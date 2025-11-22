@@ -1,0 +1,45 @@
+Package: kkstatfun
+Title: R Statistical Analysis Toolkit for Medical and Epidemiology
+Version: 0.1.0
+Authors@R: 
+    person("Kostadinov", role = c("aut", "cre"),
+           email = "kostadinov@example.com")
+Description: A comprehensive toolkit for medical statistics and epidemiology. 
+    Includes functions for proportion analysis, regression modeling, 
+    time series analysis, confusion matrix metrics, and Bulgarian EGN parsing.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+Imports: 
+    dplyr,
+    tidyr,
+    tibble,
+    ggplot2,
+    forcats,
+    purrr,
+    rlang,
+    janitor,
+    stats,
+    utils,
+    emmeans,
+    sandwich,
+    broom,
+    sysfonts,
+    ggthemes,
+    scales,
+    moments,
+    entropy,
+    tseries,
+    rugarch,
+    pROC,
+    MASS,
+    gtsummary,
+    survival,
+    ggsurvfit,
+    epitools
+Suggests: 
+    testthat,
+    knitr,
+    rmarkdown
