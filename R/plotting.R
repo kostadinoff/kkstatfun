@@ -14,6 +14,7 @@
 #'
 #' @return List with font details
 #'
+#' @import ggplot2
 #' @export
 set_plot_font <- function(font = "Roboto Condensed", size = 18,
                           search_sources = c("google", "system", "local"),
@@ -262,21 +263,21 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             strip_text_size <- size
 
                             theme_nice <- ggthemes::theme_tufte() +
-                                          ggplot2::theme(
-                                                        axis.ticks = ggplot2::element_line(linewidth = 0.5, color = "black"),
-                                                        axis.ticks.length = ggplot2::unit(4, "mm"),
-                                                        plot.title = ggplot2::element_text(family = font_family, size = title_size, hjust = 0, vjust = 2, margin = ggplot2::margin(t = 10, b = 10)),
-                                                        plot.subtitle = ggplot2::element_text(family = font_family, size = subtitle_size),
-                                                        plot.caption = ggplot2::element_text(family = font_family, hjust = 0.5, vjust = 1, size = caption_size),
+                                          theme(
+                                                        axis.ticks = element_line(linewidth = 0.5, color = "black"),
+                                                        axis.ticks.length = unit(4, "mm"),
+                                                        plot.title = element_text(family = font_family, size = title_size, hjust = 0, vjust = 2, margin = margin(t = 10, b = 10)),
+                                                        plot.subtitle = element_text(family = font_family, size = subtitle_size),
+                                                        plot.caption = element_text(family = font_family, hjust = 0.5, vjust = 1, size = caption_size),
                                                         plot.caption.position = "plot",
-                                                        axis.title = ggplot2::element_text(family = font_family, size = axis_title_size),
-                                                        axis.text = ggplot2::element_text(family = font_family, size = axis_text_size),
-                                                        axis.text.x = ggplot2::element_text(margin = ggplot2::margin(5, b = 10)),
-                                                        strip.text = ggplot2::element_text(family = font_family, size = strip_text_size),
-                                                        axis.line = ggplot2::element_line()
+                                                        axis.title = element_text(family = font_family, size = axis_title_size),
+                                                        axis.text = element_text(family = font_family, size = axis_text_size),
+                                                        axis.text.x = element_text(margin = margin(5, b = 10)),
+                                                        strip.text = element_text(family = font_family, size = strip_text_size),
+                                                        axis.line = element_line()
                                           )
 
-                            ggplot2::theme_set(theme_nice)
+                            theme_set(theme_nice)
                             message("✓ Updated ggplot2 theme with font '", font_family, "'")
               }
 
@@ -304,8 +305,8 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
 #'
 #' @export
 kkplot <- function(...) {
-              ggplot2::ggplot(...) +
-                            ggplot2::guides(x = ggplot2::guide_axis(cap = "both"), y = ggplot2::guide_axis(cap = "both"))
+              ggplot(...) +
+                            guides(x = guide_axis(cap = "both"), y = guide_axis(cap = "both"))
 }
 
 #' Univariate Categorical Plot
@@ -326,22 +327,22 @@ univariate_cat_plot <- function(data, variable) {
                             dplyr::count({{ variable }}) %>%
                             dplyr::filter(!is.na({{ variable }})) %>%
                             dplyr::mutate(prop = n / sum(n)) %>%
-                            kkplot(ggplot2::aes(y = forcats::fct_reorder({{ variable }}, prop), x = prop)) +
-                            ggplot2::geom_col(
+                            kkplot(aes(y = forcats::fct_reorder({{ variable }}, prop), x = prop)) +
+                            geom_col(
                                           alpha = 0.6,
                                           fill = "gray60",
                                           color = "black"
                             ) +
-                            ggplot2::geom_label(
-                                          ggplot2::aes(label = paste0(n, " (", scales::percent(prop), ")")),
+                            geom_label(
+                                          aes(label = paste0(n, " (", scales::percent(prop), ")")),
                                           color = "black",
                                           size = 5,
                                           family = "Roboto Condensed",
                                           hjust = -0.1
                             ) +
-                            ggplot2::scale_x_continuous(labels = scales::percent) +
-                            ggplot2::expand_limits(x = 1) +
-                            ggplot2::labs(
+                            scale_x_continuous(labels = scales::percent) +
+                            expand_limits(x = 1) +
+                            labs(
                                           x = "Proportion",
                                           y = "Category",
                                           title = title
@@ -359,26 +360,26 @@ univariate_cont_plot <- function(data, variable) {
               title <- paste("Univariate Continuous Plot of", rlang::as_name(variable))
 
               data %>%
-                            kkplot(ggplot2::aes(x = !!variable)) +
-                            ggplot2::geom_density(
+                            kkplot(aes(x = !!variable)) +
+                            geom_density(
                                           adjust = 1 / 2,
                                           fill = "gray90",
                                           color = "black",
                                           alpha = 0.6
                             ) +
-                            ggplot2::geom_vline(
-                                          ggplot2::aes(xintercept = mean({{ variable }}, na.rm = TRUE)),
+                            geom_vline(
+                                          aes(xintercept = mean({{ variable }}, na.rm = TRUE)),
                                           color = "red",
                                           linetype = 1,
                                           linewidth = 1
                             ) +
-                            ggplot2::geom_vline(
-                                          ggplot2::aes(xintercept = stats::median({{ variable }}, na.rm = TRUE)),
+                            geom_vline(
+                                          aes(xintercept = stats::median({{ variable }}, na.rm = TRUE)),
                                           color = "blue",
                                           linetype = "dashed",
                                           linewidth = 1,
                             ) +
-                            ggplot2::annotate(
+                            annotate(
                                           "label",
                                           x = mean(data[[rlang::as_name(variable)]], na.rm = TRUE),
                                           y = 0.9 * max(stats::density(data[[rlang::as_name(variable)]], na.rm = TRUE)$y),
@@ -388,7 +389,7 @@ univariate_cont_plot <- function(data, variable) {
                                           family = "Roboto Condensed",
                                           hjust = -0.1
                             ) +
-                            ggplot2::annotate(
+                            annotate(
                                           "label",
                                           x = stats::median(data[[rlang::as_name(variable)]], na.rm = TRUE),
                                           y = 0.8 * max(stats::density(data[[rlang::as_name(variable)]], na.rm = TRUE)$y),
@@ -398,8 +399,8 @@ univariate_cont_plot <- function(data, variable) {
                                           family = "Roboto Condensed",
                                           hjust = -0.1
                             ) +
-                            ggplot2::expand_limits(x = c(min(data[[rlang::as_name(variable)]], na.rm = TRUE), max(data[[rlang::as_name(variable)]], na.rm = TRUE))) +
-                            ggplot2::labs(
+                            expand_limits(x = c(min(data[[rlang::as_name(variable)]], na.rm = TRUE), max(data[[rlang::as_name(variable)]], na.rm = TRUE))) +
+                            labs(
                                           x = "Value",
                                           y = "Density",
                                           title = title
