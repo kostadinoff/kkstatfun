@@ -72,8 +72,8 @@ If you use this package in your research, please cite it as follows:
 
 ```bibtex
 @Manual{kkstatfun,
-  title = {kkstatfun: R Statistical Analysis Toolkit for Medical and Epidemiology},
-  author = {Kostadinov},
+  title = {kkstatfun: R Statistical Analysis Toolkit for Medical statistics and Epidemiology},
+  author = {Kostadinov, Kostadin},
   year = {2025},
   note = {R package version 0.1.0},
   url = {https://github.com/kostadinoff/kkstatfun},
