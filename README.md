@@ -35,7 +35,13 @@ library(kkstatfun)
 exposure <- c(1, 1, 0, 0, 1, 0, 1, 1)
 outcome <- c(1, 0, 0, 1, 1, 0, 1, 0)
 
+# Legacy function
 epi_stats(exposure = exposure, outcome = outcome)
+
+# New Tidyverse-friendly function
+# Returns OR, RR, RD, Attributable Fraction (AF), PAF, and Preventable Fraction (PF)
+df <- data.frame(exposure, outcome)
+kk_epi_2x2(df, exposure, outcome)
 ```
 
 ### Survival Analysis
@@ -45,7 +51,18 @@ library(survival)
 library(kkstatfun)
 
 # Using the lung dataset
+# Legacy
 survival_plot(lung, time_col = "time", status_col = "status", group_col = "sex")
+
+# New Tidyverse-friendly
+kk_survival_plot(lung, time, status, sex)
+```
+
+### Table 1 Summary
+
+```r
+# Create a publication-ready Table 1
+kk_table1(mtcars, by = "am", variables = c("mpg", "hp", "wt"))
 ```
 
 ### Diagnostic Test Metrics
@@ -53,6 +70,9 @@ survival_plot(lung, time_col = "time", status_col = "status", group_col = "sex")
 ```r
 # TP=100, FP=20, FN=10, TN=870
 confusion_metrics_ci(c(tp=100, fp=20, fn=10, tn=870))
+
+# From data frame with truth and prediction columns
+kk_diagnostic(data, truth_col, pred_col)
 ```
 
 ### Regression Analysis

@@ -61,3 +61,76 @@ survival_plot <- function(data, time_col, status_col, group_col = NULL, conf.int
 
               p
 }
+
+#' Survival Plot (KK)
+#'
+#' @description Kaplan-Meier plot with risk table and p-value.
+#'
+#' @param data Data frame
+#' @param time Time column
+#' @param status Status column (0/1)
+#' @param group Grouping column (optional)
+#' @param risk_table Show risk table? (default TRUE)
+#' @param p_val Show p-value? (default TRUE)
+#' @param conf_int Show confidence interval? (default TRUE)
+#' @param palette Color palette (optional)
+#'
+#' @return ggplot object
+#' @export
+kk_survival_plot <- function(data, time, status, group = NULL,
+                             risk_table = TRUE, p_val = TRUE, conf_int = TRUE,
+                             palette = NULL) {
+              if (!requireNamespace("survival", quietly = TRUE) ||
+                            !requireNamespace("ggsurvfit", quietly = TRUE)) {
+                            stop("Packages 'survival' and 'ggsurvfit' are required")
+              }
+
+              time_enquo <- rlang::enquo(time)
+              status_enquo <- rlang::enquo(status)
+              group_enquo <- rlang::enquo(group)
+
+              # Construct formula
+              # We need to handle if group is provided or not
+
+              # Check if group is provided (not null and not missing)
+              has_group <- !rlang::quo_is_null(group_enquo)
+
+              if (has_group) {
+                            fml <- stats::as.formula(paste0(
+                                          "survival::Surv(", rlang::as_name(time_enquo), ", ",
+                                          rlang::as_name(status_enquo), ") ~ ", rlang::as_name(group_enquo)
+                            ))
+              } else {
+                            fml <- stats::as.formula(paste0(
+                                          "survival::Surv(", rlang::as_name(time_enquo), ", ",
+                                          rlang::as_name(status_enquo), ") ~ 1"
+                            ))
+              }
+
+              fit <- ggsurvfit::survfit2(fml, data = data)
+
+              p <- ggsurvfit::ggsurvfit(fit) +
+                            ggplot2::labs(
+                                          y = "Survival Probability",
+                                          title = "Kaplan-Meier Survival Curve"
+                            )
+
+              if (conf_int) {
+                            p <- p + ggsurvfit::add_confidence_interval()
+              }
+
+              if (risk_table) {
+                            p <- p + ggsurvfit::add_risktable()
+              }
+
+              if (p_val && has_group) {
+                            p <- p + ggsurvfit::add_pvalue()
+              }
+
+              if (!is.null(palette)) {
+                            p <- p + ggplot2::scale_color_manual(values = palette) +
+                                          ggplot2::scale_fill_manual(values = palette)
+              }
+
+              return(p)
+}
