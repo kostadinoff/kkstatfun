@@ -1,19 +1,18 @@
 # ============================================================
-# VISUALIZATION FUNCTIONS
+# PLOTTING FUNCTIONS
 # ============================================================
 
-#' Set Plot Font with Comprehensive Search
+#' Set Plot Font
 #'
-#' @description Advanced font loading system that searches Google Fonts, system fonts,
-#'   and local directories. Automatically falls back to safe alternatives if needed.
+#' @description Sets the font for ggplot2 plots, searching Google Fonts, system fonts, and local directories.
 #'
 #' @param font Font family name (default: "Roboto Condensed")
-#' @param size Base font size in points (default: 18)
-#' @param search_sources Order to search: "google", "system", "local"
-#' @param fallbacks Fallback fonts if primary not found
-#' @param update_theme Apply theme to all subsequent plots
+#' @param size Base font size (default: 18)
+#' @param search_sources Sources to search: "google", "system", "local"
+#' @param fallbacks Fallback fonts
+#' @param update_theme Whether to update the current ggplot theme
 #'
-#' @return List with font configuration (invisibly)
+#' @return List with font details
 #'
 #' @export
 set_plot_font <- function(font = "Roboto Condensed", size = 18,
@@ -29,6 +28,12 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
               font_family <- font
               font_loaded <- FALSE
               search_results <- list()
+
+              # Helper function to normalize font names for matching
+              # Removes spaces, hyphens, and converts to lowercase
+              normalize_name <- function(name) {
+                            tolower(gsub("[\\s-]", "", name))
+              }
 
               # Helper function to test if font family is available
               test_font <- function(family) {
@@ -55,47 +60,128 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             return(test_font(family))
               }
 
-              # Helper function to search local font directories
-              search_local_fonts <- function(family) {
-                            # Common font directories
-                            font_dirs <- c(
-                                          file.path(Sys.getenv("WINDIR"), "Fonts"), # Windows
-                                          file.path(Sys.getenv("HOME"), ".fonts"), # User fonts
-                                          "/System/Library/Fonts", # macOS
-                                          "/Library/Fonts", # macOS
-                                          "/usr/share/fonts", # Linux
-                                          "/usr/local/share/fonts" # Linux
-                            )
+              # Helper function to get OS-specific font directories
+              get_font_directories <- function() {
+                            os_type <- Sys.info()["sysname"]
 
-                            # Remove duplicates and non-existent dirs
-                            font_dirs <- unique(font_dirs[dir.exists(font_dirs)])
+                            font_dirs <- character()
+
+                            if (os_type == "Windows") {
+                                          font_dirs <- c(
+                                                        file.path(Sys.getenv("WINDIR"), "Fonts"),
+                                                        file.path(Sys.getenv("LOCALAPPDATA"), "Microsoft", "Windows", "Fonts")
+                                          )
+                            } else if (os_type == "Darwin") { # macOS
+                                          font_dirs <- c(
+                                                        "/System/Library/Fonts",
+                                                        "/Library/Fonts",
+                                                        file.path(Sys.getenv("HOME"), "Library", "Fonts"),
+                                                        "/System/Library/Fonts/Supplemental",
+                                                        "/Network/Library/Fonts"
+                                          )
+                            } else { # Linux and other Unix-like
+                                          font_dirs <- c(
+                                                        "/usr/share/fonts",
+                                                        "/usr/local/share/fonts",
+                                                        file.path(Sys.getenv("HOME"), ".fonts"),
+                                                        file.path(Sys.getenv("HOME"), ".local", "share", "fonts"),
+                                                        "/usr/share/fonts/truetype",
+                                                        "/usr/share/fonts/opentype"
+                                          )
+                            }
+
+                            # Return only existing directories
+                            return(unique(font_dirs[dir.exists(font_dirs)]))
+              }
+
+              # Helper function to recursively search font directories
+              search_font_files <- function(dirs, family) {
+                            # Normalize the search term
+                            normalized_family <- normalize_name(family)
 
                             # Common font file extensions
-                            extensions <- c("ttf", "otf", "ttc")
-                            pattern <- paste0("(?i)", family, ".*\\.(", paste(extensions, collapse = "|"), ")$")
+                            extensions <- c("ttf", "otf", "ttc", "dfont")
 
-                            # Search for font files
-                            for (dir in font_dirs) {
-                                          font_files <- list.files(dir, pattern = pattern, full.names = TRUE, ignore.case = TRUE)
+                            all_fonts <- character()
 
-                                          if (length(font_files) > 0) {
-                                                        # Try to add the first matching font file
-                                                        tryCatch(
-                                                                      {
-                                                                                    sysfonts::font_add(family = family, regular = font_files[1])
-                                                                                    if (test_font(family)) {
-                                                                                                  message(" ✓ Added '", family, "' from: ", basename(font_files[1]))
-                                                                                                  return(TRUE)
-                                                                                    }
-                                                                      },
-                                                                      error = function(e) {
-                                                                                    message(" ✗ Failed to add font from ", dir, ": ", e$message)
-                                                                      }
+                            for (dir in dirs) {
+                                          # Recursively list all font files
+                                          for (ext in extensions) {
+                                                        pattern <- paste0("\\.", ext, "$")
+                                                        files <- list.files(dir,
+                                                                      pattern = pattern,
+                                                                      full.names = TRUE,
+                                                                      recursive = TRUE,
+                                                                      ignore.case = TRUE
                                                         )
+                                                        all_fonts <- c(all_fonts, files)
                                           }
                             }
 
-                            return(FALSE)
+                            # Match fonts by normalized filename
+                            matched_fonts <- character()
+                            for (font_file in all_fonts) {
+                                          basename_normalized <- normalize_name(tools::file_path_sans_ext(basename(font_file)))
+
+                                          # Check if normalized family name is in the normalized filename
+                                          if (grepl(normalized_family, basename_normalized, fixed = TRUE)) {
+                                                        matched_fonts <- c(matched_fonts, font_file)
+                                          }
+                            }
+
+                            return(matched_fonts)
+              }
+
+              # Helper function to search local fonts
+              search_local_fonts <- function(family) {
+                            font_dirs <- get_font_directories()
+
+                            if (length(font_dirs) == 0) {
+                                          message(" ✗ No font directories found")
+                                          return(FALSE)
+                            }
+
+                            message(" → Searching in ", length(font_dirs), " directories...")
+
+                            # Search for matching font files
+                            matched_fonts <- search_font_files(font_dirs, family)
+
+                            if (length(matched_fonts) == 0) {
+                                          message(" ✗ No matching font files found")
+                                          return(FALSE)
+                            }
+
+                            message(" → Found ", length(matched_fonts), " matching font file(s)")
+
+                            # Try to add the first regular font (prioritize "regular" in filename)
+                            regular_fonts <- matched_fonts[grepl("regular", basename(matched_fonts), ignore.case = TRUE)]
+
+                            font_to_add <- if (length(regular_fonts) > 0) regular_fonts[1] else matched_fonts[1]
+
+                            # Try to add the font
+                            tryCatch(
+                                          {
+                                                        # Extract the base family name without variant
+                                                        base_name <- tools::file_path_sans_ext(basename(font_to_add))
+                                                        # Remove common variant suffixes
+                                                        base_name <- gsub("-(Regular|Bold|Italic|Light|Medium|Heavy|Black).*$", "", base_name, ignore.case = TRUE)
+
+                                                        # Use the original family name for consistency
+                                                        sysfonts::font_add(family = family, regular = font_to_add)
+
+                                                        if (test_font(family)) {
+                                                                      message(" ✓ Added '", family, "' from: ", basename(font_to_add))
+                                                                      return(TRUE)
+                                                        } else {
+                                                                      message(" ✗ Font added but not available in family list")
+                                                                      return(FALSE)
+                                                        }
+                                          },
+                                          error = function(e) {
+                                                        message(" ✗ Failed to add font: ", e$message)
+                                                        return(FALSE)
+                                          }
+                            )
               }
 
               # Main search process
@@ -135,10 +221,20 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             cat(" No match found. Trying fallbacks...\n")
                             for (fb in fallbacks) {
                                           cat(" Testing fallback:", fb, "\n")
+
+                                          # Try system first
                                           if (check_system_font(fb)) {
                                                         font_family <- fb
                                                         font_loaded <- TRUE
                                                         message(" ✓ Using fallback: ", fb)
+                                                        break
+                                          }
+
+                                          # Try local search
+                                          if (search_local_fonts(fb)) {
+                                                        font_family <- fb
+                                                        font_loaded <- TRUE
+                                                        message(" ✓ Using fallback: ", fb, " (from local)")
                                                         break
                                           }
                             }
@@ -150,6 +246,10 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             message(" ⚠ Using system default 'sans'")
               }
 
+              # Enable showtext for consistent font rendering
+              # Uncomment if you want to enable showtext
+              # showtext::showtext_auto(enable = TRUE)
+              # message("✓ Enabled showtext for font rendering")
 
               # Create and set theme if requested
               if (update_theme) {
@@ -196,291 +296,141 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
               return(invisible(result))
 }
 
-#' List Available System Fonts
+#' KK Plot Wrapper
 #'
-#' @description Shows all fonts available on your system
+#' @description Wrapper for ggplot with axis caps
 #'
-#' @return Character vector of font names
-#'
-#' @export
-list_system_fonts <- function() {
-              fonts <- sysfonts::font_families()
-              message(sprintf(
-                            "Available fonts (%d total):\n%s\n",
-                            length(fonts),
-                            paste(fonts, collapse = ", ")
-              ))
-              invisible(fonts)
-}
-
-#' Load Google Font
-#'
-#' @description Downloads and installs a Google Font
-#'
-#' @param font_name Font name from Google Fonts
-#' @param family Family name to use in R
-#'
-#' @return Logical - TRUE if successful
+#' @param ... Arguments passed to ggplot
 #'
 #' @export
-load_google_font <- function(font_name, family = NULL) {
-              if (is.null(family)) {
-                            family <- tolower(gsub(" ", "_", font_name))
-              }
-
-              if (!requireNamespace("sysfonts", quietly = TRUE)) {
-                            stop("Package 'sysfonts' required")
-              }
-
-              message(sprintf("Downloading '%s' from Google Fonts...", font_name))
-
-              result <- tryCatch(
-                            {
-                                          sysfonts::font_add_google(name = font_name, family = family, db_cache = FALSE)
-                                          message(sprintf("✓ Loaded '%s' as '%s'", font_name, family))
-                                          TRUE
-                            },
-                            error = function(e) {
-                                          message(sprintf("✗ Failed to load: %s", e$message))
-                                          FALSE
-                            }
-              )
-
-              invisible(result)
-}
-
-#' Load Local Font File
-#'
-#' @description Loads a font from a local file path
-#'
-#' @param font_path Full path to font file (.ttf, .otf)
-#' @param family Family name to use in R
-#'
-#' @return Logical - TRUE if successful
-#'
-#' @export
-load_local_font <- function(font_path, family) {
-              if (!file.exists(font_path)) {
-                            stop(sprintf("Font file not found: %s", font_path))
-              }
-
-              message(sprintf("Loading font from: %s", font_path))
-
-              result <- tryCatch(
-                            {
-                                          sysfonts::font_add(family = family, regular = font_path)
-                                          message(sprintf("✓ Loaded local font as '%s'", family))
-                                          TRUE
-                            },
-                            error = function(e) {
-                                          message(sprintf("✗ Failed to load: %s", e$message))
-                                          FALSE
-                            }
-              )
-
-              invisible(result)
-}
-
-#' Search and Load Font (Google, System, or Local)
-#'
-#' @description Smart font loader that searches multiple sources
-#'
-#' @param font_name Font name to search for
-#' @param search_sources Order to search: "google", "system", "local"
-#' @param local_dir Directory to search for local fonts
-#'
-#' @return Logical - TRUE if loaded successfully
-#'
-#' @export
-load_font_smart <- function(font_name,
-                            search_sources = c("google", "system", "local"),
-                            local_dir = c(
-                                          file.path(Sys.getenv("HOME"), ".fonts"),
-                                          file.path(Sys.getenv("WINDIR"), "Fonts"),
-                                          "/System/Library/Fonts",
-                                          "/Library/Fonts",
-                                          "/usr/share/fonts"
-                            )) {
-              available_fonts <- sysfonts::font_families()
-
-              # Check if already loaded
-              if (font_name %in% available_fonts) {
-                            message(sprintf("✓ Font '%s' already available", font_name))
-                            return(invisible(TRUE))
-              }
-
-              family_name <- tolower(gsub(" ", "_", font_name))
-
-              for (source in search_sources) {
-                            message(sprintf("Searching %s...", source))
-
-                            if (source == "google") {
-                                          if (load_google_font(font_name, family_name)) {
-                                                        return(invisible(TRUE))
-                                          }
-                            } else if (source == "system") {
-                                          if (font_name %in% available_fonts) {
-                                                        message(sprintf("✓ Found '%s' in system fonts", font_name))
-                                                        return(invisible(TRUE))
-                                          }
-                            } else if (source == "local") {
-                                          # Search local directories
-                                          for (dir in local_dir) {
-                                                        if (!dir.exists(dir)) next
-
-                                                        font_files <- list.files(
-                                                                      dir,
-                                                                      pattern = paste0("(?i)", font_name, ".*\\.(ttf|otf)$"),
-                                                                      full.names = TRUE,
-                                                                      ignore.case = TRUE
-                                                        )
-
-                                                        if (length(font_files) > 0) {
-                                                                      if (load_local_font(font_files[1], family_name)) {
-                                                                                    return(invisible(TRUE))
-                                                                      }
-                                                        }
-                                          }
-                            }
-              }
-
-              message(sprintf("✗ Could not find '%s' in any source", font_name))
-              return(invisible(FALSE))
-}
-
-
-#' Enhanced ggplot Constructor with Axes Caps
-#'
-#' @description Convenience function for creating ggplot with axis caps.
-#'   Applies guides that add caps to both x and y axes.
-#'
-#' @param ... Arguments passed to ggplot2::ggplot()
-#'
-#' @return ggplot object with axis caps
-#'
-#' @export
-plot_base <- function(...) {
+kkplot <- function(...) {
               ggplot2::ggplot(...) +
-                            ggplot2::guides(
-                                          x = ggplot2::guide_axis(cap = "both"),
-                                          y = ggplot2::guide_axis(cap = "both")
-                            )
+                            ggplot2::guides(x = ggplot2::guide_axis(cap = "both"), y = ggplot2::guide_axis(cap = "both"))
 }
-
-#' Alias for plot_base (Original Name)
-#'
-#' @description Original function name. Use plot_base() instead.
-#'
-#' @param ... Arguments passed to ggplot2::ggplot()
-#'
-#' @return ggplot object with axis caps
-#'
-#' @export
-kkplot <- plot_base
 
 #' Univariate Categorical Plot
 #'
 #' @param data Data frame
-#' @param variable Variable name (unquoted)
-#'
-#' @return ggplot object
+#' @param variable Variable to plot
 #'
 #' @export
-univariate_categorical_plot <- function(data, variable) {
-              validate_data_frame(data)
+univariate_cat_plot <- function(data, variable) {
               variable <- rlang::ensym(variable)
-              var_name <- rlang::as_name(variable)
+              title <- paste("Univariate Categorical Plot of", rlang::as_name(variable))
 
-              validate_categorical_column(data, var_name)
-
-              title <- sprintf("Distribution of %s", var_name)
+              # Filter out non-finite values (NA, NaN)
+              variable_data <- dplyr::pull(data, !!variable)
+              variable_data <- variable_data[!is.na(variable_data) & !is.nan(variable_data)]
 
               data %>%
                             dplyr::count({{ variable }}) %>%
                             dplyr::filter(!is.na({{ variable }})) %>%
                             dplyr::mutate(prop = n / sum(n)) %>%
-                            plot_base(ggplot2::aes(
-                                          y = forcats::fct_reorder({{ variable }}, prop),
-                                          x = prop
-                            )) +
-                            ggplot2::geom_col(alpha = 0.6, fill = "gray60", color = "black") +
+                            kkplot(ggplot2::aes(y = forcats::fct_reorder({{ variable }}, prop), x = prop)) +
+                            ggplot2::geom_col(
+                                          alpha = 0.6,
+                                          fill = "gray60",
+                                          color = "black"
+                            ) +
                             ggplot2::geom_label(
-                                          ggplot2::aes(label = sprintf("%d (%.1f%%)", n, prop * 100)),
-                                          color = "black", size = 4, hjust = -0.1
+                                          ggplot2::aes(label = paste0(n, " (", scales::percent(prop), ")")),
+                                          color = "black",
+                                          size = 5,
+                                          family = "Roboto Condensed",
+                                          hjust = -0.1
                             ) +
                             ggplot2::scale_x_continuous(labels = scales::percent) +
                             ggplot2::expand_limits(x = 1) +
-                            ggplot2::labs(x = "Proportion", y = "Category", title = title)
+                            ggplot2::labs(
+                                          x = "Proportion",
+                                          y = "Category",
+                                          title = title
+                            )
 }
 
 #' Univariate Continuous Plot
 #'
 #' @param data Data frame
-#' @param variable Variable name (unquoted)
-#'
-#' @return ggplot object
+#' @param variable Variable to plot
 #'
 #' @export
-univariate_continuous_plot <- function(data, variable) {
-              validate_data_frame(data)
+univariate_cont_plot <- function(data, variable) {
               variable <- rlang::ensym(variable)
-              var_name <- rlang::as_name(variable)
-
-              validate_numeric_column(data, var_name)
-
-              title <- sprintf("Distribution of %s", var_name)
-
-              mean_val <- mean(data[[var_name]], na.rm = TRUE)
-              median_val <- stats::median(data[[var_name]], na.rm = TRUE)
-              density_data <- stats::density(data[[var_name]], na.rm = TRUE)
-              max_density <- max(density_data$y)
+              title <- paste("Univariate Continuous Plot of", rlang::as_name(variable))
 
               data %>%
-                            plot_base(ggplot2::aes(x = !!variable)) +
+                            kkplot(ggplot2::aes(x = !!variable)) +
                             ggplot2::geom_density(
-                                          adjust = 0.5, fill = "gray90", color = "black", alpha = 0.6
+                                          adjust = 1 / 2,
+                                          fill = "gray90",
+                                          color = "black",
+                                          alpha = 0.6
                             ) +
                             ggplot2::geom_vline(
-                                          ggplot2::aes(xintercept = mean_val),
-                                          color = "red", linetype = 1, linewidth = 1
+                                          ggplot2::aes(xintercept = mean({{ variable }}, na.rm = TRUE)),
+                                          color = "red",
+                                          linetype = 1,
+                                          linewidth = 1
                             ) +
                             ggplot2::geom_vline(
-                                          ggplot2::aes(xintercept = median_val),
-                                          color = "blue", linetype = "dashed", linewidth = 1
+                                          ggplot2::aes(xintercept = stats::median({{ variable }}, na.rm = TRUE)),
+                                          color = "blue",
+                                          linetype = "dashed",
+                                          linewidth = 1,
                             ) +
                             ggplot2::annotate(
                                           "label",
-                                          x = mean_val, y = 0.9 * max_density,
-                                          label = sprintf("Mean: %.2f", mean_val),
-                                          color = "red", size = 4, hjust = -0.1
+                                          x = mean(data[[rlang::as_name(variable)]], na.rm = TRUE),
+                                          y = 0.9 * max(stats::density(data[[rlang::as_name(variable)]], na.rm = TRUE)$y),
+                                          label = paste0("Mean: ", round(mean(data[[rlang::as_name(variable)]], na.rm = TRUE), 2)),
+                                          color = "red",
+                                          size = 5,
+                                          family = "Roboto Condensed",
+                                          hjust = -0.1
                             ) +
                             ggplot2::annotate(
                                           "label",
-                                          x = median_val, y = 0.8 * max_density,
-                                          label = sprintf("Median: %.2f", median_val),
-                                          color = "blue", size = 4, hjust = -0.1
+                                          x = stats::median(data[[rlang::as_name(variable)]], na.rm = TRUE),
+                                          y = 0.8 * max(stats::density(data[[rlang::as_name(variable)]], na.rm = TRUE)$y),
+                                          label = paste0("Median: ", round(stats::median(data[[rlang::as_name(variable)]], na.rm = TRUE), 2)),
+                                          color = "blue",
+                                          size = 5,
+                                          family = "Roboto Condensed",
+                                          hjust = -0.1
                             ) +
-                            ggplot2::labs(x = "Value", y = "Density", title = title)
+                            ggplot2::expand_limits(x = c(min(data[[rlang::as_name(variable)]], na.rm = TRUE), max(data[[rlang::as_name(variable)]], na.rm = TRUE))) +
+                            ggplot2::labs(
+                                          x = "Value",
+                                          y = "Density",
+                                          title = title
+                            )
 }
 
-#' Univariate Plot (Auto-Detect Type)
+#' Univariate Plot
+#'
+#' @description Automatically detects variable type and plots accordingly
 #'
 #' @param data Data frame
-#' @param variable Variable name (unquoted)
-#'
-#' @return ggplot object
+#' @param variable Variable to plot
 #'
 #' @export
 univariate_plot <- function(data, variable) {
-              validate_data_frame(data)
               variable <- rlang::ensym(variable)
-              var_name <- rlang::as_name(variable)
 
-              if (is.numeric(data[[var_name]])) {
-                            univariate_continuous_plot(data, !!variable)
-              } else if (is.character(data[[var_name]]) || is.factor(data[[var_name]])) {
-                            univariate_categorical_plot(data, !!variable)
+              # Check if the variable is numeric or categorical
+              if (is.numeric(data[[rlang::as_name(variable)]])) {
+                            # Call the continuous plot function
+                            univariate_cont_plot(data, !!variable)
+              } else if (is.factor(data[[rlang::as_name(variable)]]) || is.character(data[[rlang::as_name(variable)]])) {
+                            # Call the categorical plot function
+                            univariate_cat_plot(data, !!variable)
               } else {
-                            stop(sprintf("Variable '%s' must be numeric or categorical", var_name))
+                            stop("The variable must be either numeric or categorical (factor/character).")
               }
 }
+
+#' @export
+univariate_categorical_plot <- univariate_cat_plot
+
+#' @export
+univariate_continuous_plot <- univariate_cont_plot

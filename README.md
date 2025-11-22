@@ -65,3 +65,27 @@ regression_analysis(mtcars, outcome = "am", predictors = c("mpg", "wt"))
 ## License
 
 MIT
+
+## Citation
+
+If you use this package in your research, please cite it as follows:
+
+```bibtex
+@Manual{kkstatfun,
+  title = {kkstatfun: R Statistical Analysis Toolkit for Medical and Epidemiology},
+  author = {Kostadinov},
+  year = {2025},
+  note = {R package version 0.1.0},
+  url = {https://github.com/kostadinoff/kkstatfun},
+}
+```
+
+## Credits
+
+This package was architected, refactored, and enhanced by **Antigravity**, an advanced AI coding assistant developed by **Google DeepMind**. 
+
+It serves as a showcase of high-level AI capability in:
+- **R Package Development**: Structuring complex scripts into modular, installable packages.
+- **Statistical Programming**: Implementing robust medical statistics and epidemiological methods.
+- **Code Refactoring**: Modernizing legacy code with best practices and error handling.
+

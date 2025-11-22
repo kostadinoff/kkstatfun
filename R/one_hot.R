@@ -2,45 +2,52 @@
 # ONE-HOT ENCODING
 # ============================================================
 
-#' One-Hot Encoding for Categorical Variables
+#' One-Hot Encoding (KK One Hot)
 #'
 #' @description Creates binary dummy variables for categorical column
 #'
 #' @param data Tibble or data frame
-#' @param column Column name (character or unquoted)
+#' @param column Column name (character)
 #'
 #' @return Data with new binary columns added
 #'
 #' @export
-one_hot_encode <- function(data, column) {
-              if (!inherits(data, c("tbl_df", "data.frame"))) {
-                            stop(sprintf("Input must be tibble or data frame, got %s", class(data)[1]))
+kkonehot <- function(data, column) {
+              # Check if input is a tibble
+              if (!inherits(data, "tbl_df")) {
+                            stop("Input 'data' must be a tibble")
               }
 
-              col_name <- if (is.symbol(substitute(column))) {
-                            rlang::as_string(rlang::ensym(column))
-              } else {
-                            as.character(column)
+              # Check if column exists in data
+              if (!column %in% names(data)) {
+                            stop("Specified column not found in the dataset")
               }
 
-              if (!col_name %in% names(data)) {
-                            stop(sprintf("Column '%s' not found", col_name))
+              # Get the variable
+              var <- data[[column]]
+
+              # Check if variable is character or factor
+              if (!(is.character(var) || is.factor(var))) {
+                            stop("Column must be character or factor type for one-hot encoding")
               }
 
-              var <- data[[col_name]]
-
-              if (!is.character(var) && !is.factor(var)) {
-                            stop(sprintf("'%s' must be character or factor", col_name))
+              # Convert character to factor if needed
+              if (is.character(var)) {
+                            var <- as.factor(var)
               }
 
-              if (is.character(var)) var <- as.factor(var)
+              # Get levels of the factor
+              levels <- levels(var)
 
-              levels_var <- levels(var)
-
-              for (level in levels_var) {
-                            new_col_name <- paste0(col_name, "_", level)
-                            data[[new_col_name]] <- dplyr::if_else(var == level, 1L, 0L)
+              # Create one-hot encoded columns
+              for (level in levels) {
+                            new_col_name <- paste0(column, "_", level)
+                            data[[new_col_name]] <- ifelse(var == level, 1, 0)
               }
 
-              tibble::as_tibble(data)
+              # Return the modified dataset
+              return(data)
 }
+
+#' @export
+one_hot_encode <- kkonehot

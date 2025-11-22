@@ -1,19 +1,19 @@
 # ============================================================
-# EGN (BULGARIAN ID) PARSING
+# EGN PARSING
 # ============================================================
 
-#' Extract Age from Bulgarian EGN
+#' Extract Information from EGN
 #'
-#' @description Validates and extracts demographic information from
-#'   Bulgarian EGN numbers (6 or 10 digits)
+#' @description Parses Bulgarian EGN to extract age, birth date, gender, and region.
+#'   Also validates the EGN.
 #'
-#' @param egn Character vector of EGN numbers
-#' @param admission_date Date of admission for age calculation
+#' @param egn Vector of EGNs (character or numeric)
+#' @param admission_date Date to calculate age against (default: Sys.Date())
 #'
-#' @return Tibble with age, birth_date, validity, gender, region
+#' @return Data frame with extracted information
 #'
 #' @export
-extract_egn_info <- function(egn, admission_date = Sys.Date()) {
+extract_age_from_egn <- function(egn, admission_date = Sys.Date()) {
               region_codes <- list(
                             "000-043" = "Blagoevgrad", "044-093" = "Burgas", "094-139" = "Varna",
                             "140-169" = "Veliko Tarnovo", "170-183" = "Vidin", "184-217" = "Vratsa",
@@ -26,8 +26,8 @@ extract_egn_info <- function(egn, admission_date = Sys.Date()) {
                             "822-843" = "Targovishte", "844-871" = "Haskovo", "872-903" = "Shumen",
                             "904-925" = "Yambol", "926-999" = "Other/Unknown"
               )
-
               weights <- c(2, 4, 8, 5, 10, 9, 7, 3, 6)
+
               egn <- as.character(egn)
               admission_date <- as.Date(admission_date)
 
@@ -39,7 +39,7 @@ extract_egn_info <- function(egn, admission_date = Sys.Date()) {
                             region = character(length(egn)),
                             birth_order = numeric(length(egn)),
                             invalid_egn = character(length(egn)),
-                            invalid_reason = character(length(egn)),
+                            invalid_reason = character(length(egn)), # New column for reason
                             stringsAsFactors = FALSE
               )
 
@@ -56,8 +56,8 @@ extract_egn_info <- function(egn, admission_date = Sys.Date()) {
                             )
 
                             if (is.na(egn[i]) || nchar(trimws(egn[i])) == 0) {
-                                          output$invalid_reason <- "Missing or empty EGN"
                                           output$invalid_egn <- egn[i]
+                                          output$invalid_reason <- "Missing or empty EGN"
                                           result[i, ] <- output
                                           next
                             }
@@ -79,8 +79,8 @@ extract_egn_info <- function(egn, admission_date = Sys.Date()) {
                                           } else if (month_indicator >= 1 && month_indicator <= 12) {
                                                         year <- year + 1900
                                           } else {
-                                                        output$invalid_reason <- sprintf("Invalid month: %d", month_indicator)
                                                         output$invalid_egn <- egn[i]
+                                                        output$invalid_reason <- sprintf("Invalid month: %d", month_indicator)
                                                         result[i, ] <- output
                                                         next
                                           }
@@ -99,10 +99,7 @@ extract_egn_info <- function(egn, admission_date = Sys.Date()) {
 
                                           if (!is.na(output$birth_date)) {
                                                         current_admission_date <- if (length(admission_date) == 1) admission_date else admission_date[i]
-                                                        output$age <- floor(as.numeric(difftime(current_admission_date,
-                                                                      output$birth_date,
-                                                                      units = "days"
-                                                        )) / 365.25)
+                                                        output$age <- floor(as.numeric(difftime(current_admission_date, output$birth_date, units = "days")) / 365.25)
                                                         output$is_valid <- TRUE
                                           }
 
@@ -125,8 +122,9 @@ extract_egn_info <- function(egn, admission_date = Sys.Date()) {
                                           } else if (month_indicator >= 1 && month_indicator <= 12) {
                                                         year <- year + 1900
                                           } else {
-                                                        output$invalid_reason <- sprintf("Invalid month: %d", month_indicator)
+                                                        warning(sprintf("Invalid month in EGN at index %d: %s", i, egn[i]))
                                                         output$invalid_egn <- egn[i]
+                                                        output$invalid_reason <- sprintf("Invalid month: %d", month_indicator)
                                                         result[i, ] <- output
                                                         next
                                           }
@@ -137,17 +135,14 @@ extract_egn_info <- function(egn, admission_date = Sys.Date()) {
                                           )
 
                                           if (is.na(output$birth_date)) {
-                                                        output$invalid_reason <- "Invalid birth date"
                                                         output$invalid_egn <- egn[i]
+                                                        output$invalid_reason <- "Invalid birth date"
                                                         result[i, ] <- output
                                                         next
                                           }
 
                                           current_admission_date <- if (length(admission_date) == 1) admission_date else admission_date[i]
-                                          output$age <- floor(as.numeric(difftime(current_admission_date,
-                                                        output$birth_date,
-                                                        units = "days"
-                                          )) / 365.25)
+                                          output$age <- floor(as.numeric(difftime(current_admission_date, output$birth_date, units = "days")) / 365.25)
 
                                           digits <- as.numeric(strsplit(egn[i], "")[[1]])
                                           weighted_sum <- sum(digits[1:9] * weights)
@@ -178,22 +173,15 @@ extract_egn_info <- function(egn, admission_date = Sys.Date()) {
                                                         }
                                           }
                             } else {
-                                          output$invalid_reason <- sprintf("Invalid length (%d) or non-numeric", egn_length)
                                           output$invalid_egn <- egn[i]
+                                          output$invalid_reason <- sprintf("Invalid length (%d) or non-numeric", egn_length)
                             }
 
                             result[i, ] <- output
               }
 
-              tibble::as_tibble(result)
+              return(result)
 }
 
-#' Alias for extract_egn_info (Original Name)
-#'
-#' @param egn Character vector of EGN numbers
-#' @param admission_date Date of admission
-#'
-#' @return Tibble with EGN information
-#'
 #' @export
-extract_age_from_egn <- extract_egn_info
+extract_egn_info <- extract_age_from_egn
