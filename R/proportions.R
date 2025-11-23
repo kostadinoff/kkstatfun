@@ -391,3 +391,47 @@ compare_proportions_by <- function(data,
 
               return(results)
 }
+
+#' Test for Trend in Proportions
+#'
+#' @description Performs the Cochran-Armitage test for trend in proportions.
+#'
+#' @param data Data frame
+#' @param x Variable for number of successes (or binary outcome if n is NULL)
+#' @param n Variable for number of trials (optional if x is binary outcome)
+#' @param group Grouping variable (ordered)
+#'
+#' @return Result of prop.trend.test
+#' @export
+prop_trend_test <- function(data, x, n = NULL, group = NULL) {
+              x_enquo <- rlang::enquo(x)
+              n_enquo <- rlang::enquo(n)
+              group_enquo <- rlang::enquo(group)
+
+              if (!rlang::quo_is_null(n_enquo)) {
+                            # Summarized data case: x=successes, n=trials, group=group
+
+                            df <- data %>%
+                                          dplyr::select(!!x_enquo, !!n_enquo, !!group_enquo) %>%
+                                          dplyr::arrange(!!group_enquo)
+
+                            x_vec <- df %>% dplyr::pull(!!x_enquo)
+                            n_vec <- df %>% dplyr::pull(!!n_enquo)
+              } else {
+                            # Raw data case: x=outcome (binary), group=group
+                            # We need to calculate successes and trials per group
+
+                            df <- data %>%
+                                          dplyr::group_by(!!group_enquo) %>%
+                                          dplyr::summarise(
+                                                        successes = sum(!!x_enquo, na.rm = TRUE),
+                                                        trials = dplyr::n()
+                                          ) %>%
+                                          dplyr::arrange(!!group_enquo)
+
+                            x_vec <- df$successes
+                            n_vec <- df$trials
+              }
+
+              stats::prop.trend.test(x_vec, n_vec)
+}

@@ -435,3 +435,67 @@ univariate_categorical_plot <- univariate_cat_plot
 
 #' @export
 univariate_continuous_plot <- univariate_cont_plot
+
+#' Plot Proportion Comparisons
+#'
+#' @description Visualizes the output of `compare_proportions` or `compare_proportions_kk_glm` using a forest plot.
+#'
+#' @param results Data frame returned by `compare_proportions` or `compare_proportions_kk_glm`
+#' @param title Plot title
+#' @param subtitle Plot subtitle
+#' @param xlab Label for x-axis
+#'
+#' @return ggplot object
+#'
+#' @export
+plot_proportion_comparisons <- function(results,
+                                        title = "Proportion Comparisons",
+                                        subtitle = NULL,
+                                        xlab = "Difference in Proportions (95% CI)") {
+              # Check if required columns exist
+              required_cols <- c("estimate", "conf_low", "conf_high")
+
+              # Handle different column names from different functions
+              if ("prop_diff" %in% names(results)) {
+                            results <- results %>%
+                                          dplyr::rename(
+                                                        estimate = prop_diff,
+                                                        conf_low = ci_lower,
+                                                        conf_high = ci_upper
+                                          )
+              }
+
+              if (!all(required_cols %in% names(results))) {
+                            stop("Results data frame must contain 'estimate', 'conf_low', and 'conf_high' (or 'prop_diff', 'ci_lower', 'ci_upper').")
+              }
+
+              # Create a label for the comparison
+              if ("group1" %in% names(results) && "group2" %in% names(results)) {
+                            results <- results %>%
+                                          dplyr::mutate(comparison = paste0(group1, " vs ", group2))
+              } else if ("subgroup1" %in% names(results) && "subgroup2" %in% names(results)) {
+                            results <- results %>%
+                                          dplyr::mutate(comparison = paste0(group, ": ", subgroup1, " vs ", subgroup2))
+              } else {
+                            # Fallback if no clear group names
+                            results <- results %>%
+                                          dplyr::mutate(comparison = paste0("Comparison ", dplyr::row_number()))
+              }
+
+              kkplot(results, aes(x = estimate, y = comparison, xmin = conf_low, xmax = conf_high)) +
+                            geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
+                            geom_errorbarh(height = 0.2, color = "#2c3e50", linewidth = 0.8) +
+                            geom_point(size = 3, color = "#e74c3c") +
+                            labs(
+                                          title = title,
+                                          subtitle = subtitle,
+                                          x = xlab,
+                                          y = ""
+                            ) +
+                            theme_minimal() +
+                            theme(
+                                          plot.title = element_text(face = "bold", size = 14),
+                                          axis.text.y = element_text(size = 10),
+                                          panel.grid.minor = element_blank()
+                            )
+}

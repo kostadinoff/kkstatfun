@@ -340,3 +340,49 @@ confusion_metrics_ci <- function(x,
 
               tibble::as_tibble(out)
 }
+
+#' Diagnostic Test Accuracy Summary
+#'
+#' @description A wrapper around `confusion_metrics_ci` to produce a summary table
+#'   from raw data columns (Truth, Test).
+#'
+#' @param data Data frame
+#' @param truth Column with true status (binary)
+#' @param test Column with test result (binary or numeric)
+#' @param cutoff Cutoff for numeric test results (default: 0.5)
+#' @param positive Value indicating positive case (optional, auto-detected)
+#' @param ... Additional arguments passed to `confusion_metrics_ci`
+#'
+#' @return Tibble with diagnostic metrics
+#' @export
+diagnostic_summary <- function(data, truth, test, cutoff = 0.5, positive = NULL, ...) {
+              truth_enquo <- rlang::enquo(truth)
+              test_enquo <- rlang::enquo(test)
+
+              truth_vec <- data %>% dplyr::pull(!!truth_enquo)
+              test_vec <- data %>% dplyr::pull(!!test_enquo)
+
+              # Handle numeric predictions
+              if (is.numeric(test_vec) && length(unique(test_vec)) > 2) {
+                            test_class <- ifelse(test_vec >= cutoff, 1, 0)
+                            # If truth is not numeric 0/1, we might need to be careful, but let's assume 0/1 for numeric test
+              } else {
+                            test_class <- test_vec
+              }
+
+              # Determine positive class
+              levels_truth <- levels(factor(truth_vec))
+              if (is.null(positive)) {
+                            # Assume the last level is positive (standard R behavior) or '1' or 'Yes'
+                            positive <- levels_truth[length(levels_truth)]
+              }
+
+              # Calculate Confusion Matrix
+              tp <- sum(test_class == positive & truth_vec == positive, na.rm = TRUE)
+              tn <- sum(test_class != positive & truth_vec != positive, na.rm = TRUE)
+              fp <- sum(test_class == positive & truth_vec != positive, na.rm = TRUE)
+              fn <- sum(test_class != positive & truth_vec == positive, na.rm = TRUE)
+
+              # Call confusion_metrics_ci
+              confusion_metrics_ci(c(tp = tp, fp = fp, fn = fn, tn = tn), ...)
+}

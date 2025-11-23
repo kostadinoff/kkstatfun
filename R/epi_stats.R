@@ -286,10 +286,47 @@ kk_risk_plot <- function(data, title = "Risk Estimates") {
               req_cols <- c("Metric", "Estimate", "Lower", "Upper")
               if (!all(req_cols %in% names(data))) stop("Data must contain Metric, Estimate, Lower, Upper")
 
-              ggplot2::ggplot(data, ggplot2::aes(x = .data$Estimate, y = .data$Metric, xmin = .data$Lower, xmax = .data$Upper)) +
-                            ggplot2::geom_point(size = 3, color = "blue") +
-                            ggplot2::geom_errorbar(width = 0.2, color = "blue") +
+              kkplot(data, ggplot2::aes(x = .data$Estimate, y = .data$Metric, xmin = .data$Lower, xmax = .data$Upper)) +
+                            ggplot2::geom_point(size = 3) +
+                            ggplot2::geom_errorbar(width = 0.2) +
                             ggplot2::geom_vline(xintercept = 1, linetype = "dashed", color = "red") +
                             ggplot2::labs(title = title, x = "Estimate (95% CI)", y = "") +
                             ggplot2::theme_minimal()
+}
+
+
+#' Calculate Risk Ratio (Relative Risk)
+#'
+#' @description Calculates Relative Risk (RR) with confidence intervals.
+#'
+#' @param data Data frame or 2x2 table
+#' @param exposure Exposure variable
+#' @param outcome Outcome variable
+#' @param conf.level Confidence level (default: 0.95)
+#'
+#' @return Tibble with RR estimate and CI
+#' @export
+risk_ratio <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95) {
+              res <- kk_epi_2x2(data, exposure, outcome, conf.level)
+              res %>%
+                            dplyr::filter(.data$Metric == "Relative Risk") %>%
+                            dplyr::select("Metric", "Estimate", "Lower", "Upper", "P_Value", "Conf_Level")
+}
+
+#' Calculate Odds Ratio
+#'
+#' @description Calculates Odds Ratio (OR) with confidence intervals.
+#'
+#' @param data Data frame or 2x2 table
+#' @param exposure Exposure variable
+#' @param outcome Outcome variable
+#' @param conf.level Confidence level (default: 0.95)
+#'
+#' @return Tibble with OR estimate and CI
+#' @export
+odds_ratio <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95) {
+              res <- kk_epi_2x2(data, exposure, outcome, conf.level)
+              res %>%
+                            dplyr::filter(.data$Metric == "Odds Ratio") %>%
+                            dplyr::select("Metric", "Estimate", "Lower", "Upper", "P_Value", "Conf_Level")
 }
