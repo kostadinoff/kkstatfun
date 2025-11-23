@@ -16,6 +16,12 @@
 #'
 #' @return Tibble with time series metrics
 #'
+#' @examples
+#' date <- seq(as.Date("2020-01-01"), by = "month", length.out = 24)
+#' value <- 100 + cumsum(rnorm(24, 2, 5))
+#' df <- data.frame(date = date, value = value)
+#' kk_time_series(df)
+#'
 #' @export
 kk_time_series <- function(data, value_col = NULL, date_col = "date", group_cols = NULL, wide_format = FALSE, skip_advanced = FALSE, round_digits = 4) {
               # Validate data input
@@ -490,6 +496,12 @@ kk_time_series <- function(data, value_col = NULL, date_col = "date", group_cols
 #' @param group_cols Grouping columns
 #'
 #' @return Tibble with metrics
+#'
+#' @examples
+#' date <- seq(as.Date("2020-01-01"), by = "month", length.out = 24)
+#' value <- 100 + cumsum(rnorm(24, 2, 5))
+#' df <- data.frame(date = date, value = value)
+#' kk_time_metrics(df)
 #'
 #' @export
 kk_time_metrics <- function(data, value_col = NULL, date_col = "date", group_cols = NULL) {

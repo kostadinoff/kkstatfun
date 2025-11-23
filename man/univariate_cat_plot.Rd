@@ -14,3 +14,7 @@ univariate_cat_plot(data, variable)
 \description{
 Univariate Categorical Plot
 }
+\examples{
+univariate_cat_plot(mtcars, "am")
+
+}

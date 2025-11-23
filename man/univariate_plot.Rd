@@ -14,3 +14,8 @@ univariate_plot(data, variable)
 \description{
 Automatically detects variable type and plots accordingly
 }
+\examples{
+univariate_plot(mtcars, "mpg")
+univariate_plot(mtcars, "am")
+
+}

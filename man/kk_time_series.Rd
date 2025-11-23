@@ -35,3 +35,10 @@ Tibble with time series metrics
 \description{
 Comprehensive time series analysis including GARCH, Hurst, and chain/fixed base metrics.
 }
+\examples{
+date <- seq(as.Date("2020-01-01"), by = "month", length.out = 24)
+value <- 100 + cumsum(rnorm(24, 2, 5))
+df <- data.frame(date = date, value = value)
+kk_time_series(df)
+
+}

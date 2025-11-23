@@ -35,3 +35,8 @@ Tibble with summary statistics
 \description{
 Computes full summary statistics with grouped data support.
 }
+\examples{
+kk_summary(mtcars, mpg)
+kk_summary(mtcars, mpg, verbose = "basic")
+
+}

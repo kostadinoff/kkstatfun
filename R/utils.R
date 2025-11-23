@@ -28,6 +28,11 @@ validate_data_frame <- function(data, var_name = "data") {
 #'
 #' @return Formatted tibble
 #'
+#' @examples
+#' library(dplyr)
+#' df <- tibble(Value = c(10.567, 2.3, NA))
+#' format_tibble(df)
+#'
 #' @export
 format_tibble <- function(data, digits = 2) {
               data %>%
@@ -46,6 +51,10 @@ format_tibble <- function(data, digits = 2) {
 #' @param digits Number of digits (default: 2)
 #'
 #' @return Data frame with rounded numeric columns
+#'
+#' @examples
+#' df <- data.frame(a = c(1.234, 5.678), b = c("x", "y"))
+#' mutate_round(df, 1)
 #'
 #' @export
 mutate_round <- function(data, digits = 2) {

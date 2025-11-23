@@ -12,3 +12,7 @@ kkplot(...)
 \description{
 Wrapper for ggplot with axis caps
 }
+\examples{
+kkplot(mtcars, aes(x = mpg, y = wt)) + geom_point()
+
+}

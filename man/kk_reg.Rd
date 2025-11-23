@@ -36,3 +36,8 @@ Tibble with results
 Unified function for univariate and multivariate regression
 (linear, logistic, ordinal) with automatic diagnostics.
 }
+\examples{
+kk_reg(mtcars, "mpg", c("wt", "hp"))
+kk_reg(mtcars, "am", c("wt", "hp"))
+
+}

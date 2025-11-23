@@ -22,3 +22,10 @@ gtsummary object
 Generates a summary table of descriptive statistics, stratified by a group
 variable, with p-values.
 }
+\examples{
+\dontrun{
+library(gtsummary)
+table1_summary(mtcars, by = "am", variables = c("mpg", "hp", "wt"))
+}
+
+}

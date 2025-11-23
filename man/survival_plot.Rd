@@ -23,3 +23,10 @@ ggplot object
 \description{
 Creates a Kaplan-Meier survival plot with risk table
 }
+\examples{
+\dontrun{
+library(survival)
+survival_plot(lung, "time", "status", "sex")
+}
+
+}

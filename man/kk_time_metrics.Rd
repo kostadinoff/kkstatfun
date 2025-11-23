@@ -21,3 +21,10 @@ Tibble with metrics
 \description{
 Calculates detailed time series metrics per period.
 }
+\examples{
+date <- seq(as.Date("2020-01-01"), by = "month", length.out = 24)
+value <- 100 + cumsum(rnorm(24, 2, 5))
+df <- data.frame(date = date, value = value)
+kk_time_metrics(df)
+
+}

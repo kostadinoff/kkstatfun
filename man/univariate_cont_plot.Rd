@@ -14,3 +14,7 @@ univariate_cont_plot(data, variable)
 \description{
 Univariate Continuous Plot
 }
+\examples{
+univariate_cont_plot(mtcars, "mpg")
+
+}

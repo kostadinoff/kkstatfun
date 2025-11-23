@@ -14,6 +14,12 @@
 #'
 #' @return ggplot object
 #'
+#' @examples
+#' \dontrun{
+#' library(survival)
+#' survival_plot(lung, "time", "status", "sex")
+#' }
+#'
 #' @export
 survival_plot <- function(data, time_col, status_col, group_col = NULL, conf.int = TRUE) {
               validate_data_frame(data)
@@ -76,6 +82,13 @@ survival_plot <- function(data, time_col, status_col, group_col = NULL, conf.int
 #' @param palette Color palette (optional)
 #'
 #' @return ggplot object
+#'
+#' @examples
+#' \dontrun{
+#' library(survival)
+#' kk_survival_plot(lung, time, status, sex)
+#' }
+#'
 #' @export
 kk_survival_plot <- function(data, time, status, group = NULL,
                              risk_table = TRUE, p_val = TRUE, conf_int = TRUE,

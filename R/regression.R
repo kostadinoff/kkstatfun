@@ -17,6 +17,10 @@
 #'
 #' @return Tibble with results
 #'
+#' @examples
+#' kk_reg(mtcars, "mpg", c("wt", "hp"))
+#' kk_reg(mtcars, "am", c("wt", "hp"))
+#'
 #' @export
 kk_reg <- function(data, outcome, predictors, log_outcome = FALSE, custom_formula = NULL, include_diagnostics = TRUE, ...) {
               # Validate inputs

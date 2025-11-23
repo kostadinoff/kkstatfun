@@ -16,6 +16,10 @@
 #'
 #' @return Tibble with summary statistics
 #'
+#' @examples
+#' kk_summary(mtcars, mpg)
+#' kk_summary(mtcars, mpg, verbose = "basic")
+#'
 #' @export
 kk_summary <- function(data, col, var_name = NULL,
                        verbose = c("full", "basic", "custom"),

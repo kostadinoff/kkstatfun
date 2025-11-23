@@ -14,6 +14,11 @@
 #'
 #' @return List with font details
 #'
+#' @examples
+#' \dontrun{
+#' set_plot_font("Roboto Condensed")
+#' }
+#'
 #' @import ggplot2
 #' @export
 set_plot_font <- function(font = "Roboto Condensed", size = 18,
@@ -303,6 +308,9 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
 #'
 #' @param ... Arguments passed to ggplot
 #'
+#' @examples
+#' kkplot(mtcars, aes(x = mpg, y = wt)) + geom_point()
+#'
 #' @export
 kkplot <- function(...) {
               ggplot(...) +
@@ -313,6 +321,9 @@ kkplot <- function(...) {
 #'
 #' @param data Data frame
 #' @param variable Variable to plot
+#'
+#' @examples
+#' univariate_cat_plot(mtcars, "am")
 #'
 #' @export
 univariate_cat_plot <- function(data, variable) {
@@ -353,6 +364,9 @@ univariate_cat_plot <- function(data, variable) {
 #'
 #' @param data Data frame
 #' @param variable Variable to plot
+#'
+#' @examples
+#' univariate_cont_plot(mtcars, "mpg")
 #'
 #' @export
 univariate_cont_plot <- function(data, variable) {
@@ -414,6 +428,10 @@ univariate_cont_plot <- function(data, variable) {
 #' @param data Data frame
 #' @param variable Variable to plot
 #'
+#' @examples
+#' univariate_plot(mtcars, "mpg")
+#' univariate_plot(mtcars, "am")
+#'
 #' @export
 univariate_plot <- function(data, variable) {
               variable <- rlang::ensym(variable)
@@ -446,6 +464,12 @@ univariate_continuous_plot <- univariate_cont_plot
 #' @param xlab Label for x-axis
 #'
 #' @return ggplot object
+#'
+#' @examples
+#' \dontrun{
+#' # Assuming results from compare_proportions
+#' plot_proportion_comparisons(results)
+#' }
 #'
 #' @export
 plot_proportion_comparisons <- function(results,

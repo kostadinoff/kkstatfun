@@ -17,3 +17,9 @@ Formatted tibble
 \description{
 Formats numeric columns in a tibble for display with specified digits
 }
+\examples{
+library(dplyr)
+df <- tibble(Value = c(10.567, 2.3, NA))
+format_tibble(df)
+
+}

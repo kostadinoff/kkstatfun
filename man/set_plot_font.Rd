@@ -29,3 +29,9 @@ List with font details
 \description{
 Sets the font for ggplot2 plots, searching Google Fonts, system fonts, and local directories.
 }
+\examples{
+\dontrun{
+set_plot_font("Roboto Condensed")
+}
+
+}

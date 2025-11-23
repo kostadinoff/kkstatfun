@@ -17,3 +17,8 @@ Data frame with rounded numeric columns
 \description{
 Rounds all numeric columns in a data frame
 }
+\examples{
+df <- data.frame(a = c(1.234, 5.678), b = c("x", "y"))
+mutate_round(df, 1)
+
+}

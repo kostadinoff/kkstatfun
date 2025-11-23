@@ -26,3 +26,10 @@ ggplot object
 \description{
 Visualizes the output of \code{compare_proportions} or \code{compare_proportions_kk_glm} using a forest plot.
 }
+\examples{
+\dontrun{
+# Assuming results from compare_proportions
+plot_proportion_comparisons(results)
+}
+
+}
