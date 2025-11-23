@@ -26,39 +26,67 @@
 #' - **Likelihood Ratios:** LR+, LR−, DOR (with log-normal CIs)
 #' - **Point Estimates:** F1, Balanced Accuracy, MCC, Youden's J, etc.
 #'
-#' Input formats:
-#' ```
-#' # Named vector
-#' confusion_metrics_ci(c(tp=100, fp=20, fn=10, tn=870))
-#'
-#' # Tibble with columns: metric/label, value
-#' tibble(label = c("TP","FP","FN","TN"), value = c(100,20,10,870)) %>%
-#'   confusion_metrics_ci()
-#'
-#' # Data frame
-#' data.frame(tp=100, fp=20, fn=10, tn=870) %>%
-#'   confusion_metrics_ci()
-#' ```
-#'
 #' @examples
 #' \dontrun{
-#' # Basic usage
-#' confusion_metrics_ci(c(tp = 85, fp = 10, fn = 15, tn = 890))
+#' library(kkstatfun)
 #'
-#' # With bootstrap CIs
-#' confusion_metrics_ci(c(tp = 85, fp = 10, fn = 15, tn = 890), boot = TRUE, B = 10000)
+#' # Example 1: Named vector input
+#' cm <- c(tp = 85, fp = 10, fn = 15, tn = 890)
+#' result <- kk_confusion_matrix(cm)
+#' print(result)
 #'
-#' # Higher confidence
-#' confusion_metrics_ci(c(tp = 85, fp = 10, fn = 15, tn = 890), conf = 0.99)
+#' # Example 2: Tibble input with label column
+#' library(tibble)
+#' cm_tibble <- tibble(
+#'               label = c("TP", "FP", "FN", "TN"),
+#'               value = c(85, 10, 15, 890)
+#' )
+#' result <- kk_confusion_matrix(cm_tibble)
+#'
+#' # Example 3: Data frame input
+#' cm_df <- data.frame(tp = 85, fp = 10, fn = 15, tn = 890)
+#' result <- kk_confusion_matrix(cm_df)
+#'
+#' # Example 4: With bootstrap confidence intervals
+#' result_boot <- kk_confusion_matrix(
+#'               c(tp = 85, fp = 10, fn = 15, tn = 890),
+#'               boot = TRUE,
+#'               B = 10000
+#' )
+#'
+#' # Example 5: Higher confidence level (99%)
+#' result_99 <- kk_confusion_matrix(
+#'               c(tp = 85, fp = 10, fn = 15, tn = 890),
+#'               conf = 0.99
+#' )
+#'
+#' # Example 6: Medical diagnostic test
+#' # Disease prevalence: 10%, Test sensitivity: 85%, specificity: 98%
+#' # In a population of 1000:
+#' test_result <- kk_confusion_matrix(c(
+#'               tp = 85, # True positives (diseased, test+)
+#'               fp = 18, # False positives (healthy, test+)
+#'               fn = 15, # False negatives (diseased, test-)
+#'               tn = 882 # True negatives (healthy, test-)
+#' ))
+#' print(test_result)
+#'
+#' # View key metrics
+#' library(dplyr)
+#' test_result %>%
+#'               filter(metric %in% c(
+#'                             "sensitivity (TPR)", "specificity (TNR)",
+#'                             "PPV (precision)", "NPV"
+#'               ))
 #' }
 #'
 #' @export
-confusion_metrics_ci <- function(x,
-                                 conf = 0.95,
-                                 boot = FALSE,
-                                 B = 5000,
-                                 seed = 1,
-                                 add_0_5_for_lr = TRUE) {
+kk_confusion_matrix <- function(x,
+                                conf = 0.95,
+                                boot = FALSE,
+                                B = 5000,
+                                seed = 1,
+                                add_0_5_for_lr = TRUE) {
               # ----------------------------- helpers ---------------------------------
               get_counts <- function(x) {
                             if (is.data.frame(x)) {
@@ -341,9 +369,22 @@ confusion_metrics_ci <- function(x,
               tibble::as_tibble(out)
 }
 
+#' @rdname kk_confusion_matrix
+#' @export
+confusion_metrics_ci <- function(x,
+                                 conf = 0.95,
+                                 boot = FALSE,
+                                 B = 5000,
+                                 seed = 1,
+                                 add_0_5_for_lr = TRUE) {
+              .Deprecated("kk_confusion_matrix")
+              kk_confusion_matrix(x, conf, boot, B, seed, add_0_5_for_lr)
+}
+
+
 #' Diagnostic Test Accuracy Summary
 #'
-#' @description A wrapper around `confusion_metrics_ci` to produce a summary table
+#' @description A wrapper around `kk_confusion_matrix` to produce a summary table
 #'   from raw data columns (Truth, Test).
 #'
 #' @param data Data frame
@@ -351,7 +392,7 @@ confusion_metrics_ci <- function(x,
 #' @param test Column with test result (binary or numeric)
 #' @param cutoff Cutoff for numeric test results (default: 0.5)
 #' @param positive Value indicating positive case (optional, auto-detected)
-#' @param ... Additional arguments passed to `confusion_metrics_ci`
+#' @param ... Additional arguments passed to `kk_confusion_matrix`
 #'
 #' @return Tibble with diagnostic metrics
 #' @export
@@ -383,6 +424,6 @@ diagnostic_summary <- function(data, truth, test, cutoff = 0.5, positive = NULL,
               fp <- sum(test_class == positive & truth_vec != positive, na.rm = TRUE)
               fn <- sum(test_class != positive & truth_vec == positive, na.rm = TRUE)
 
-              # Call confusion_metrics_ci
-              confusion_metrics_ci(c(tp = tp, fp = fp, fn = fn, tn = tn), ...)
+              # Call kk_confusion_matrix
+              kk_confusion_matrix(c(tp = tp, fp = fp, fn = fn, tn = tn), ...)
 }

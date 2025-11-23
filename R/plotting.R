@@ -515,4 +515,4 @@ plot_proportion_comparisons <- function(results,
                                           subtitle = subtitle,
                                           x = xlab,
                                           y = ""
-                            )
+                            )}
