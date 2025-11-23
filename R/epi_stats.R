@@ -15,7 +15,7 @@
 #' @return Tibble with OR, RR, and their confidence intervals
 #'
 #' @export
-epi_stats <- function(data = NULL, exposure, outcome, conf.level = 0.95) {
+kk_epi_stats <- function(data = NULL, exposure, outcome, conf.level = 0.95) {
               if (!is.null(data)) {
                             validate_data_frame(data)
                             exposure_col <- rlang::as_string(rlang::ensym(exposure))
@@ -103,7 +103,7 @@ epi_stats <- function(data = NULL, exposure, outcome, conf.level = 0.95) {
 #'
 #' @return Tibble with estimates
 #' @export
-kk_epi_2x2 <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95, method = "wald") {
+kk_twobytwo <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95, method = "wald") {
               # Handle input types
               exposure_enquo <- rlang::enquo(exposure)
               outcome_enquo <- rlang::enquo(outcome)

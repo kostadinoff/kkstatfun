@@ -516,7 +516,6 @@ plot_proportion_comparisons <- function(results,
                                           x = xlab,
                                           y = ""
                             ) +
-                            theme_minimal() +
                             theme(
                                           plot.title = element_text(face = "bold", size = 14),
                                           axis.text.y = element_text(size = 10),
