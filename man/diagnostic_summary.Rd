@@ -17,12 +17,12 @@ diagnostic_summary(data, truth, test, cutoff = 0.5, positive = NULL, ...)
 
 \item{positive}{Value indicating positive case (optional, auto-detected)}
 
-\item{...}{Additional arguments passed to \code{confusion_metrics_ci}}
+\item{...}{Additional arguments passed to \code{kk_confusion_matrix}}
 }
 \value{
 Tibble with diagnostic metrics
 }
 \description{
-A wrapper around \code{confusion_metrics_ci} to produce a summary table
+A wrapper around \code{kk_confusion_matrix} to produce a summary table
 from raw data columns (Truth, Test).
 }

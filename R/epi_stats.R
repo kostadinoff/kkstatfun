@@ -91,9 +91,11 @@ kk_epi_stats <- function(data = NULL, exposure, outcome, conf.level = 0.95) {
               )
 }
 
-#' Epidemiology 2x2 Analysis (KK)
+#' Two-by-Two Contingency Table Analysis (KK)
 #'
-#' @description Comprehensive 2x2 table analysis including OR, RR, and Risk Difference.
+#' @description Comprehensive two-by-two table analysis including OR, RR, Risk Difference,
+#'   Attributable Fractions, Preventable Fractions, and NNT/NNH, all with confidence intervals.
+#'   PAF CI calculated using delta method (Leung & Kupper 1981).
 #'
 #' @param data Data frame or 2x2 matrix/table
 #' @param exposure Exposure column (if data is data frame)
@@ -101,7 +103,7 @@ kk_epi_stats <- function(data = NULL, exposure, outcome, conf.level = 0.95) {
 #' @param conf.level Confidence level (default 0.95)
 #' @param method Method for CIs ("wald", "small.sample", "bootstrap") - currently "wald" or "small.sample" (Fisher/Exact)
 #'
-#' @return Tibble with estimates
+#' @return Tibble with 7 metrics: OR, RR, RD, AF(Exposed), PAF, PF(Exposed), and NNT/NNH, all with CIs
 #' @export
 kk_twobytwo <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95, method = "wald") {
               # Handle input types
@@ -110,15 +112,12 @@ kk_twobytwo <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95
 
               if (is.data.frame(data) && !rlang::quo_is_null(exposure_enquo) && !rlang::quo_is_null(outcome_enquo)) {
                             # Tidy evaluation
-
-                            # Extract vectors
                             exp_vec <- data %>% dplyr::pull(!!exposure_enquo)
                             out_vec <- data %>% dplyr::pull(!!outcome_enquo)
 
                             # Create table
                             exp_fac <- factor(exp_vec)
                             out_fac <- factor(out_vec)
-
                             tbl <- table(Exposure = exp_fac, Outcome = out_fac)
               } else if (is.matrix(data) || is.table(data)) {
                             if (all(dim(data) == c(2, 2))) {
@@ -140,10 +139,12 @@ kk_twobytwo <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95
 
               n1 <- a + b # Total Exposed
               n0 <- c + d # Total Unexposed
+              n_total <- n1 + n0
 
               # Estimates
               p1 <- a / n1 # Risk in Exposed
               p0 <- c / n0 # Risk in Unexposed
+              pe <- n1 / n_total # Prevalence of exposure
 
               # Risk Ratio (RR)
               rr <- p1 / p0
@@ -172,41 +173,63 @@ kk_twobytwo <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95
               rd_low <- rd - z * se_rd
               rd_high <- rd + z * se_rd
 
-              # Attributable Fraction among Exposed (AF_e) / Attributable Risk Percent (AR%)
-              # Formula: (RR - 1) / RR
+              # Attributable Fraction among Exposed (AF_e)
               af_e <- (rr - 1) / rr
-              # CI for AF_e: 1 - 1/RR_low to 1 - 1/RR_high (if RR > 1)
               af_e_low <- (rr_low - 1) / rr_low
               af_e_high <- (rr_high - 1) / rr_high
 
               # Population Attributable Fraction (PAF)
-              # Formula: (Risk_total - Risk_unexposed) / Risk_total
-              # Risk_total = (a + c) / (n1 + n0)
-              p_total <- (a + c) / (n1 + n0)
+              p_total <- (a + c) / n_total
               paf <- (p_total - p0) / p_total
-              # CI for PAF is complex, leaving as NA for now
+
+              # PAF CI using delta method (Leung & Kupper 1981)
+              var_ln_rr <- se_ln_rr^2
+              var_paf <- (pe^2 * (1 - pe)^2 * var_ln_rr * rr^2) / (1 + pe * (rr - 1))^4
+              se_paf <- sqrt(var_paf)
+              paf_low <- paf - z * se_paf
+              paf_high <- paf + z * se_paf
 
               # Preventable Fraction among Exposed (PF_e)
-              # Formula: 1 - RR (useful when RR < 1)
               pf_e <- 1 - rr
               pf_e_low <- 1 - rr_high
               pf_e_high <- 1 - rr_low
 
+              # Number Needed to Treat (NNT) or Number Needed to Harm (NNH)
+              nnt_nnh <- ifelse(abs(rd) > 0, 1 / abs(rd), Inf)
+              nnt_label <- ifelse(rd > 0, "NNH", ifelse(rd < 0, "NNT", "NNT/NNH"))
+
+              # NNT/NNH CI using reciprocal transformation (Altman 1998)
+              if (sign(rd_low) != sign(rd_high)) {
+                            nnt_low <- -Inf
+                            nnt_high <- Inf
+              } else {
+                            nnt_bounds <- 1 / c(rd_high, rd_low)
+                            nnt_low <- min(abs(nnt_bounds))
+                            nnt_high <- max(abs(nnt_bounds))
+              }
+
               # Fisher's Exact Test for p-value
               fisher <- stats::fisher.test(tbl)
-              chisq <- stats::chisq.test(tbl, correct = FALSE)
+              chisq <- suppressWarnings(stats::chisq.test(tbl, correct = FALSE))
 
               # Compile results
               res <- tibble::tibble(
                             Metric = c(
                                           "Odds Ratio", "Relative Risk", "Risk Difference",
-                                          "Attributable Fraction (Exposed)", "Population Attributable Fraction", "Preventable Fraction (Exposed)"
+                                          "Attributable Fraction (Exposed)", "Population Attributable Fraction",
+                                          "Preventable Fraction (Exposed)", nnt_label
                             ),
-                            Estimate = c(or, rr, rd, af_e, paf, pf_e),
-                            Lower = c(or_low, rr_low, rd_low, af_e_low, NA, pf_e_low),
-                            Upper = c(or_high, rr_high, rd_high, af_e_high, NA, pf_e_high),
-                            P_Value = c(fisher$p.value, chisq$p.value, chisq$p.value, NA, NA, NA),
-                            Test = c("Fisher's Exact", "Chi-Square", "Chi-Square", NA, NA, NA),
+                            Estimate = c(or, rr, rd, af_e, paf, pf_e, nnt_nnh),
+                            Lower = c(or_low, rr_low, rd_low, af_e_low, paf_low, pf_e_low, nnt_low),
+                            Upper = c(or_high, rr_high, rd_high, af_e_high, paf_high, pf_e_high, nnt_high),
+                            P_Value = c(
+                                          fisher$p.value, chisq$p.value, chisq$p.value,
+                                          chisq$p.value, chisq$p.value, chisq$p.value, chisq$p.value
+                            ),
+                            Test = c(
+                                          "Fisher's Exact", "Chi-Square", "Chi-Square",
+                                          "Chi-Square", "Chi-Square", "Chi-Square", "Chi-Square"
+                            ),
                             Conf_Level = conf.level
               )
 

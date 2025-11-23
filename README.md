@@ -4,7 +4,7 @@
 
 A comprehensive R package designed for medical statistics, epidemiology, and general data analysis. It provides a suite of tools for:
 
-- **Epidemiology**: Odds Ratios, Relative Risks, 2x2 table analysis (`epi_stats`).
+- **Epidemiology**: Odds Ratios, Relative Risks, contingency table analysis (`kk_twobytwo`).
 - **Medical Statistics**: Sensitivity, Specificity, PPV, NPV, Likelihood Ratios (`confusion_metrics_ci`).
 - **Survival Analysis**: Kaplan-Meier plots with risk tables (`survival_plot`).
 - **Regression**: Unified wrapper for linear, logistic, and ordinal regression with auto-diagnostics (`regression_analysis`).
@@ -41,7 +41,7 @@ epi_stats(exposure = exposure, outcome = outcome)
 # New Tidyverse-friendly function
 # Returns OR, RR, RD, Attributable Fraction (AF), PAF, and Preventable Fraction (PF)
 df <- data.frame(exposure, outcome)
-kk_epi_2x2(df, exposure, outcome)
+kk_twobytwo(df, exposure, outcome)
 ```
 
 ### Survival Analysis
