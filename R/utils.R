@@ -19,6 +19,32 @@ validate_data_frame <- function(data, var_name = "data") {
               invisible(NULL)
 }
 
+#' Initialize KK Stat Fun Environment
+#'
+#' @description Sets preferred options for backend, parallel processing, and display.
+#' @param cores Number of cores to use (default: detectCores() - 1)
+#' @param scipen Scientific notation penalty (default: 999)
+#' @export
+kk_setup <- function(cores = parallel::detectCores(logical = FALSE) - 1, scipen = 999) {
+              # Backend and parallel processing
+              options(brms.backend = "cmdstanr")
+              options(mc.cores = max(1, cores)) # Ensure at least 1 core
+
+              # Display options
+              options(ggplot2.messages = FALSE)
+              options(dplyr.width = Inf)
+              options(scipen = scipen)
+              options(warn = 1)
+
+              # Memory
+              options(expressions = 5000)
+
+              message("✅ kkstatfun environment configured:")
+              message(sprintf("   - Cores: %d", getOption("mc.cores")))
+              message(sprintf("   - Backend: %s", getOption("brms.backend")))
+              message("   - Scientific notation disabled")
+}
+
 #' Format Tibble for Display
 #'
 #' @description Formats numeric columns in a tibble for display with specified digits
