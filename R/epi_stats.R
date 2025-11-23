@@ -307,7 +307,7 @@ kk_risk_plot <- function(data, title = "Risk Estimates") {
 #' @return Tibble with RR estimate and CI
 #' @export
 risk_ratio <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95) {
-              res <- kk_epi_2x2(data, exposure, outcome, conf.level)
+              res <- kk_twobytwo(data, exposure, outcome, conf.level)
               res %>%
                             dplyr::filter(.data$Metric == "Relative Risk") %>%
                             dplyr::select("Metric", "Estimate", "Lower", "Upper", "P_Value", "Conf_Level")
@@ -325,7 +325,7 @@ risk_ratio <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95)
 #' @return Tibble with OR estimate and CI
 #' @export
 odds_ratio <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95) {
-              res <- kk_epi_2x2(data, exposure, outcome, conf.level)
+              res <- kk_twobytwo(data, exposure, outcome, conf.level)
               res %>%
                             dplyr::filter(.data$Metric == "Odds Ratio") %>%
                             dplyr::select("Metric", "Estimate", "Lower", "Upper", "P_Value", "Conf_Level")
