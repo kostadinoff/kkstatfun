@@ -14,6 +14,16 @@
 #'
 #' @return Tibble with OR, RR, and their confidence intervals
 #'
+#' @examples
+#' # Create dummy data
+#' df <- data.frame(
+#'   exposure = c(rep(1, 50), rep(0, 50)),
+#'   outcome = c(rep(1, 20), rep(0, 30), rep(1, 10), rep(0, 40))
+#' )
+#'
+#' # Calculate stats
+#' kk_epi_stats(df, exposure, outcome)
+#'
 #' @export
 kk_epi_stats <- function(data = NULL, exposure, outcome, conf.level = 0.95) {
               if (!is.null(data)) {
