@@ -82,6 +82,18 @@ kk_diagnostic(data, truth_col, pred_col)
 regression_analysis(mtcars, outcome = "am", predictors = c("mpg", "wt"))
 ```
 
+### Group Comparison Table
+
+```r
+# Compare two groups with automatic test selection
+compare_groups_table(
+  data = your_data,
+  group = treatment_group,
+  variables = c("age", "gender", "height", "weight"),
+  nonparametric = FALSE  # Set to TRUE for Wilcoxon tests
+)
+```
+
 ## License
 
 MIT
