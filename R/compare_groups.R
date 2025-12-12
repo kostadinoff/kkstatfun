@@ -126,7 +126,10 @@ kk_compare_groups_table <- function(data, group, variables,
                                           level_results <- list()
                                           level_pvalues <- c()
 
-                                          for (level in all_levels) {
+                                          # For binary variables, only show one level
+                                          levels_to_show <- if (length(all_levels) == 2) all_levels[1] else all_levels
+
+                                          for (level in levels_to_show) {
                                                         count1 <- sum(var_data1 == level, na.rm = TRUE)
                                                         count2 <- sum(var_data2 == level, na.rm = TRUE)
 
@@ -183,9 +186,22 @@ kk_compare_groups_table <- function(data, group, variables,
               # Combine all results
               result_df <- dplyr::bind_rows(results_list)
 
-              # Rename columns with group names
-              names(result_df)[2] <- sprintf("%s\nN = %d", group1_name, n1)
-              names(result_df)[3] <- sprintf("%s\nN = %d", group2_name, n2)
+              # Add N row at the top
+              n_row <- tibble::tibble(
+                            Characteristic = "N",
+                            Group1 = as.character(n1),
+                            Group2 = as.character(n2),
+                            Difference = "",
+                            CI_95 = "",
+                            p_value = "",
+                            Test = ""
+              )
+
+              result_df <- dplyr::bind_rows(n_row, result_df)
+
+              # Rename columns with group names (without N)
+              names(result_df)[2] <- group1_name
+              names(result_df)[3] <- group2_name
               names(result_df)[5] <- "95% CI"
               names(result_df)[6] <- "p-value"
 
