@@ -21,6 +21,42 @@ kk_compare_groups_table <- function(data, group, variables,
                                     nonparametric = FALSE,
                                     adjust_method = "holm",
                                     conf.level = 0.95) {
+              # Handle grouped data frames
+              if (dplyr::is_grouped_df(data)) {
+                            # Get grouping variables
+                            group_vars <- dplyr::group_vars(data)
+
+                            # Process each group separately
+                            results <- data %>%
+                                          dplyr::group_map(~ {
+                                                        # Get the current group values
+                                                        group_vals <- dplyr::cur_group()
+
+                                                        # Run comparison on this subset
+                                                        result <- kk_compare_groups_table(
+                                                                      data = .x,
+                                                                      group = {{ group }},
+                                                                      variables = variables,
+                                                                      nonparametric = nonparametric,
+                                                                      adjust_method = adjust_method,
+                                                                      conf.level = conf.level
+                                                        )
+
+                                                        # Add grouping columns at the beginning
+                                                        for (i in rev(seq_along(group_vars))) {
+                                                                      result <- tibble::add_column(result,
+                                                                                    !!group_vars[i] := group_vals[[i]],
+                                                                                    .before = 1
+                                                                      )
+                                                        }
+
+                                                        result
+                                          }, .keep = TRUE) %>%
+                                          dplyr::bind_rows()
+
+                            return(results)
+              }
+
               # Validate inputs
               if (!is.data.frame(data)) stop("'data' must be a data frame")
 
