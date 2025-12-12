@@ -1,4 +1,4 @@
-# Example Usage of compare_groups_table
+# Example Usage of kk_compare_groups_table
 
 library(kkstatfun)
 library(dplyr)
@@ -29,7 +29,7 @@ example_data <- example_data %>%
               )
 
 # Basic usage - parametric tests
-result <- compare_groups_table(
+result <- kk_compare_groups_table(
               data = example_data,
               group = group,
               variables = c("age", "male", "married", "high_education", "smoker", "height", "weight")
@@ -38,7 +38,7 @@ result <- compare_groups_table(
 print(result)
 
 # Using nonparametric tests for continuous variables
-result_nonparam <- compare_groups_table(
+result_nonparam <- kk_compare_groups_table(
               data = example_data,
               group = group,
               variables = c("age", "height", "weight"),
@@ -55,7 +55,7 @@ example_data2 <- example_data %>%
                             )
               )
 
-result_multilevel <- compare_groups_table(
+result_multilevel <- kk_compare_groups_table(
               data = example_data2,
               group = group,
               variables = c("age", "education_level", "height"),

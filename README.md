@@ -86,7 +86,7 @@ regression_analysis(mtcars, outcome = "am", predictors = c("mpg", "wt"))
 
 ```r
 # Compare two groups with automatic test selection
-compare_groups_table(
+kk_compare_groups_table(
   data = your_data,
   group = treatment_group,
   variables = c("age", "gender", "height", "weight"),

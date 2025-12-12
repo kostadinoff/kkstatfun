@@ -17,10 +17,10 @@
 #' @return Tibble with comparison results
 #'
 #' @export
-compare_groups_table <- function(data, group, variables,
-                                 nonparametric = FALSE,
-                                 adjust_method = "holm",
-                                 conf.level = 0.95) {
+kk_compare_groups_table <- function(data, group, variables,
+                                    nonparametric = FALSE,
+                                    adjust_method = "holm",
+                                    conf.level = 0.95) {
               # Validate inputs
               if (!is.data.frame(data)) stop("'data' must be a data frame")
 
