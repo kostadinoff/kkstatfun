@@ -28,14 +28,28 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                             group_vars <- dplyr::group_vars(data)
                             group_keys <- dplyr::group_keys(data)
 
+                            # Get the group variable name for exclusion
+                            group_sym <- rlang::ensym(group)
+                            group_name <- rlang::as_name(group_sym)
+
                             # Process each group separately
                             results <- data %>%
                                           dplyr::group_map(~ {
+                                                        # Exclude grouping variables from comparison
+                                                        # Since .x is ungrouped, we need to explicitly set variables
+                                                        vars_to_use <- if (is.null(variables)) {
+                                                                      # Auto-detect: all columns except group var and grouping vars
+                                                                      setdiff(names(.x), c(group_name, group_vars))
+                                                        } else {
+                                                                      # Explicit: remove grouping vars from provided list
+                                                                      setdiff(variables, group_vars)
+                                                        }
+
                                                         # Run comparison on this subset
                                                         kk_compare_groups_table(
                                                                       data = .x,
                                                                       group = {{ group }},
-                                                                      variables = variables,
+                                                                      variables = vars_to_use,
                                                                       nonparametric = nonparametric,
                                                                       adjust_method = adjust_method,
                                                                       conf.level = conf.level
@@ -137,6 +151,13 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
 
                                           p_value <- test_result$p.value
 
+                                          # Extract test statistic
+                                          test_stat <- if (nonparametric) {
+                                                        sprintf("W=%.2f", test_result$statistic)
+                                          } else {
+                                                        sprintf("t=%.2f", test_result$statistic)
+                                          }
+
                                           results_list[[length(results_list) + 1]] <- tibble::tibble(
                                                         Characteristic = var,
                                                         Group1 = sprintf("%.2f (%.2f)", mean1, sd1),
@@ -144,7 +165,8 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                                         Difference = sprintf("%.2f", diff),
                                                         CI_95 = sprintf("%.2f, %.2f", ci_lower, ci_upper),
                                                         p_value = format_pvalue(p_value),
-                                                        Test = test_name
+                                                        Test = test_name,
+                                                        Statistic = test_stat
                                           )
                             } else if (is_categorical) {
                                           # Categorical variable
@@ -158,16 +180,19 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                           tbl <- table(data[[group_name]], data[[var]], useNA = "no")
 
                                           # Determine test
+                                          test_stat <- NA_character_
                                           if (any(tbl < 5)) {
                                                         # Use Fisher's exact test for small counts
                                                         test_result <- stats::fisher.test(tbl)
                                                         test_name <- "Fisher"
                                                         overall_p <- test_result$p.value
+                                                        test_stat <- "" # Fisher's test doesn't have a traditional statistic
                                           } else {
                                                         # Use Chi-square test
                                                         test_result <- stats::chisq.test(tbl)
                                                         test_name <- "Chi-square"
                                                         overall_p <- test_result$p.value
+                                                        test_stat <- sprintf("χ²=%.2f", test_result$statistic)
                                           }
 
                                           # For each level, calculate proportions and differences
@@ -213,7 +238,8 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                                                       Difference = sprintf("%.1f%%", diff_prop * 100),
                                                                       CI_95 = sprintf("%.1f%%, %.1f%%", ci_lower * 100, ci_upper * 100),
                                                                       p_value = NA_character_, # Will be filled later
-                                                                      Test = test_name
+                                                                      Test = test_name,
+                                                                      Statistic = test_stat
                                                         )
                                           }
 
@@ -242,7 +268,8 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                             Difference = "",
                             CI_95 = "",
                             p_value = "",
-                            Test = ""
+                            Test = "",
+                            Statistic = ""
               )
 
               result_df <- dplyr::bind_rows(n_row, result_df)
