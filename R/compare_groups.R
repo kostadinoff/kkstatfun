@@ -9,7 +9,8 @@
 #'
 #' @param data Data frame
 #' @param group Grouping variable (must have exactly 2 levels)
-#' @param variables Vector of variable names to compare
+#' @param variables Vector of variable names to compare. If NULL (default),
+#'   all columns except the group variable will be compared.
 #' @param nonparametric Use nonparametric tests for continuous variables (default: FALSE)
 #' @param adjust_method P-value adjustment method for categorical variables with >2 levels (default: "holm")
 #' @param conf.level Confidence level (default: 0.95)
@@ -17,7 +18,7 @@
 #' @return Tibble with comparison results
 #'
 #' @export
-kk_compare_groups_table <- function(data, group, variables,
+kk_compare_groups_table <- function(data, group, variables = NULL,
                                     nonparametric = FALSE,
                                     adjust_method = "holm",
                                     conf.level = 0.95) {
@@ -70,6 +71,11 @@ kk_compare_groups_table <- function(data, group, variables,
               group_levels <- unique(stats::na.omit(data[[group_name]]))
               if (length(group_levels) != 2) {
                             stop(sprintf("Group variable must have exactly 2 levels, found %d", length(group_levels)))
+              }
+
+              # If variables not specified, use all columns except group
+              if (is.null(variables)) {
+                            variables <- setdiff(names(data), group_name)
               }
 
               # Ensure variables exist
