@@ -103,8 +103,15 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                             var_data2 <- data2[[var]]
 
                             # Determine variable type
-                            is_numeric <- is.numeric(var_data)
-                            is_categorical <- is.factor(var_data) || is.character(var_data)
+                            # Check if numeric variable is actually binary (0/1 only)
+                            is_binary_numeric <- FALSE
+                            if (is.numeric(var_data)) {
+                                          unique_vals <- unique(stats::na.omit(var_data))
+                                          is_binary_numeric <- all(unique_vals %in% c(0, 1)) && length(unique_vals) <= 2
+                            }
+
+                            is_numeric <- is.numeric(var_data) && !is_binary_numeric
+                            is_categorical <- is.factor(var_data) || is.character(var_data) || is_binary_numeric
 
                             if (is_numeric) {
                                           # Numerical variable
@@ -200,7 +207,7 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                                         }
 
                                                         level_results[[length(level_results) + 1]] <- tibble::tibble(
-                                                                      Characteristic = if (length(all_levels) > 2) paste0(var, " - ", level) else var,
+                                                                      Characteristic = paste0(var, " - ", level),
                                                                       Group1 = sprintf("%d (%.1f%%)", count1, prop1 * 100),
                                                                       Group2 = sprintf("%d (%.1f%%)", count2, prop2 * 100),
                                                                       Difference = sprintf("%.1f%%", diff_prop * 100),
