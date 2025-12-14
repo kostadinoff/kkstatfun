@@ -6,6 +6,7 @@
 #'
 #' @description Creates a comparison table showing group statistics, differences,
 #'   confidence intervals, and p-values for both categorical and numerical variables.
+#'   Now includes sample size per group for each variable, degrees of freedom, effect size, and a total column.
 #'
 #' @param data Data frame
 #' @param group Grouping variable (must have exactly 2 levels)
@@ -105,8 +106,9 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
               data1 <- data[data[[group_name]] == group_levels[1], ]
               data2 <- data[data[[group_name]] == group_levels[2], ]
 
-              n1 <- nrow(data1)
-              n2 <- nrow(data2)
+              n1_total <- nrow(data1)
+              n2_total <- nrow(data2)
+              n_all <- nrow(data)
 
               # Process each variable
               results_list <- list()
@@ -115,6 +117,10 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                             var_data <- data[[var]]
                             var_data1 <- data1[[var]]
                             var_data2 <- data2[[var]]
+
+                            n_valid_1 <- sum(!is.na(var_data1))
+                            n_valid_2 <- sum(!is.na(var_data2))
+                            n_valid_all <- sum(!is.na(var_data))
 
                             # Determine variable type
                             # Check if numeric variable is actually binary (0/1 only)
@@ -129,12 +135,8 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
 
                             if (is_numeric) {
                                           # Numerical variable
-                                          mean1 <- mean(var_data1, na.rm = TRUE)
-                                          sd1 <- stats::sd(var_data1, na.rm = TRUE)
-                                          mean2 <- mean(var_data2, na.rm = TRUE)
-                                          sd2 <- stats::sd(var_data2, na.rm = TRUE)
 
-                                          diff <- mean1 - mean2
+                                          diff <- mean(var_data1, na.rm = TRUE) - mean(var_data2, na.rm = TRUE)
 
                                           # Statistical test
                                           if (nonparametric) {
@@ -142,36 +144,81 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                                         test_name <- "Wilcoxon"
                                                         ci_lower <- test_result$conf.int[1]
                                                         ci_upper <- test_result$conf.int[2]
+                                                        test_stat <- sprintf("W=%.2f", test_result$statistic)
+                                                        df_val <- NA_character_
+
+                                                        # Effect size (r)
+                                                        n_obs <- n_valid_1 + n_valid_2
+                                                        mu_W <- n_valid_1 * n_valid_2 / 2
+                                                        sigma_W <- sqrt((n_valid_1 * n_valid_2 * (n_valid_1 + n_valid_2 + 1)) / 12)
+                                                        z_score <- (test_result$statistic - mu_W) / sigma_W
+                                                        effect_size_val <- z_score / sqrt(n_obs)
+                                                        effect_size_str <- sprintf("r=%.2f", abs(effect_size_val))
+
+                                                        # Median (IQR)
+                                                        calc_median_iqr <- function(x) {
+                                                                      med <- median(x, na.rm = TRUE)
+                                                                      q1 <- quantile(x, 0.25, na.rm = TRUE)
+                                                                      q3 <- quantile(x, 0.75, na.rm = TRUE)
+                                                                      sprintf("%.2f [%.2f, %.2f]", med, q1, q3)
+                                                        }
+
+                                                        total_val <- calc_median_iqr(var_data)
+                                                        group1_val <- calc_median_iqr(var_data1)
+                                                        group2_val <- calc_median_iqr(var_data2)
                                           } else {
                                                         test_result <- stats::t.test(var_data1, var_data2, conf.level = conf.level)
                                                         test_name <- "t-test"
                                                         ci_lower <- test_result$conf.int[1]
                                                         ci_upper <- test_result$conf.int[2]
+                                                        test_stat <- sprintf("t=%.2f", test_result$statistic)
+                                                        df_val <- sprintf("%.1f", test_result$parameter)
+
+                                                        # Effect size (Cohen's d)
+                                                        mean1 <- mean(var_data1, na.rm = TRUE)
+                                                        sd1 <- stats::sd(var_data1, na.rm = TRUE)
+                                                        mean2 <- mean(var_data2, na.rm = TRUE)
+                                                        sd2 <- stats::sd(var_data2, na.rm = TRUE)
+
+                                                        pooled_sd <- sqrt(((n_valid_1 - 1) * sd1^2 + (n_valid_2 - 1) * sd2^2) / (n_valid_1 + n_valid_2 - 2))
+                                                        d_val <- (mean1 - mean2) / pooled_sd
+                                                        effect_size_str <- sprintf("d=%.2f", abs(d_val))
+
+                                                        # Mean (SD)
+                                                        calc_mean_sd <- function(x) {
+                                                                      mn <- mean(x, na.rm = TRUE)
+                                                                      s <- stats::sd(x, na.rm = TRUE)
+                                                                      sprintf("%.2f (%.2f)", mn, s)
+                                                        }
+
+                                                        total_val <- calc_mean_sd(var_data)
+                                                        group1_val <- calc_mean_sd(var_data1)
+                                                        group2_val <- calc_mean_sd(var_data2)
                                           }
 
                                           p_value <- test_result$p.value
 
-                                          # Extract test statistic
-                                          test_stat <- if (nonparametric) {
-                                                        sprintf("W=%.2f", test_result$statistic)
-                                          } else {
-                                                        sprintf("t=%.2f", test_result$statistic)
-                                          }
-
                                           results_list[[length(results_list) + 1]] <- tibble::tibble(
                                                         Characteristic = var,
-                                                        Group1 = sprintf("%.2f (%.2f)", mean1, sd1),
-                                                        Group2 = sprintf("%.2f (%.2f)", mean2, sd2),
+                                                        n_Total = as.character(n_valid_all),
+                                                        Total = total_val,
+                                                        n1 = as.character(n_valid_1),
+                                                        Group1 = group1_val,
+                                                        n2 = as.character(n_valid_2),
+                                                        Group2 = group2_val,
                                                         Difference = sprintf("%.2f", diff),
                                                         CI_95 = sprintf("%.2f, %.2f", ci_lower, ci_upper),
                                                         p_value = format_pvalue(p_value),
                                                         Test = test_name,
-                                                        Statistic = test_stat
+                                                        Statistic = test_stat,
+                                                        df = df_val,
+                                                        Effect_Size = effect_size_str
                                           )
                             } else if (is_categorical) {
                                           # Categorical variable
                                           var_factor1 <- factor(var_data1)
                                           var_factor2 <- factor(var_data2)
+                                          var_factor_all <- factor(var_data)
 
                                           # Get all levels
                                           all_levels <- unique(c(levels(var_factor1), levels(var_factor2)))
@@ -181,69 +228,83 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
 
                                           # Determine test
                                           test_stat <- NA_character_
+                                          df_val <- NA_character_
+                                          effect_size_str <- NA_character_
+
+                                          chisq_res_for_es <- suppressWarnings(stats::chisq.test(tbl))
+                                          chisq_stat <- chisq_res_for_es$statistic
+                                          N_total_tbl <- sum(tbl)
+                                          k <- min(dim(tbl))
+                                          v_val <- sqrt(chisq_stat / (N_total_tbl * (k - 1)))
+                                          effect_size_str <- sprintf("V=%.2f", v_val)
+
                                           if (any(tbl < 5)) {
-                                                        # Use Fisher's exact test for small counts
                                                         test_result <- stats::fisher.test(tbl)
                                                         test_name <- "Fisher"
                                                         overall_p <- test_result$p.value
-                                                        test_stat <- "" # Fisher's test doesn't have a traditional statistic
+                                                        test_stat <- ""
+                                                        df_val <- ""
                                           } else {
-                                                        # Use Chi-square test
                                                         test_result <- stats::chisq.test(tbl)
                                                         test_name <- "Chi-square"
                                                         overall_p <- test_result$p.value
                                                         test_stat <- sprintf("χ²=%.2f", test_result$statistic)
+                                                        df_val <- as.character(test_result$parameter)
                                           }
 
                                           # For each level, calculate proportions and differences
                                           level_results <- list()
                                           level_pvalues <- c()
 
-                                          # For binary variables, only show one level
                                           levels_to_show <- if (length(all_levels) == 2) all_levels[1] else all_levels
 
                                           for (level in levels_to_show) {
+                                                        count_all <- sum(var_data == level, na.rm = TRUE)
                                                         count1 <- sum(var_data1 == level, na.rm = TRUE)
                                                         count2 <- sum(var_data2 == level, na.rm = TRUE)
 
-                                                        prop1 <- count1 / n1
-                                                        prop2 <- count2 / n2
+                                                        prop_all <- count_all / n_all
+                                                        prop1 <- count1 / n1_total
+                                                        prop2 <- count2 / n2_total
 
                                                         diff_prop <- prop1 - prop2
 
-                                                        # Confidence interval for difference in proportions
-                                                        # Using normal approximation
-                                                        se_diff <- sqrt(prop1 * (1 - prop1) / n1 + prop2 * (1 - prop2) / n2)
+                                                        # Confidence interval
+                                                        se_diff <- sqrt(prop1 * (1 - prop1) / n1_total + prop2 * (1 - prop2) / n2_total)
                                                         z_crit <- stats::qnorm(1 - (1 - conf.level) / 2)
                                                         ci_lower <- diff_prop - z_crit * se_diff
                                                         ci_upper <- diff_prop + z_crit * se_diff
 
-                                                        # Pairwise test for this level
+                                                        # Pairwise test
                                                         if (length(all_levels) > 2) {
-                                                                      # Binary comparison for this level vs others
-                                                                      binary_tbl <- matrix(c(count1, n1 - count1, count2, n2 - count2), nrow = 2)
-
+                                                                      binary_tbl <- matrix(c(count1, n1_total - count1, count2, n2_total - count2), nrow = 2)
                                                                       if (any(binary_tbl < 5)) {
                                                                                     level_test <- stats::fisher.test(binary_tbl)
                                                                       } else {
-                                                                                    level_test <- stats::prop.test(c(count1, count2), c(n1, n2), correct = FALSE)
+                                                                                    level_test <- stats::prop.test(c(count1, count2), c(n1_total, n2_total), correct = FALSE)
                                                                       }
                                                                       level_pvalues <- c(level_pvalues, level_test$p.value)
                                                         }
 
                                                         level_results[[length(level_results) + 1]] <- tibble::tibble(
                                                                       Characteristic = paste0(var, " - ", level),
+                                                                      n_Total = as.character(n_valid_all),
+                                                                      Total = sprintf("%d (%.1f%%)", count_all, prop_all * 100),
+                                                                      n1 = as.character(n_valid_1),
                                                                       Group1 = sprintf("%d (%.1f%%)", count1, prop1 * 100),
+                                                                      n2 = as.character(n_valid_2),
                                                                       Group2 = sprintf("%d (%.1f%%)", count2, prop2 * 100),
                                                                       Difference = sprintf("%.1f%%", diff_prop * 100),
                                                                       CI_95 = sprintf("%.1f%%, %.1f%%", ci_lower * 100, ci_upper * 100),
-                                                                      p_value = NA_character_, # Will be filled later
+                                                                      p_value = NA_character_,
                                                                       Test = test_name,
-                                                                      Statistic = test_stat
+                                                                      Statistic = test_stat,
+                                                                      df = df_val,
+                                                                      Effect_Size = effect_size_str
                                                         )
                                           }
 
-                                          # Adjust p-values if multiple levels
+                                          # Adjust p-values
                                           if (length(all_levels) > 2) {
                                                         adjusted_p <- stats::p.adjust(level_pvalues, method = adjust_method)
                                                         for (i in seq_along(level_results)) {
@@ -263,22 +324,32 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
               # Add N row at the top
               n_row <- tibble::tibble(
                             Characteristic = "N",
-                            Group1 = as.character(n1),
-                            Group2 = as.character(n2),
+                            n_Total = as.character(n_all),
+                            Total = "",
+                            n1 = as.character(n1_total),
+                            Group1 = "",
+                            n2 = as.character(n2_total),
+                            Group2 = "",
                             Difference = "",
                             CI_95 = "",
                             p_value = "",
                             Test = "",
-                            Statistic = ""
+                            Statistic = "",
+                            df = "",
+                            Effect_Size = ""
               )
 
               result_df <- dplyr::bind_rows(n_row, result_df)
 
-              # Rename columns with group names (without N)
-              names(result_df)[2] <- group1_name
-              names(result_df)[3] <- group2_name
-              names(result_df)[5] <- "95% CI"
-              names(result_df)[6] <- "p-value"
+              # Rename columns
+              names(result_df)[names(result_df) == "n1"] <- paste0("n_", group1_name)
+              names(result_df)[names(result_df) == "Group1"] <- group1_name
+              names(result_df)[names(result_df) == "n2"] <- paste0("n_", group2_name)
+              names(result_df)[names(result_df) == "Group2"] <- group2_name
+              names(result_df)[names(result_df) == "CI_95"] <- "95% CI"
+              names(result_df)[names(result_df) == "p_value"] <- "p-value"
+              names(result_df)[names(result_df) == "Effect_Size"] <- "Effect Size"
+              # Clean up Total n name to be more descriptive if needed, or leave as n_Total
 
               return(result_df)
 }
