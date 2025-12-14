@@ -321,25 +321,8 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
               # Combine all results
               result_df <- dplyr::bind_rows(results_list)
 
-              # Add N row at the top
-              n_row <- tibble::tibble(
-                            Characteristic = "N",
-                            n_Total = as.character(n_all),
-                            Total = "",
-                            n1 = as.character(n1_total),
-                            Group1 = "",
-                            n2 = as.character(n2_total),
-                            Group2 = "",
-                            Difference = "",
-                            CI_95 = "",
-                            p_value = "",
-                            Test = "",
-                            Statistic = "",
-                            df = "",
-                            Effect_Size = ""
-              )
-
-              result_df <- dplyr::bind_rows(n_row, result_df)
+              # Combine all results
+              result_df <- dplyr::bind_rows(results_list)
 
               # Rename columns
               names(result_df)[names(result_df) == "n1"] <- paste0("n_", group1_name)
