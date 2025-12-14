@@ -256,7 +256,22 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                           level_results <- list()
                                           level_pvalues <- c()
 
-                                          levels_to_show <- if (length(all_levels) == 2) all_levels[1] else all_levels
+                                          levels_to_show <- all_levels
+                                          if (length(all_levels) == 2) {
+                                                        # Prioritize showing "positive" level
+                                                        positive_candidates <- c("1", "Yes", "True", "T", "Y", "Positive", "Present", "Low")
+                                                        # "Low" added just in case? No, remove "Low".
+                                                        # Actually let's stick to standard positive ones.
+                                                        # Removing "Low" to avoid confusion.
+
+                                                        pos_idx <- which(all_levels %in% positive_candidates)
+                                                        if (length(pos_idx) > 0) {
+                                                                      levels_to_show <- all_levels[pos_idx[1]]
+                                                        } else {
+                                                                      # Default to first level if no specific positive level found
+                                                                      levels_to_show <- all_levels[1]
+                                                        }
+                                          }
 
                                           for (level in levels_to_show) {
                                                         count_all <- sum(var_data == level, na.rm = TRUE)
