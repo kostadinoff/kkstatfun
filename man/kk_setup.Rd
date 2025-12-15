@@ -14,3 +14,8 @@ kk_setup(cores = parallel::detectCores(logical = FALSE) - 1, scipen = 999)
 \description{
 Sets preferred options for backend, parallel processing, and display.
 }
+\examples{
+\dontrun{
+kk_setup()
+}
+}

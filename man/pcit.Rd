@@ -18,3 +18,8 @@ Tibble with results
 Calculates binomial confidence intervals for proportions based on
 the first two numeric columns (successes, trials).
 }
+\examples{
+data <- data.frame(successes = c(10, 20), trials = c(100, 100), group = c("A", "B"))
+pcit(data)
+
+}

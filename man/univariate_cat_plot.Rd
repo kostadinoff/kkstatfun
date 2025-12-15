@@ -2,9 +2,12 @@
 % Please edit documentation in R/plotting.R
 \name{univariate_cat_plot}
 \alias{univariate_cat_plot}
+\alias{univariate_categorical_plot}
 \title{Univariate Categorical Plot}
 \usage{
 univariate_cat_plot(data, variable)
+
+univariate_categorical_plot(data, variable)
 }
 \arguments{
 \item{data}{Data frame}

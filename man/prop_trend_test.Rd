@@ -21,3 +21,12 @@ Result of prop.trend.test
 \description{
 Performs the Cochran-Armitage test for trend in proportions.
 }
+\examples{
+data <- data.frame(
+              dose = c("Low", "Medium", "High"),
+              positive = c(10, 20, 30),
+              total = c(100, 100, 100)
+)
+prop_trend_test(data, positive, total, dose)
+
+}

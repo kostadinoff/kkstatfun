@@ -31,3 +31,8 @@ Comprehensive two-by-two table analysis including OR, RR, Risk Difference,
 Attributable Fractions, Preventable Fractions, and NNT/NNH, all with confidence intervals.
 PAF CI calculated using delta method (Leung & Kupper 1981).
 }
+\examples{
+data <- data.frame(exposure = c(1, 1, 0, 0), outcome = c(1, 0, 1, 0))
+kk_twobytwo(data, exposure, outcome)
+
+}

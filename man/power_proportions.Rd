@@ -36,3 +36,7 @@ Object of class "power.htest"
 Calculate the necessary sample size or power for detecting a difference in proportions.
 This is a wrapper around \code{stats::power.prop.test}.
 }
+\examples{
+power_proportions(n = 100, p1 = 0.5, p2 = 0.6)
+
+}

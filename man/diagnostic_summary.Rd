@@ -26,3 +26,8 @@ Tibble with diagnostic metrics
 A wrapper around \code{kk_confusion_matrix} to produce a summary table
 from raw data columns (Truth, Test).
 }
+\examples{
+data <- data.frame(truth = c(1, 0, 1, 0), test = c(1, 0, 0, 1))
+diagnostic_summary(data, truth, test)
+
+}

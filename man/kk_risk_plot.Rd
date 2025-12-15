@@ -17,3 +17,13 @@ ggplot object
 \description{
 Forest plot for Odds Ratios or Relative Risks.
 }
+\examples{
+res <- tibble::tibble(
+              Metric = c("OR", "RR"),
+              Estimate = c(1.5, 1.2),
+              Lower = c(1.1, 1.0),
+              Upper = c(2.0, 1.5)
+)
+kk_risk_plot(res)
+
+}

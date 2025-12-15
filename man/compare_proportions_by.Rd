@@ -16,3 +16,13 @@ compare_proportions_by(data, conf.level = 0.95, method = "holm")
 \description{
 Compares proportions within groups (stratified analysis)
 }
+\examples{
+data <- data.frame(
+              group = rep(c("A", "B"), each = 2),
+              subgroup = rep(c("X", "Y"), 2),
+              proportion = c(0.3, 0.5, 0.4, 0.6),
+              trials = rep(50, 4)
+)
+compare_proportions_by(data)
+
+}

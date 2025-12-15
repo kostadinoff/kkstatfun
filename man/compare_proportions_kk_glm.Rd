@@ -42,3 +42,8 @@ compare_proportions_kk_glm(
 Compares proportions between groups using logistic regression
 with robust standard errors.
 }
+\examples{
+df <- data.frame(group = c("A", "B"), x = c(15, 25), n = c(50, 50))
+compare_proportions_kk_glm(df, group, x, n)
+
+}

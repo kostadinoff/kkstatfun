@@ -21,3 +21,8 @@ Tibble with RR estimate and CI
 \description{
 Calculates Relative Risk (RR) with confidence intervals.
 }
+\examples{
+data <- data.frame(exposure = c(1, 1, 0, 0), outcome = c(1, 0, 1, 0))
+risk_ratio(data, exposure, outcome)
+
+}

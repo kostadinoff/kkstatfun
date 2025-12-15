@@ -23,3 +23,8 @@ Tibble with metrics
 \description{
 Calculates sensitivity, specificity, PPV, NPV, and Accuracy.
 }
+\examples{
+data <- data.frame(truth = c(1, 0, 1, 0), prediction = c(1, 0, 0, 1))
+kk_diagnostic(data, truth, prediction)
+
+}

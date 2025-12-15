@@ -2,9 +2,31 @@
 % Please edit documentation in R/regression.R
 \name{kk_reg}
 \alias{kk_reg}
+\alias{krk_reg}
+\alias{regression_analysis}
 \title{Regression Analysis (KK Reg)}
 \usage{
 kk_reg(
+  data,
+  outcome,
+  predictors,
+  log_outcome = FALSE,
+  custom_formula = NULL,
+  include_diagnostics = TRUE,
+  ...
+)
+
+krk_reg(
+  data,
+  outcome,
+  predictors,
+  log_outcome = FALSE,
+  custom_formula = NULL,
+  include_diagnostics = TRUE,
+  ...
+)
+
+regression_analysis(
   data,
   outcome,
   predictors,

@@ -2,9 +2,20 @@
 % Please edit documentation in R/time_series.R
 \name{kk_time_series}
 \alias{kk_time_series}
+\alias{time_series_analysis}
 \title{Time Series Analysis (KK Time Series)}
 \usage{
 kk_time_series(
+  data,
+  value_col = NULL,
+  date_col = "date",
+  group_cols = NULL,
+  wide_format = FALSE,
+  skip_advanced = FALSE,
+  round_digits = 4
+)
+
+time_series_analysis(
   data,
   value_col = NULL,
   date_col = "date",

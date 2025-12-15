@@ -21,3 +21,8 @@ Tibble with OR estimate and CI
 \description{
 Calculates Odds Ratio (OR) with confidence intervals.
 }
+\examples{
+data <- data.frame(exposure = c(1, 1, 0, 0), outcome = c(1, 0, 1, 0))
+odds_ratio(data, exposure, outcome)
+
+}

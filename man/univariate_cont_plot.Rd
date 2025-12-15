@@ -2,9 +2,12 @@
 % Please edit documentation in R/plotting.R
 \name{univariate_cont_plot}
 \alias{univariate_cont_plot}
+\alias{univariate_continuous_plot}
 \title{Univariate Continuous Plot}
 \usage{
 univariate_cont_plot(data, variable)
+
+univariate_continuous_plot(data, variable)
 }
 \arguments{
 \item{data}{Data frame}

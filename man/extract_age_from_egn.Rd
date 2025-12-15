@@ -18,3 +18,7 @@ Data frame with extracted information
 Parses Bulgarian EGN to extract age, birth date, gender, and region.
 Also validates the EGN.
 }
+\examples{
+extract_age_from_egn("7501010010")
+
+}

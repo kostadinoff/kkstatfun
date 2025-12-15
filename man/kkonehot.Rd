@@ -17,3 +17,8 @@ Data with new binary columns added
 \description{
 Creates binary dummy variables for categorical column
 }
+\examples{
+data <- tibble::tibble(id = 1:3, color = c("red", "blue", "red"))
+kkonehot(data, "color")
+
+}

@@ -45,6 +45,10 @@ table1_summary <- function(data, by = NULL, variables = NULL, label_list = NULL)
         tbl
 }
 
+#' Wrapper for Table 1 Generation
+#'
+#' @description A wrapper around `table1_summary` to generate a publication-ready descriptive table.
+#'
 #' @examples
 #' \dontrun{
 #' kk_table1(mtcars, by = "am", variables = c("mpg", "hp"))

@@ -16,3 +16,8 @@ compare_proportions(data, conf.level = 0.95, method = "holm")
 \description{
 Pairwise comparison of proportions using normal approximation
 }
+\examples{
+data <- data.frame(proportion = c(0.3, 0.5), trials = c(50, 50), group = c("A", "B"))
+compare_proportions(data)
+
+}
