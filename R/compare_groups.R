@@ -18,6 +18,9 @@
 #'
 #' @return Tibble with comparison results
 #'
+#' @examples
+#' kk_compare_groups_table(mtcars, "am", c("mpg", "hp"))
+#'
 #' @export
 kk_compare_groups_table <- function(data, group, variables = NULL,
                                     nonparametric = FALSE,
@@ -370,5 +373,6 @@ format_pvalue <- function(p) {
               return(sprintf("%.3f", p))
 }
 
+#' @rdname kk_compare_groups_table
 #' @export
 compare_groups_table <- kk_compare_groups_table

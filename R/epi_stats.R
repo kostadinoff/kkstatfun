@@ -17,8 +17,8 @@
 #' @examples
 #' # Create dummy data
 #' df <- data.frame(
-#'   exposure = c(rep(1, 50), rep(0, 50)),
-#'   outcome = c(rep(1, 20), rep(0, 30), rep(1, 10), rep(0, 40))
+#'               exposure = c(rep(1, 50), rep(0, 50)),
+#'               outcome = c(rep(1, 20), rep(0, 30), rep(1, 10), rep(0, 40))
 #' )
 #'
 #' # Calculate stats
@@ -114,6 +114,11 @@ kk_epi_stats <- function(data = NULL, exposure, outcome, conf.level = 0.95) {
 #' @param method Method for CIs ("wald", "small.sample", "bootstrap") - currently "wald" or "small.sample" (Fisher/Exact)
 #'
 #' @return Tibble with 7 metrics: OR, RR, RD, AF(Exposed), PAF, PF(Exposed), and NNT/NNH, all with CIs
+#'
+#' @examples
+#' data <- data.frame(exposure = c(1, 1, 0, 0), outcome = c(1, 0, 1, 0))
+#' kk_twobytwo(data, exposure, outcome)
+#'
 #' @export
 kk_twobytwo <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95, method = "wald") {
               # Handle input types
@@ -256,6 +261,11 @@ kk_twobytwo <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95
 #' @param positive Value indicating positive case in truth (optional, auto-detected)
 #'
 #' @return Tibble with metrics
+#'
+#' @examples
+#' data <- data.frame(truth = c(1, 0, 1, 0), prediction = c(1, 0, 0, 1))
+#' kk_diagnostic(data, truth, prediction)
+#'
 #' @export
 kk_diagnostic <- function(data, truth, prediction, cutoff = 0.5, positive = NULL) {
               truth_enquo <- rlang::enquo(truth)
@@ -311,6 +321,16 @@ kk_diagnostic <- function(data, truth, prediction, cutoff = 0.5, positive = NULL
 #' @param title Plot title
 #'
 #' @return ggplot object
+#'
+#' @examples
+#' res <- tibble::tibble(
+#'               Metric = c("OR", "RR"),
+#'               Estimate = c(1.5, 1.2),
+#'               Lower = c(1.1, 1.0),
+#'               Upper = c(2.0, 1.5)
+#' )
+#' kk_risk_plot(res)
+#'
 #' @export
 kk_risk_plot <- function(data, title = "Risk Estimates") {
               if (!requireNamespace("ggplot2", quietly = TRUE)) stop("ggplot2 required")
@@ -338,6 +358,11 @@ kk_risk_plot <- function(data, title = "Risk Estimates") {
 #' @param conf.level Confidence level (default: 0.95)
 #'
 #' @return Tibble with RR estimate and CI
+#'
+#' @examples
+#' data <- data.frame(exposure = c(1, 1, 0, 0), outcome = c(1, 0, 1, 0))
+#' risk_ratio(data, exposure, outcome)
+#'
 #' @export
 risk_ratio <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95) {
               res <- kk_twobytwo(data, exposure, outcome, conf.level)
@@ -356,6 +381,11 @@ risk_ratio <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95)
 #' @param conf.level Confidence level (default: 0.95)
 #'
 #' @return Tibble with OR estimate and CI
+#'
+#' @examples
+#' data <- data.frame(exposure = c(1, 1, 0, 0), outcome = c(1, 0, 1, 0))
+#' odds_ratio(data, exposure, outcome)
+#'
 #' @export
 odds_ratio <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95) {
               res <- kk_twobytwo(data, exposure, outcome, conf.level)

@@ -24,6 +24,10 @@ validate_data_frame <- function(data, var_name = "data") {
 #' @description Sets preferred options for backend, parallel processing, and display.
 #' @param cores Number of cores to use (default: detectCores() - 1)
 #' @param scipen Scientific notation penalty (default: 999)
+#' @examples
+#' \dontrun{
+#' kk_setup()
+#' }
 #' @export
 kk_setup <- function(cores = parallel::detectCores(logical = FALSE) - 1, scipen = 999) {
               # Backend and parallel processing
@@ -63,7 +67,7 @@ kk_setup <- function(cores = parallel::detectCores(logical = FALSE) - 1, scipen 
 format_tibble <- function(data, digits = 2) {
               data %>%
                             dplyr::mutate(
-                                          Value_display = sapply(Value, function(x) {
+                                          Value_display = sapply(.data$Value, function(x) {
                                                         if (is.na(x)) "NA" else format(round(x, digits), nsmall = digits, scientific = FALSE, big.mark = ",")
                                           })
                             )
@@ -88,5 +92,5 @@ mutate_round <- function(data, digits = 2) {
                             stop("Input must be a data frame or tibble.")
               }
               data |>
-                            dplyr::mutate(dplyr::across(where(is.numeric), ~ janitor::round_half_up(., digits)))
+                            dplyr::mutate(dplyr::across(tidyselect::where(is.numeric), ~ janitor::round_half_up(., digits)))
 }

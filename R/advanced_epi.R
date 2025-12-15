@@ -23,6 +23,14 @@
 #'     \item stratum_specific - Stratum-specific estimates
 #'   }
 #'
+#' @examples
+#' data <- data.frame(
+#'               exposure = c(1, 1, 0, 0, 1, 1, 0, 0),
+#'               outcome = c(1, 0, 1, 0, 1, 0, 1, 0),
+#'               strata = c(1, 1, 1, 1, 2, 2, 2, 2)
+#' )
+#' kk_stratified_2x2(data, exposure, outcome, strata)
+#'
 #' @export
 kk_stratified_2x2 <- function(data, exposure, outcome, strata, conf.level = 0.95, method = "mh") {
               exposure_enquo <- rlang::enquo(exposure)
@@ -188,6 +196,14 @@ kk_stratified_2x2 <- function(data, exposure, outcome, strata, conf.level = 0.95
 #'
 #' @return Tibble with McNemar's test results and conditional OR
 #'
+#' @examples
+#' data <- data.frame(
+#'               id = rep(1:50, 2),
+#'               exposure = rep(c(0, 1), each = 50),
+#'               outcome = sample(0:1, 100, replace = TRUE)
+#' )
+#' kk_mcnemar(data, exposure, outcome, id)
+#'
 #' @export
 kk_mcnemar <- function(data, exposure, outcome, pair_id, conf.level = 0.95, exact = TRUE) {
               exposure_enquo <- rlang::enquo(exposure)
@@ -263,6 +279,13 @@ kk_mcnemar <- function(data, exposure, outcome, pair_id, conf.level = 0.95, exac
 #' @param conf.level Confidence level (default 0.95)
 #'
 #' @return Tibble with trend test results and trend OR/RR
+#'
+#' @examples
+#' data <- data.frame(
+#'               outcome = c(rep(1, 10), rep(0, 90), rep(1, 20), rep(0, 80), rep(1, 30), rep(0, 70)),
+#'               dose = rep(c("Low", "Medium", "High"), each = 100)
+#' )
+#' kk_trend_test(data, outcome, dose)
 #'
 #' @export
 kk_trend_test <- function(data, outcome, dose_group, scores = NULL, conf.level = 0.95) {
@@ -340,6 +363,13 @@ kk_trend_test <- function(data, outcome, dose_group, scores = NULL, conf.level =
 #' @param conf.level Confidence level (default 0.95)
 #'
 #' @return Tibble with kappa statistics and confidence intervals
+#'
+#' @examples
+#' data <- data.frame(
+#'               rater1 = c(1, 0, 1, 0, 1),
+#'               rater2 = c(1, 1, 0, 0, 1)
+#' )
+#' kk_agreement(data, rater1, rater2)
 #'
 #' @export
 kk_agreement <- function(data, rater1, rater2, weights = "unweighted", conf.level = 0.95) {
@@ -457,6 +487,9 @@ kk_agreement <- function(data, rater1, rater2, weights = "unweighted", conf.leve
 #'
 #' @references VanderWeele TJ, Ding P (2017). Sensitivity Analysis in
 #'   Observational Research. Ann Intern Med 167:268-274.
+#'
+#' @examples
+#' kk_sensitivity_analysis(estimate = 1.5, lower = 1.1, upper = 2.0)
 #'
 #' @export
 kk_sensitivity_analysis <- function(estimate, lower = NULL, upper = NULL,

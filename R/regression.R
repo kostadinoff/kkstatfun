@@ -195,8 +195,10 @@ kk_reg <- function(data, outcome, predictors, log_outcome = FALSE, custom_formul
               dplyr::bind_rows(univariate_results, multivariate_results)
 }
 
+#' @rdname kk_reg
 #' @export
 krk_reg <- kk_reg
 
+#' @rdname kk_reg
 #' @export
 regression_analysis <- kk_reg

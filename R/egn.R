@@ -12,6 +12,9 @@
 #'
 #' @return Data frame with extracted information
 #'
+#' @examples
+#' extract_age_from_egn("7501010010")
+#'
 #' @export
 extract_age_from_egn <- function(egn, admission_date = Sys.Date()) {
               region_codes <- list(

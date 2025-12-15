@@ -45,6 +45,10 @@ table1_summary <- function(data, by = NULL, variables = NULL, label_list = NULL)
         tbl
 }
 
+#' @examples
+#' \dontrun{
+#' kk_table1(mtcars, by = "am", variables = c("mpg", "hp"))
+#' }
 #' @export
 kk_table1 <- function(data, by = NULL, variables = NULL, label_list = NULL,
                       digits = 2, p_value = TRUE) {

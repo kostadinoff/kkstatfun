@@ -63,7 +63,7 @@ kk_time_series <- function(data, value_col = NULL, date_col = "date", group_cols
                             if (any(data$.dup_dates)) {
                                           stop("Duplicate dates found within groups. Ensure unique dates per group or preprocess data to aggregate duplicates.")
                             }
-                            data <- dplyr::select(data, -.dup_dates)
+                            data <- dplyr::select(data, -.data$.dup_dates)
                             data <- dplyr::group_by(data, !!!group_cols)
               } else {
                             # Check for duplicate dates in ungrouped data
@@ -83,7 +83,7 @@ kk_time_series <- function(data, value_col = NULL, date_col = "date", group_cols
               # Process time series for each group
               result <- data %>%
                             dplyr::arrange(!!date_col) %>%
-                            dplyr::filter(!is.na(value)) %>%
+                            dplyr::filter(!is.na(.data$value)) %>%
                             dplyr::group_map(~ {
                                           # Extract values and count observations
                                           y <- .x$value
@@ -471,7 +471,7 @@ kk_time_series <- function(data, value_col = NULL, date_col = "date", group_cols
               # Bind results with proper group labels
               if (!is.null(group_cols)) {
                             result <- dplyr::bind_rows(result, .id = "group_idx") %>%
-                                          dplyr::mutate(group = group_labels[as.integer(group_idx)]) %>%
+                                          dplyr::mutate(group = group_labels[as.integer(.data$group_idx)]) %>%
                                           dplyr::select(-group_idx)
               } else {
                             result <- dplyr::bind_rows(result)
@@ -480,7 +480,7 @@ kk_time_series <- function(data, value_col = NULL, date_col = "date", group_cols
               # Convert to wide format if requested
               if (wide_format) {
                             result <- result %>%
-                                          tidyr::pivot_wider(names_from = Metric, values_from = Value, names_repair = "minimal")
+                                          tidyr::pivot_wider(names_from = "Metric", values_from = "Value", names_repair = "minimal")
               }
 
               return(result)
@@ -541,7 +541,7 @@ kk_time_metrics <- function(data, value_col = NULL, date_col = "date", group_col
               # Process time series for each group
               result <- data %>%
                             dplyr::arrange(!!date_col) %>%
-                            dplyr::filter(!is.na(value)) %>%
+                            dplyr::filter(!is.na(.data$value)) %>%
                             dplyr::group_map(~ {
                                           # Extract values, time index, and period
                                           y <- .x$value
@@ -692,5 +692,6 @@ kk_time_metrics <- function(data, value_col = NULL, date_col = "date", group_col
               return(result)
 }
 
+#' @rdname kk_time_series
 #' @export
 time_series_analysis <- kk_time_series

@@ -17,6 +17,9 @@
 #'
 #' @return Object of class "power.htest"
 #'
+#' @examples
+#' power_proportions(n = 100, p1 = 0.5, p2 = 0.6)
+#'
 #' @export
 power_proportions <- function(n = NULL, p1 = NULL, p2 = NULL, sig.level = 0.05,
                               power = NULL, alternative = "two.sided",

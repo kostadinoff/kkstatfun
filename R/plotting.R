@@ -448,9 +448,11 @@ univariate_plot <- function(data, variable) {
               }
 }
 
+#' @rdname univariate_cat_plot
 #' @export
 univariate_categorical_plot <- univariate_cat_plot
 
+#' @rdname univariate_cont_plot
 #' @export
 univariate_continuous_plot <- univariate_cont_plot
 
@@ -515,4 +517,5 @@ plot_proportion_comparisons <- function(results,
                                           subtitle = subtitle,
                                           x = xlab,
                                           y = ""
-                            )}
+                            )
+}

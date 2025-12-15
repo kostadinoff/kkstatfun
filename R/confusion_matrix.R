@@ -395,6 +395,11 @@ confusion_metrics_ci <- function(x,
 #' @param ... Additional arguments passed to `kk_confusion_matrix`
 #'
 #' @return Tibble with diagnostic metrics
+#'
+#' @examples
+#' data <- data.frame(truth = c(1, 0, 1, 0), test = c(1, 0, 0, 1))
+#' diagnostic_summary(data, truth, test)
+#'
 #' @export
 diagnostic_summary <- function(data, truth, test, cutoff = 0.5, positive = NULL, ...) {
               truth_enquo <- rlang::enquo(truth)

@@ -12,6 +12,10 @@
 #'
 #' @return Tibble with results
 #'
+#' @examples
+#' data <- data.frame(successes = c(10, 20), trials = c(100, 100), group = c("A", "B"))
+#' pcit(data)
+#'
 #' @export
 pcit <- function(data, conf.level = 0.95) {
               # Identify numeric columns
@@ -88,6 +92,10 @@ pcit <- function(data, conf.level = 0.95) {
 #' @param conf.level Confidence level (default: 0.95)
 #' @param vcov_type Robust variance type (default: "HC3")
 #' @param drop_empty Drop empty groups (default: TRUE)
+#'
+#' @examples
+#' df <- data.frame(group = c("A", "B"), x = c(15, 25), n = c(50, 50))
+#' compare_proportions_kk_glm(df, group, x, n)
 #'
 #' @export
 compare_proportions_kk_glm <- function(data, group, x, n,
@@ -182,6 +190,10 @@ compare_proportions_kk_glm <- function(data, group, x, n,
 #' @param conf.level Confidence level
 #' @param method Adjustment method
 #'
+#' @examples
+#' data <- data.frame(proportion = c(0.3, 0.5), trials = c(50, 50), group = c("A", "B"))
+#' compare_proportions(data)
+#'
 #' @export
 compare_proportions <- function(data,
                                 conf.level = 0.95,
@@ -275,6 +287,15 @@ compare_proportions <- function(data,
 #' @param data Data frame
 #' @param conf.level Confidence level
 #' @param method Adjustment method
+#'
+#' @examples
+#' data <- data.frame(
+#'               group = rep(c("A", "B"), each = 2),
+#'               subgroup = rep(c("X", "Y"), 2),
+#'               proportion = c(0.3, 0.5, 0.4, 0.6),
+#'               trials = rep(50, 4)
+#' )
+#' compare_proportions_by(data)
 #'
 #' @export
 compare_proportions_by <- function(data,
@@ -402,6 +423,15 @@ compare_proportions_by <- function(data,
 #' @param group Grouping variable (ordered)
 #'
 #' @return Result of prop.trend.test
+#'
+#' @examples
+#' data <- data.frame(
+#'               dose = c("Low", "Medium", "High"),
+#'               positive = c(10, 20, 30),
+#'               total = c(100, 100, 100)
+#' )
+#' prop_trend_test(data, positive, total, dose)
+#'
 #' @export
 prop_trend_test <- function(data, x, n = NULL, group = NULL) {
               x_enquo <- rlang::enquo(x)
