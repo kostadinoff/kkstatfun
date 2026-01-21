@@ -8,66 +8,110 @@
 #'   confidence intervals, and p-values for both categorical and numerical variables.
 #'   Now includes sample size per group for each variable, degrees of freedom, effect size, and a total column.
 #'
-#' @param data Data frame
-#' @param group Grouping variable (must have exactly 2 levels)
-#' @param variables Vector of variable names to compare. If NULL (default),
-#'   all columns except the group variable will be compared.
-#' @param nonparametric Use nonparametric tests for continuous variables (default: FALSE)
-#' @param adjust_method P-value adjustment method for categorical variables with >2 levels (default: "holm")
-#' @param conf.level Confidence level (default: 0.95)
+#' @param data A data frame or a grouped data frame (from \code{dplyr::group_by}).
+#' @param group Grouping variable (can be unquoted or a string). If \code{data} is grouped
+#'   and \code{group} is missing, the last grouping variable is used as the comparison group.
+#' @param variables Variables to compare (tidyselect supported, e.g., \code{c(age, smoking)} or \code{starts_with("score")}).
+#'   If \code{NULL} (default), all columns except the \code{group} and grouping variables are compared.
+#' @param nonparametric Logical, whether to use nonparametric tests (Wilcoxon) for continuous variables (default: \code{FALSE}).
+#' @param correct Logical, whether to apply continuity correction in Chi-square and proportion tests (default: \code{FALSE}).
+#' @param adjust_method P-value adjustment method for categorical variables with >2 levels (default: \code{"holm"}).
+#' @param conf.level Confidence level for intervals (default: \code{0.95}).
 #'
-#' @return Tibble with comparison results
+#' @return A tibble with comparison results, including counts, means/proportions, differences, CIs, p-values, and effect sizes.
 #'
 #' @examples
-#' kk_compare_groups_table(mtcars, "am", c("mpg", "hp"))
+#' # Basic usage with tidy evaluation
+#' kk_compare_groups_table(mtcars, am, c(mpg, hp))
+#'
+#' # Automatic variable selection
+#' mtcars |>
+#'               dplyr::select(am, mpg, hp, cyl) |>
+#'               kk_compare_groups_table(am)
+#'
+#' # Stratified analysis using group_by
+#' mtcars |>
+#'               dplyr::group_by(vs) |>
+#'               kk_compare_groups_table(am, c(mpg, hp))
+#'
+#' # Automatic group detection from grouped data
+#' mtcars |>
+#'               dplyr::group_by(am) |>
+#'               kk_compare_groups_table()
 #'
 #' @export
 kk_compare_groups_table <- function(data, group, variables = NULL,
                                     nonparametric = FALSE,
+                                    correct = FALSE,
                                     adjust_method = "holm",
                                     conf.level = 0.95) {
               # Handle grouped data frames
               if (dplyr::is_grouped_df(data)) {
-                            # Get grouping variables and keys
+                            # Get grouping variables
                             group_vars <- dplyr::group_vars(data)
+
+                            # If group is missing, try to use the last grouping variable
+                            # and use the rest as grouping strata
+                            if (missing(group)) {
+                                          if (length(group_vars) == 0) {
+                                                        stop("Data is grouped but has no grouping variables. Please specify 'group'.")
+                                          }
+                                          group_name <- group_vars[length(group_vars)]
+                                          strata_vars <- group_vars[-length(group_vars)]
+                                          # Re-group by strata only for recursive call
+                                          if (length(strata_vars) > 0) {
+                                                        data <- dplyr::group_by(data, !!!rlang::syms(strata_vars))
+                                          } else {
+                                                        data <- dplyr::ungroup(data)
+                                          }
+                                          group_expr <- rlang::sym(group_name)
+                            } else {
+                                          group_expr <- rlang::enquo(group)
+                                          group_name <- rlang::as_name(rlang::ensym(group))
+                                          strata_vars <- group_vars
+                            }
+
+                            # Get group keys for the strata
                             group_keys <- dplyr::group_keys(data)
 
-                            # Get the group variable name for exclusion
-                            group_sym <- rlang::ensym(group)
-                            group_name <- rlang::as_name(group_sym)
-
-                            # Process each group separately
+                            # Process each stratum separately
                             results <- data %>%
                                           dplyr::group_map(~ {
-                                                        # Exclude grouping variables from comparison
-                                                        # Since .x is ungrouped, we need to explicitly set variables
+                                                        # Auto-detect variables for this stratum
                                                         vars_to_use <- if (is.null(variables)) {
-                                                                      # Auto-detect: all columns except group var and grouping vars
-                                                                      setdiff(names(.x), c(group_name, group_vars))
+                                                                      setdiff(names(.x), c(group_name, strata_vars))
                                                         } else {
-                                                                      # Explicit: remove grouping vars from provided list
-                                                                      setdiff(variables, group_vars)
+                                                                      # Support tidyselect on .x
+                                                                      names(tidyselect::eval_select(rlang::enquo(variables), .x))
                                                         }
 
                                                         # Run comparison on this subset
                                                         kk_compare_groups_table(
                                                                       data = .x,
-                                                                      group = {{ group }},
+                                                                      group = !!group_expr,
                                                                       variables = vars_to_use,
                                                                       nonparametric = nonparametric,
+                                                                      correct = correct,
                                                                       adjust_method = adjust_method,
                                                                       conf.level = conf.level
                                                         )
                                           }, .keep = TRUE)
 
-                            # Add grouping columns to each result
-                            for (i in seq_along(results)) {
-                                          for (j in seq_along(group_vars)) {
-                                                        results[[i]] <- tibble::add_column(
-                                                                      results[[i]],
-                                                                      !!group_vars[j] := group_keys[[j]][i],
-                                                                      .before = 1
-                                                        )
+                            # Combine all results and add grouping columns
+                            if (length(results) == 0) {
+                                          return(tibble::tibble())
+                            }
+
+                            # Add strata columns to each result
+                            if (length(strata_vars) > 0) {
+                                          for (i in seq_along(results)) {
+                                                        for (j in seq_along(strata_vars)) {
+                                                                      results[[i]] <- tibble::add_column(
+                                                                                    results[[i]],
+                                                                                    !!strata_vars[j] := group_keys[[j]][i],
+                                                                                    .before = 1
+                                                                      )
+                                                        }
                                           }
                             }
 
@@ -75,31 +119,27 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                             return(dplyr::bind_rows(results))
               }
 
-              # Validate inputs
-              if (!is.data.frame(data)) stop("'data' must be a data frame")
-
-              group_sym <- rlang::ensym(group)
-              group_name <- rlang::as_name(group_sym)
+              # Resolve group
+              if (missing(group)) {
+                            stop("Argument 'group' is missing with no default (and data is not grouped)")
+              }
+              group_name <- rlang::as_name(rlang::ensym(group))
 
               if (!group_name %in% names(data)) {
                             stop(sprintf("Group variable '%s' not found in data", group_name))
+              }
+
+              # Resolve variables (tidyselect)
+              if (is.null(variables)) {
+                            variables <- setdiff(names(data), group_name)
+              } else {
+                            variables <- names(tidyselect::eval_select(rlang::enquo(variables), data))
               }
 
               # Check that group has exactly 2 levels
               group_levels <- unique(stats::na.omit(data[[group_name]]))
               if (length(group_levels) != 2) {
                             stop(sprintf("Group variable must have exactly 2 levels, found %d", length(group_levels)))
-              }
-
-              # If variables not specified, use all columns except group
-              if (is.null(variables)) {
-                            variables <- setdiff(names(data), group_name)
-              }
-
-              # Ensure variables exist
-              missing_vars <- setdiff(variables, names(data))
-              if (length(missing_vars) > 0) {
-                            stop(sprintf("Variables not found: %s", paste(missing_vars, collapse = ", ")))
               }
 
               # Split data by group
@@ -234,7 +274,7 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                           df_val <- NA_character_
                                           effect_size_str <- NA_character_
 
-                                          chisq_res_for_es <- suppressWarnings(stats::chisq.test(tbl))
+                                          chisq_res_for_es <- suppressWarnings(stats::chisq.test(tbl, correct = correct))
                                           chisq_stat <- chisq_res_for_es$statistic
                                           N_total_tbl <- sum(tbl)
                                           k <- min(dim(tbl))
@@ -248,7 +288,7 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                                         test_stat <- ""
                                                         df_val <- ""
                                           } else {
-                                                        test_result <- stats::chisq.test(tbl)
+                                                        test_result <- stats::chisq.test(tbl, correct = correct)
                                                         test_name <- "Chi-square"
                                                         overall_p <- test_result$p.value
                                                         test_stat <- sprintf("χ²=%.2f", test_result$statistic)
@@ -262,10 +302,7 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                           levels_to_show <- all_levels
                                           if (length(all_levels) == 2) {
                                                         # Prioritize showing "positive" level
-                                                        positive_candidates <- c("1", "Yes", "True", "T", "Y", "Positive", "Present", "Low")
-                                                        # "Low" added just in case? No, remove "Low".
-                                                        # Actually let's stick to standard positive ones.
-                                                        # Removing "Low" to avoid confusion.
+                                                        positive_candidates <- c("1", "Yes", "True", "T", "Y", "Positive", "Present")
 
                                                         pos_idx <- which(all_levels %in% positive_candidates)
                                                         if (length(pos_idx) > 0) {
@@ -299,7 +336,7 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                                                       if (any(binary_tbl < 5)) {
                                                                                     level_test <- stats::fisher.test(binary_tbl)
                                                                       } else {
-                                                                                    level_test <- stats::prop.test(c(count1, count2), c(n1_total, n2_total), correct = FALSE)
+                                                                                    level_test <- stats::prop.test(c(count1, count2), c(n1_total, n2_total), correct = correct)
                                                                       }
                                                                       level_pvalues <- c(level_pvalues, level_test$p.value)
                                                         }
@@ -339,9 +376,6 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
               # Combine all results
               result_df <- dplyr::bind_rows(results_list)
 
-              # Combine all results
-              result_df <- dplyr::bind_rows(results_list)
-
               # Rename columns
               names(result_df)[names(result_df) == "n1"] <- paste0("n_", group1_name)
               names(result_df)[names(result_df) == "Group1"] <- group1_name
@@ -350,7 +384,6 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
               names(result_df)[names(result_df) == "CI_95"] <- "95% CI"
               names(result_df)[names(result_df) == "p_value"] <- "p-value"
               names(result_df)[names(result_df) == "Effect_Size"] <- "Effect Size"
-              # Clean up Total n name to be more descriptive if needed, or leave as n_Total
 
               return(result_df)
 }
