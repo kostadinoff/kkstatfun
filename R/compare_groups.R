@@ -250,12 +250,12 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                                         n2 = as.character(n_valid_2),
                                                         Group2 = group2_val,
                                                         Difference = sprintf("%.2f", diff),
-                                                        CI_95 = sprintf("%.2f, %.2f", ci_lower, ci_upper),
+                                                        ci_95 = sprintf("%.2f, %.2f", ci_lower, ci_upper),
                                                         p_value = format_pvalue(p_value),
                                                         Test = test_name,
                                                         Statistic = test_stat,
                                                         df = df_val,
-                                                        Effect_Size = effect_size_str
+                                                        effect_size = effect_size_str
                                           )
                             } else if (is_categorical) {
                                           # Categorical variable
@@ -350,12 +350,12 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                                                       n2 = as.character(n_valid_2),
                                                                       Group2 = sprintf("%d (%.1f%%)", count2, prop2 * 100),
                                                                       Difference = sprintf("%.1f%%", diff_prop * 100),
-                                                                      CI_95 = sprintf("%.1f%%, %.1f%%", ci_lower * 100, ci_upper * 100),
+                                                                      ci_95 = sprintf("%.1f%%, %.1f%%", ci_lower * 100, ci_upper * 100),
                                                                       p_value = NA_character_,
                                                                       Test = test_name,
                                                                       Statistic = test_stat,
                                                                       df = df_val,
-                                                                      Effect_Size = effect_size_str
+                                                                      effect_size = effect_size_str
                                                         )
                                           }
 
@@ -381,9 +381,6 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
               names(result_df)[names(result_df) == "Group1"] <- group1_name
               names(result_df)[names(result_df) == "n2"] <- paste0("n_", group2_name)
               names(result_df)[names(result_df) == "Group2"] <- group2_name
-              names(result_df)[names(result_df) == "CI_95"] <- "95% CI"
-              names(result_df)[names(result_df) == "p_value"] <- "p-value"
-              names(result_df)[names(result_df) == "Effect_Size"] <- "Effect Size"
 
               return(result_df)
 }
