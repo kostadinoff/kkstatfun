@@ -191,10 +191,16 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
 
                                           # Statistical test and Effect size
                                           if (nonparametric) {
-                                                        test_result <- tryCatch(
-                                                                      stats::wilcox.test(var_data1, var_data2, conf.int = TRUE, conf.level = conf.level),
-                                                                      error = function(e) NULL
-                                                        )
+                                                        # Defensive check for wilcox.test
+                                                        can_run_wilcox <- n_valid_1 > 0 && n_valid_2 > 0
+
+                                                        test_result <- NULL
+                                                        if (can_run_wilcox) {
+                                                                      test_result <- tryCatch(
+                                                                                    stats::wilcox.test(var_data1, var_data2, conf.int = TRUE, conf.level = conf.level),
+                                                                                    error = function(e) NULL
+                                                                      )
+                                                        }
 
                                                         if (!is.null(test_result)) {
                                                                       p_value <- test_result$p.value
@@ -204,8 +210,8 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                                                                     ci_upper <- test_result$conf.int[2]
                                                                       }
                                                         } else {
-                                                                      # If failed (e.g. constant data), but identical
-                                                                      if (isTRUE(all.equal(var_data1, var_data2))) {
+                                                                      # If failed or skipped, but identical and not all NA
+                                                                      if (n_valid_1 > 0 && n_valid_2 > 0 && isTRUE(all.equal(var_data1, var_data2))) {
                                                                                     p_value <- 1.0
                                                                                     test_stat <- "W=0.00"
                                                                                     ci_lower <- 0
@@ -215,11 +221,11 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
 
                                                         # Effect size (r)
                                                         n_obs <- n_valid_1 + n_valid_2
-                                                        if (n_obs > 0) {
-                                                                      mu_W <- n_valid_1 * n_valid_2 / 2
-                                                                      sigma_W <- sqrt((n_valid_1 * n_valid_2 * (n_valid_1 + n_valid_2 + 1)) / 12)
+                                                        if (n_obs > 0 && n_valid_1 > 0 && n_valid_2 > 0) {
+                                                                      mu_W <- (as.numeric(n_valid_1) * as.numeric(n_valid_2)) / 2
+                                                                      sigma_W <- sqrt((as.numeric(n_valid_1) * as.numeric(n_valid_2) * (as.numeric(n_valid_1) + as.numeric(n_valid_2) + 1)) / 12)
                                                                       if (sigma_W > 0 && !is.null(test_result)) {
-                                                                                    z_score <- (test_result$statistic - mu_W) / sigma_W
+                                                                                    z_score <- (as.numeric(test_result$statistic) - mu_W) / sigma_W
                                                                                     effect_size_val <- z_score / sqrt(n_obs)
                                                                                     effect_size_str <- sprintf("r=%.2f", abs(effect_size_val))
                                                                       } else if (isTRUE(all.equal(var_data1, var_data2))) {
@@ -229,7 +235,7 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
 
                                                         # Median (IQR)
                                                         calc_median_iqr <- function(x) {
-                                                                      if (length(stats::na.omit(x)) == 0) {
+                                                                      if (sum(!is.na(x)) == 0) {
                                                                                     return("NA")
                                                                       }
                                                                       med <- median(x, na.rm = TRUE)
@@ -242,10 +248,22 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                                         group1_val <- calc_median_iqr(var_data1)
                                                         group2_val <- calc_median_iqr(var_data2)
                                           } else {
-                                                        test_result <- tryCatch(
-                                                                      stats::t.test(var_data1, var_data2, conf.level = conf.level),
-                                                                      error = function(e) NULL
-                                                        )
+                                                        # Defensive check for t.test
+                                                        v1 <- if (n_valid_1 > 1) stats::var(var_data1, na.rm = TRUE) else 0
+                                                        v2 <- if (n_valid_2 > 1) stats::var(var_data2, na.rm = TRUE) else 0
+
+                                                        # t.test fails if variance is 0 in BOTH groups
+                                                        # Also check if we have enough data
+                                                        can_run_t_test <- (n_valid_1 > 0 && n_valid_2 > 0) &&
+                                                                      !((is.na(v1) || v1 == 0) && (is.na(v2) || v2 == 0))
+
+                                                        test_result <- NULL
+                                                        if (can_run_t_test) {
+                                                                      test_result <- tryCatch(
+                                                                                    stats::t.test(var_data1, var_data2, conf.level = conf.level),
+                                                                                    error = function(e) NULL
+                                                                      )
+                                                        }
 
                                                         if (!is.null(test_result)) {
                                                                       p_value <- test_result$p.value
@@ -254,8 +272,8 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                                                       test_stat <- sprintf("t=%.2f", test_result$statistic)
                                                                       df_val <- sprintf("%.1f", test_result$parameter)
                                                         } else {
-                                                                      # If failed (e.g. constant data), but identical
-                                                                      if (isTRUE(all.equal(mean(var_data1, na.rm = TRUE), mean(var_data2, na.rm = TRUE)))) {
+                                                                      # If failed or skipped, but identical and not all NA
+                                                                      if (n_valid_1 > 0 && n_valid_2 > 0 && isTRUE(all.equal(mean(var_data1, na.rm = TRUE), mean(var_data2, na.rm = TRUE)))) {
                                                                                     p_value <- 1.0
                                                                                     test_stat <- "t=0.00"
                                                                                     ci_lower <- 0
