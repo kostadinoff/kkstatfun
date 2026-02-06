@@ -20,6 +20,7 @@
 #' }
 #'
 #' @import ggplot2
+#' @import ggtext
 #' @export
 set_plot_font <- function(font = "Roboto Condensed", size = 18,
                           search_sources = c("google", "system", "local"),
@@ -270,20 +271,26 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             theme_nice <- ggthemes::theme_tufte() +
                                           theme(
                                                         axis.ticks = element_line(linewidth = 0.25, color = "black"),
-                                                        axis.ticks.length = unit(2, "mm"),
-                                                        plot.title = element_text(family = font_family, size = title_size, hjust = 0, vjust = 2, margin = margin(t = 10, b = 10)),
-                                                        plot.subtitle = element_text(family = font_family, size = subtitle_size),
-                                                        plot.caption = element_text(family = font_family, hjust = 0.5, vjust = 1, size = caption_size),
+                                                        axis.ticks.length = unit(1, "mm"),
+                                                        plot.title = ggtext::element_markdown(family = font_family, size = title_size, hjust = 0, face = "bold", margin = margin(t = 5, b = 10)),
+                                                        plot.subtitle = ggtext::element_markdown(family = font_family, size = subtitle_size, lineheight = 1.2, margin = margin(b = 15)),
+                                                        plot.caption = ggtext::element_markdown(family = font_family, hjust = 1, size = caption_size, color = "gray30", margin = margin(t = 10)),
+                                                        plot.title.position = "plot",
                                                         plot.caption.position = "plot",
-                                                        axis.title = element_text(family = font_family, size = axis_title_size),
+                                                        axis.title = element_text(family = font_family, size = axis_title_size, face = "bold"),
                                                         axis.text = element_text(family = font_family, size = axis_text_size),
-                                                        axis.text.x = element_text(margin = margin(5, b = 10)),
-                                                        strip.text = element_text(family = font_family, size = strip_text_size),
-                                                        axis.line = element_line()
+                                                        axis.text.x = element_text(margin = margin(t = 5)),
+                                                        strip.text = element_text(family = font_family, size = strip_text_size, face = "bold"),
+                                                        axis.line = element_line(linewidth = 0.5),
+                                                        panel.grid.major.y = element_line(linewidth = 0.1, color = "gray90"),
+                                                        panel.grid.minor = element_blank()
                                           )
 
+                            # Enable showtext for better rendering of custom fonts
+                            showtext::showtext_auto(enable = TRUE)
+
                             theme_set(theme_nice)
-                            message("✓ Updated ggplot2 theme with font '", font_family, "'")
+                            message("✓ Updated ggplot2 theme with font '", font_family, "' and enabled showtext")
               }
 
               # Return comprehensive results
@@ -335,21 +342,28 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
               na_count <- sum(is.na(data[[var_name]]))
               subtitle <- paste0("Missing: ", na_count)
 
+              # Get current theme font
+              curr_font <- tryCatch(ggplot2::theme_get()$text$family, error = function(e) "sans")
+              if (is.null(curr_font) || curr_font == "") curr_font <- "sans"
+
               data %>%
                             dplyr::filter(!is.na(!!variable)) %>%
                             dplyr::count(!!variable) %>%
                             dplyr::mutate(prop = n / sum(n)) %>%
                             kkplot(aes(y = forcats::fct_reorder(factor(!!variable), prop), x = prop)) +
                             geom_col(
-                                          alpha = 0.6,
-                                          fill = "gray60",
-                                          color = "black"
+                                          alpha = 0.7,
+                                          fill = "#34495e",
+                                          color = NA,
+                                          width = 0.7
                             ) +
                             geom_label(
-                                          aes(label = paste0(n, " (", scales::percent(prop), ")")),
+                                          aes(label = paste0(n, " (", scales::percent(prop, accuracy = 0.1), ")")),
                                           color = "black",
+                                          fill = "white",
+                                          label.size = 0,
                                           size = label_size,
-                                          family = "Roboto Condensed",
+                                          family = curr_font,
                                           hjust = -0.1
                             ) +
                             scale_x_continuous(labels = scales::percent) +
@@ -402,27 +416,24 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
                             " | Range: [", min_val, ", ", max_val, "]"
               )
 
-              p <- ggplot(data, aes(x = !!variable)) +
-                            geom_density(fill = "grey90", color = "black") +
+              p <- kkplot(data, aes(x = !!variable)) +
+                            geom_density(fill = "#d0d3d4", color = "#2c3e50", alpha = 0.5) +
                             geom_vline(
-                                          xintercept = mean(vals),
-                                          color = "red",
-                                          linewidth = 0.5
+                                          xintercept = mean(vals, na.rm = TRUE),
+                                          color = "#e74c3c",
+                                          linewidth = 0.8
                             ) +
                             geom_vline(
-                                          xintercept = stats::median(vals),
-                                          color = "blue",
+                                          xintercept = stats::median(vals, na.rm = TRUE),
+                                          color = "#3498db",
                                           linetype = "dashed",
-                                          linewidth = 0.5
+                                          linewidth = 0.8
                             ) +
                             labs(
                                           title = paste0("Univariate Continuous Plot of ", var_name),
                                           subtitle = subtitle_md,
                                           x = "Value",
                                           y = "Density"
-                            ) +
-                            theme(
-                                          plot.subtitle = ggtext::element_markdown(size = 9, family = "Roboto Condensed")
                             )
 
               if (length(vals) > 0) {
