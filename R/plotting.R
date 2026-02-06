@@ -397,8 +397,8 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
               # Construct Enhanced Subtitle (Markdown for colors)
               subtitle_md <- paste0(
                             "Missing: ", missing_count,
-                            " | <span style='color:red;'>Mean (SD): ", m_val, " (", sd_val, ")</span>",
-                            " | <span style='color:blue;'>Median (IQR): ", med_val, " (", iqr_val, ")</span>",
+                            " | <span style='color:red;'>Mean (SD): ", m_val, " (", sd_val, ")</span><br>",
+                            "<span style='color:blue;'>Median (IQR): ", med_val, " (", iqr_val, ")</span>",
                             " | Range: [", min_val, ", ", max_val, "]"
               )
 
