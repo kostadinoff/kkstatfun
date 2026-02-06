@@ -271,10 +271,13 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             # Use zero margins to maximize space in grids
                             m_val <- 0
 
+                            # Scale ticks relative to font size (e.g., size 16 -> 3mm)
+                            tick_len <- size * (3 / 16)
+
                             theme_nice <- ggthemes::theme_tufte() +
                                           theme(
                                                         axis.ticks = element_line(linewidth = 0.2, color = "black"),
-                                                        axis.ticks.length = unit(0.5, "mm"),
+                                                        axis.ticks.length = unit(tick_len, "mm"),
                                                         plot.title = ggtext::element_markdown(family = font_family, size = title_size, hjust = 0, vjust = 1, margin = margin(t = 2, b = 2), face = "bold"),
                                                         plot.subtitle = ggtext::element_markdown(family = font_family, size = subtitle_size, lineheight = 1, margin = margin(b = 2)),
                                                         plot.caption = ggtext::element_markdown(family = font_family, hjust = 0.5, vjust = 1, size = caption_size),
@@ -355,8 +358,8 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
                             dplyr::mutate(prop = n / sum(n)) %>%
                             kkplot(aes(y = forcats::fct_reorder(factor(!!variable), prop), x = prop)) +
                             geom_col(
-                                          alpha = 0.3, # Lighten categorical bars
-                                          fill = "gray90",
+                                          alpha = 0.75, # Set for gray75 look
+                                          fill = "gray75",
                                           color = "gray30",
                                           width = 0.8,
                                           linewidth = 0.1
@@ -371,7 +374,8 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
                                           fill = "white",
                                           alpha = 0.8
                             ) +
-                            scale_x_continuous(labels = scales::percent, expand = expansion(mult = c(0, 0.2))) +
+                            # Add space between columns and y axis (mult = c(low, high))
+                            scale_x_continuous(labels = scales::percent, expand = expansion(mult = c(0.05, 0.2))) +
                             labs(
                                           x = "Proportion",
                                           y = "Category",
