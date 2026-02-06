@@ -1,6 +1,6 @@
 Package: kkstatfun
 Title: R Statistical Analysis Toolkit for Medical and Epidemiology
-Version: 0.1.2
+Version: 0.1.3
 Authors@R: 
     person("Kostadinov", role = c("aut", "cre"),
            email = "kostadinov@example.com")

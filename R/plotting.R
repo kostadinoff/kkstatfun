@@ -405,13 +405,16 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
                             )
 
               if (length(vals) > 0) {
+                            max_y <- max(stats::density(vals)$y)
                             p <- p +
                                           annotate(
                                                         "label",
                                                         x = mean(vals),
-                                                        y = 0.9 * max(stats::density(vals)$y),
+                                                        y = 0.95 * max_y,
                                                         label = paste0("Mean: ", round(mean(vals), 2)),
                                                         color = "red",
+                                                        fill = scales::alpha("white", 0.6),
+                                                        label.size = NA,
                                                         size = label_size,
                                                         family = "Roboto Condensed",
                                                         hjust = -0.1
@@ -419,9 +422,11 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
                                           annotate(
                                                         "label",
                                                         x = stats::median(vals),
-                                                        y = 0.8 * max(stats::density(vals)$y),
+                                                        y = 0.75 * max_y,
                                                         label = paste0("Median: ", round(stats::median(vals), 2)),
                                                         color = "blue",
+                                                        fill = scales::alpha("white", 0.6),
+                                                        label.size = NA,
                                                         size = label_size,
                                                         family = "Roboto Condensed",
                                                         hjust = -0.1
