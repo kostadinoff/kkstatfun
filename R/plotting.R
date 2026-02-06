@@ -261,13 +261,12 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
               # Create and set theme if requested
               if (update_theme) {
                             # Define relative font sizes based on the `size` parameter
-                             title_size <- size
-                             subtitle_size <- size * 0.93
-                             caption_size <- size * 0.8
-                             
-                             axis_title_size <- size * 0.93
-                             axis_text_size <- size * 0.93
-                             strip_text_size <- size * 0.93
+                            title_size <- size
+                            subtitle_size <- size * 0.93
+                            caption_size <- size * 0.7
+                            axis_title_size <- size * 0.93
+                            axis_text_size <- size * 0.93
+                            strip_text_size <- size * 0.93
 
                             # Scale ticks and line weights relative to font size
                             tick_len <- size * (3 / 16)
@@ -275,6 +274,7 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
 
                             theme_nice <- ggthemes::theme_tufte() +
                                           theme(
+                                                        text = element_text(size = size, family = font_family),
                                                         axis.ticks = element_line(linewidth = line_w, color = "black"),
                                                         axis.ticks.length = unit(tick_len, "mm"),
                                                         plot.title = ggtext::element_markdown(family = font_family, size = title_size, hjust = 0, vjust = 1, margin = margin(t = 2, b = 2), face = "bold"),
@@ -293,7 +293,8 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                                         axis.line = element_line(linewidth = line_w * 1.5),
                                                         panel.grid = element_blank(),
                                                         panel.border = element_blank(),
-                                                        plot.margin = margin(1, 1, 1, 1)
+                                                        # Add relative top margin for breathing room when title is missing
+                                                        plot.margin = margin(t = size * 0.8, r = size / 2, b = size / 2, l = size / 2)
                                           )
 
                             # Enable showtext only if manually requested (avoiding ggsave issues)
@@ -369,8 +370,7 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
                             geom_col(
                                           fill = "gray75",
                                           color = "gray20",
-                                          width = 0.8,
-                                          linewidth = 0.1
+                                          width = 0.9
                             ) +
                             geom_label(
                                           aes(label = paste0(n, " (", scales::percent(prop, accuracy = 1), ")")),
