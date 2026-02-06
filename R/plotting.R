@@ -384,55 +384,38 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
               plot_data <- data %>% dplyr::filter(!is.na(!!variable))
               vals <- plot_data[[var_name]]
 
-              p <- kkplot(plot_data, aes(x = !!variable)) +
-                            geom_density(
-                                          adjust = 1 / 2,
-                                          fill = "gray90",
-                                          color = "black",
-                                          alpha = 0.6
-                            ) +
+              mean_val <- if (length(vals) > 0) round(mean(vals), 2) else NA
+              median_val <- if (length(vals) > 0) round(stats::median(vals), 2) else NA
+
+              p <- ggplot(data, aes(x = !!variable)) +
+                            geom_density(fill = "grey90", color = "black") +
                             geom_vline(
-                                          aes(xintercept = mean(!!variable)),
+                                          xintercept = mean(vals),
                                           color = "red",
-                                          linetype = 1,
-                                          linewidth = 1
+                                          linewidth = 0.5
                             ) +
                             geom_vline(
-                                          aes(xintercept = stats::median(!!variable)),
+                                          xintercept = stats::median(vals),
                                           color = "blue",
                                           linetype = "dashed",
-                                          linewidth = 1,
+                                          linewidth = 0.5
+                            ) +
+                            labs(
+                                          title = paste0("Univariate Continuous Plot of ", var_name),
+                                          subtitle = paste0(
+                                                        "Missing: ", sum(is.na(data[[var_name]])),
+                                                        " | Mean: ", mean_val,
+                                                        " | Median: ", median_val
+                                          ),
+                                          x = "Value",
+                                          y = "Density"
                             )
 
               if (length(vals) > 0) {
-                            stats_text <- paste0(
-                                          "Mean: ", round(mean(vals), 2), "\n",
-                                          "Median: ", round(stats::median(vals), 2)
-                            )
-
-                            p <- p +
-                                          annotate(
-                                                        "label",
-                                                        x = Inf,
-                                                        y = Inf,
-                                                        label = stats_text,
-                                                        fill = scales::alpha("white", 0.8),
-                                                        color = "black",
-                                                        label.size = 0.5,
-                                                        family = "Roboto Condensed",
-                                                        size = label_size,
-                                                        hjust = 1.1,
-                                                        vjust = 1.1
-                                          ) +
-                                          expand_limits(x = range(vals))
+                            p <- p + expand_limits(x = range(vals))
               }
 
-              p + labs(
-                            x = "Value",
-                            y = "Density",
-                            title = title,
-                            subtitle = subtitle
-              )
+              return(p)
 }
 
 #' Univariate Plot
