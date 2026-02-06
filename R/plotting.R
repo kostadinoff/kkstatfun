@@ -339,12 +339,13 @@ kkplot <- function(...) {
 #'
 #' @param data Data frame
 #' @param label_size Size for text labels (default: 3.5)
+#' @param force_100 Whether to force the x-axis to 100% (default: FALSE)
 #'
 #' @examples
 #' univariate_cat_plot(mtcars, "am")
 #'
 #' @export
-univariate_cat_plot <- function(data, variable, label_size = 3.5) {
+univariate_cat_plot <- function(data, variable, label_size = 3.5, force_100 = FALSE) {
               variable <- rlang::ensym(variable)
               var_name <- rlang::as_name(variable)
               title <- paste("Univariate Categorical Plot of", var_name)
@@ -384,7 +385,11 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
                                           alpha = 0.8
                             ) +
                             # 2.5% expansion from Y axis, and room for labels on the right
-                            scale_x_continuous(labels = scales::percent, expand = expansion(mult = c(0.025, 0.2))) +
+                            scale_x_continuous(
+                                          labels = scales::percent,
+                                          expand = expansion(mult = c(0.025, 0.2)),
+                                          limits = if (force_100) c(0, 1) else NULL
+                            ) +
                             scale_y_discrete(expand = expansion(add = c(0.5, 0.5))) +
                             labs(
                                           x = "Proportion",
@@ -475,13 +480,14 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
 #'
 #' @param data Data frame
 #' @param label_size Size for text labels (automatically calculated if NULL)
+#' @param force_100 Whether to force categorical x-axis to 100% (default: TRUE)
 #'
 #' @examples
 #' univariate_plot(mtcars, "mpg")
 #' univariate_plot(mtcars, "am")
 #'
 #' @export
-univariate_plot <- function(data, ..., categorical = NULL, ordered = NULL, continuous = NULL, label_size = NULL, ncol = NULL, nrow = NULL) {
+univariate_plot <- function(data, ..., categorical = NULL, ordered = NULL, continuous = NULL, label_size = NULL, ncol = NULL, nrow = NULL, force_100 = TRUE) {
               # Select variables
               vars <- tidyselect::eval_select(rlang::expr(c(...)), data)
               if (length(vars) == 0) {
@@ -522,7 +528,7 @@ univariate_plot <- function(data, ..., categorical = NULL, ordered = NULL, conti
                             } else {
                                           # For both categorical and ordered, we use cat_plot for now
                                           # (could expand ordered later with specific logic if needed)
-                                          rlang::inject(univariate_cat_plot(data, !!rlang::sym(var), label_size = label_size))
+                                          rlang::inject(univariate_cat_plot(data, !!rlang::sym(var), label_size = label_size, force_100 = force_100))
                             }
               })
 
