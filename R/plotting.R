@@ -271,26 +271,25 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             theme_nice <- ggthemes::theme_tufte() +
                                           theme(
                                                         axis.ticks = element_line(linewidth = 0.25, color = "black"),
-                                                        axis.ticks.length = unit(1, "mm"),
-                                                        plot.title = ggtext::element_markdown(family = font_family, size = title_size, hjust = 0, face = "bold", margin = margin(t = 5, b = 10)),
-                                                        plot.subtitle = ggtext::element_markdown(family = font_family, size = subtitle_size, lineheight = 1.2, margin = margin(b = 15)),
-                                                        plot.caption = ggtext::element_markdown(family = font_family, hjust = 1, size = caption_size, color = "gray30", margin = margin(t = 10)),
-                                                        plot.title.position = "plot",
+                                                        axis.ticks.length = unit(2, "mm"),
+                                                        plot.title = element_text(family = font_family, size = title_size, hjust = 0, vjust = 2, margin = margin(t = 10, b = 10), face = "bold"),
+                                                        plot.subtitle = element_text(family = font_family, size = subtitle_size),
+                                                        plot.caption = element_text(family = font_family, hjust = 0.5, vjust = 1, size = caption_size),
                                                         plot.caption.position = "plot",
-                                                        axis.title = element_text(family = font_family, size = axis_title_size, face = "bold"),
+                                                        axis.title = element_text(family = font_family, size = axis_title_size),
                                                         axis.text = element_text(family = font_family, size = axis_text_size),
-                                                        axis.text.x = element_text(margin = margin(t = 5)),
-                                                        strip.text = element_text(family = font_family, size = strip_text_size, face = "bold"),
-                                                        axis.line = element_line(linewidth = 0.5),
-                                                        panel.grid.major.y = element_line(linewidth = 0.1, color = "gray90"),
-                                                        panel.grid.minor = element_blank()
+                                                        axis.text.x = element_text(margin = margin(5, b = 10)),
+                                                        strip.text = element_text(family = font_family, size = strip_text_size),
+                                                        axis.line = element_line(),
+                                                        panel.grid = element_blank(),
+                                                        panel.border = element_blank()
                                           )
 
                             # Enable showtext for better rendering of custom fonts
                             showtext::showtext_auto(enable = TRUE)
 
                             theme_set(theme_nice)
-                            message("✓ Updated ggplot2 theme with font '", font_family, "' and enabled showtext")
+                            message("✓ Updated ggplot2 theme with font '", font_family, "'")
               }
 
               # Return comprehensive results
@@ -352,16 +351,13 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
                             dplyr::mutate(prop = n / sum(n)) %>%
                             kkplot(aes(y = forcats::fct_reorder(factor(!!variable), prop), x = prop)) +
                             geom_col(
-                                          alpha = 0.7,
-                                          fill = "#34495e",
-                                          color = NA,
-                                          width = 0.7
+                                          alpha = 0.6,
+                                          fill = "gray60",
+                                          color = "black"
                             ) +
                             geom_label(
-                                          aes(label = paste0(n, " (", scales::percent(prop, accuracy = 0.1), ")")),
+                                          aes(label = paste0(n, " (", scales::percent(prop), ")")),
                                           color = "black",
-                                          fill = "white",
-                                          label.size = 0,
                                           size = label_size,
                                           family = curr_font,
                                           hjust = -0.1
@@ -417,17 +413,17 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
               )
 
               p <- kkplot(data, aes(x = !!variable)) +
-                            geom_density(fill = "#d0d3d4", color = "#2c3e50", alpha = 0.5) +
+                            geom_density(fill = "grey90", color = "black") +
                             geom_vline(
                                           xintercept = mean(vals, na.rm = TRUE),
-                                          color = "#e74c3c",
-                                          linewidth = 0.8
+                                          color = "red",
+                                          linewidth = 0.5
                             ) +
                             geom_vline(
                                           xintercept = stats::median(vals, na.rm = TRUE),
-                                          color = "#3498db",
+                                          color = "blue",
                                           linetype = "dashed",
-                                          linewidth = 0.8
+                                          linewidth = 0.5
                             ) +
                             labs(
                                           title = paste0("Univariate Continuous Plot of ", var_name),
