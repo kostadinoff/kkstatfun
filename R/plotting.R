@@ -405,31 +405,29 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
                             )
 
               if (length(vals) > 0) {
-                            max_y <- max(stats::density(vals)$y)
+                            max_y <- max(stats::density(vals)$y, na.rm = TRUE)
                             p <- p +
                                           annotate(
-                                                        "label",
+                                                        "text",
                                                         x = mean(vals),
                                                         y = 0.95 * max_y,
                                                         label = paste0("Mean: ", round(mean(vals), 2)),
                                                         color = "red",
-                                                        fill = scales::alpha("white", 0.6),
-                                                        label.size = NA,
+                                                        fontface = "bold",
                                                         size = label_size,
                                                         family = "Roboto Condensed",
                                                         hjust = -0.1
                                           ) +
                                           annotate(
-                                                        "label",
+                                                        "text",
                                                         x = stats::median(vals),
-                                                        y = 0.75 * max_y,
+                                                        y = 0.85 * max_y,
                                                         label = paste0("Median: ", round(stats::median(vals), 2)),
                                                         color = "blue",
-                                                        fill = scales::alpha("white", 0.6),
-                                                        label.size = NA,
+                                                        fontface = "bold",
                                                         size = label_size,
                                                         family = "Roboto Condensed",
-                                                        hjust = -0.1
+                                                        hjust = 1.1
                                           ) +
                                           expand_limits(x = range(vals))
               }
