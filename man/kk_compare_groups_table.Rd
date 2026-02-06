@@ -10,6 +10,7 @@ kk_compare_groups_table(
   group,
   variables = NULL,
   nonparametric = FALSE,
+  correct = FALSE,
   adjust_method = "holm",
   conf.level = 0.95
 )
@@ -19,26 +20,30 @@ compare_groups_table(
   group,
   variables = NULL,
   nonparametric = FALSE,
+  correct = FALSE,
   adjust_method = "holm",
   conf.level = 0.95
 )
 }
 \arguments{
-\item{data}{Data frame}
+\item{data}{A data frame or a grouped data frame (from \code{dplyr::group_by}).}
 
-\item{group}{Grouping variable (must have exactly 2 levels)}
+\item{group}{Grouping variable (can be unquoted or a string). If \code{data} is grouped
+and \code{group} is missing, the last grouping variable is used as the comparison group.}
 
-\item{variables}{Vector of variable names to compare. If NULL (default),
-all columns except the group variable will be compared.}
+\item{variables}{Variables to compare (tidyselect supported, e.g., \code{c(age, smoking)} or \code{starts_with("score")}).
+If \code{NULL} (default), all columns except the \code{group} and grouping variables are compared.}
 
-\item{nonparametric}{Use nonparametric tests for continuous variables (default: FALSE)}
+\item{nonparametric}{Logical, whether to use nonparametric tests (Wilcoxon) for continuous variables (default: \code{FALSE}).}
 
-\item{adjust_method}{P-value adjustment method for categorical variables with >2 levels (default: "holm")}
+\item{correct}{Logical, whether to apply continuity correction in Chi-square and proportion tests (default: \code{FALSE}).}
 
-\item{conf.level}{Confidence level (default: 0.95)}
+\item{adjust_method}{P-value adjustment method for categorical variables with >2 levels (default: \code{"holm"}).}
+
+\item{conf.level}{Confidence level for intervals (default: \code{0.95}).}
 }
 \value{
-Tibble with comparison results
+A tibble with comparison results, including counts, means/proportions, differences, CIs, p-values, and effect sizes.
 }
 \description{
 Creates a comparison table showing group statistics, differences,
@@ -46,6 +51,22 @@ confidence intervals, and p-values for both categorical and numerical variables.
 Now includes sample size per group for each variable, degrees of freedom, effect size, and a total column.
 }
 \examples{
-kk_compare_groups_table(mtcars, "am", c("mpg", "hp"))
+# Basic usage with tidy evaluation
+kk_compare_groups_table(mtcars, am, c(mpg, hp))
+
+# Automatic variable selection
+mtcars |>
+              dplyr::select(am, mpg, hp, cyl) |>
+              kk_compare_groups_table(am)
+
+# Stratified analysis using group_by
+mtcars |>
+              dplyr::group_by(vs) |>
+              kk_compare_groups_table(am, c(mpg, hp))
+
+# Automatic group detection from grouped data
+mtcars |>
+              dplyr::group_by(am) |>
+              kk_compare_groups_table()
 
 }

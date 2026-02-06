@@ -4,7 +4,15 @@
 \alias{univariate_plot}
 \title{Univariate Plot}
 \usage{
-univariate_plot(data, variable)
+univariate_plot(
+  data,
+  ...,
+  categorical = NULL,
+  ordered = NULL,
+  continuous = NULL,
+  ncol = NULL,
+  nrow = NULL
+)
 }
 \arguments{
 \item{data}{Data frame}

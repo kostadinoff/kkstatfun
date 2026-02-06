@@ -328,17 +328,18 @@ kkplot <- function(...) {
 #' @export
 univariate_cat_plot <- function(data, variable) {
               variable <- rlang::ensym(variable)
-              title <- paste("Univariate Categorical Plot of", rlang::as_name(variable))
+              var_name <- rlang::as_name(variable)
+              title <- paste("Univariate Categorical Plot of", var_name)
 
-              # Filter out non-finite values (NA, NaN)
-              variable_data <- dplyr::pull(data, !!variable)
-              variable_data <- variable_data[!is.na(variable_data) & !is.nan(variable_data)]
+              # Calculate missing count
+              na_count <- sum(is.na(data[[var_name]]))
+              subtitle <- paste0("Missing: ", na_count)
 
               data %>%
-                            dplyr::count({{ variable }}) %>%
-                            dplyr::filter(!is.na({{ variable }})) %>%
+                            dplyr::filter(!is.na(!!variable)) %>%
+                            dplyr::count(!!variable) %>%
                             dplyr::mutate(prop = n / sum(n)) %>%
-                            kkplot(aes(y = forcats::fct_reorder({{ variable }}, prop), x = prop)) +
+                            kkplot(aes(y = forcats::fct_reorder(factor(!!variable), prop), x = prop)) +
                             geom_col(
                                           alpha = 0.6,
                                           fill = "gray60",
@@ -356,7 +357,8 @@ univariate_cat_plot <- function(data, variable) {
                             labs(
                                           x = "Proportion",
                                           y = "Category",
-                                          title = title
+                                          title = title,
+                                          subtitle = subtitle
                             )
 }
 
@@ -371,10 +373,18 @@ univariate_cat_plot <- function(data, variable) {
 #' @export
 univariate_cont_plot <- function(data, variable) {
               variable <- rlang::ensym(variable)
-              title <- paste("Univariate Continuous Plot of", rlang::as_name(variable))
+              var_name <- rlang::as_name(variable)
+              title <- paste("Univariate Continuous Plot of", var_name)
 
-              data %>%
-                            kkplot(aes(x = !!variable)) +
+              # Calculate missing count
+              na_count <- sum(is.na(data[[var_name]]))
+              subtitle <- paste0("Missing: ", na_count)
+
+              # Filter data for calculations
+              plot_data <- data %>% dplyr::filter(!is.na(!!variable))
+              vals <- plot_data[[var_name]]
+
+              p <- kkplot(plot_data, aes(x = !!variable)) +
                             geom_density(
                                           adjust = 1 / 2,
                                           fill = "gray90",
@@ -382,43 +392,49 @@ univariate_cont_plot <- function(data, variable) {
                                           alpha = 0.6
                             ) +
                             geom_vline(
-                                          aes(xintercept = mean({{ variable }}, na.rm = TRUE)),
+                                          aes(xintercept = mean(!!variable)),
                                           color = "red",
                                           linetype = 1,
                                           linewidth = 1
                             ) +
                             geom_vline(
-                                          aes(xintercept = stats::median({{ variable }}, na.rm = TRUE)),
+                                          aes(xintercept = stats::median(!!variable)),
                                           color = "blue",
                                           linetype = "dashed",
                                           linewidth = 1,
-                            ) +
-                            annotate(
-                                          "label",
-                                          x = mean(data[[rlang::as_name(variable)]], na.rm = TRUE),
-                                          y = 0.9 * max(stats::density(data[[rlang::as_name(variable)]], na.rm = TRUE)$y),
-                                          label = paste0("Mean: ", round(mean(data[[rlang::as_name(variable)]], na.rm = TRUE), 2)),
-                                          color = "red",
-                                          size = 5,
-                                          family = "Roboto Condensed",
-                                          hjust = -0.1
-                            ) +
-                            annotate(
-                                          "label",
-                                          x = stats::median(data[[rlang::as_name(variable)]], na.rm = TRUE),
-                                          y = 0.8 * max(stats::density(data[[rlang::as_name(variable)]], na.rm = TRUE)$y),
-                                          label = paste0("Median: ", round(stats::median(data[[rlang::as_name(variable)]], na.rm = TRUE), 2)),
-                                          color = "blue",
-                                          size = 5,
-                                          family = "Roboto Condensed",
-                                          hjust = -0.1
-                            ) +
-                            expand_limits(x = c(min(data[[rlang::as_name(variable)]], na.rm = TRUE), max(data[[rlang::as_name(variable)]], na.rm = TRUE))) +
-                            labs(
-                                          x = "Value",
-                                          y = "Density",
-                                          title = title
                             )
+
+              if (length(vals) > 0) {
+                            p <- p +
+                                          annotate(
+                                                        "label",
+                                                        x = mean(vals),
+                                                        y = 0.9 * max(stats::density(vals)$y),
+                                                        label = paste0("Mean: ", round(mean(vals), 2)),
+                                                        color = "red",
+                                                        size = 5,
+                                                        family = "Roboto Condensed",
+                                                        hjust = -0.1
+                                          ) +
+                                          annotate(
+                                                        "label",
+                                                        x = stats::median(vals),
+                                                        y = 0.8 * max(stats::density(vals)$y),
+                                                        label = paste0("Median: ", round(stats::median(vals), 2)),
+                                                        color = "blue",
+                                                        size = 5,
+                                                        family = "Roboto Condensed",
+                                                        hjust = -0.1
+                                          ) +
+                                          expand_limits(x = range(vals))
+              }
+
+              p + labs(
+                            x = "Value",
+                            y = "Density",
+                            title = title,
+                            subtitle = subtitle
+              )
 }
 
 #' Univariate Plot
@@ -433,18 +449,43 @@ univariate_cont_plot <- function(data, variable) {
 #' univariate_plot(mtcars, "am")
 #'
 #' @export
-univariate_plot <- function(data, variable) {
-              variable <- rlang::ensym(variable)
-
-              # Check if the variable is numeric or categorical
-              if (is.numeric(data[[rlang::as_name(variable)]])) {
-                            # Call the continuous plot function
-                            univariate_cont_plot(data, !!variable)
-              } else if (is.factor(data[[rlang::as_name(variable)]]) || is.character(data[[rlang::as_name(variable)]])) {
-                            # Call the categorical plot function
-                            univariate_cat_plot(data, !!variable)
+univariate_plot <- function(data, ..., categorical = NULL, ordered = NULL, continuous = NULL, ncol = NULL, nrow = NULL) {
+              # Select variables
+              vars <- tidyselect::eval_select(rlang::expr(c(...)), data)
+              if (length(vars) == 0) {
+                            vars <- names(data)
               } else {
-                            stop("The variable must be either numeric or categorical (factor/character).")
+                            vars <- names(vars)
+              }
+
+              plots <- purrr::map(vars, function(var) {
+                            # Determine type
+                            type <- NULL
+                            if (var %in% categorical) type <- "categorical"
+                            if (var %in% ordered) type <- "ordered"
+                            if (var %in% continuous) type <- "continuous"
+
+                            if (is.null(type)) {
+                                          if (is.numeric(data[[var]])) {
+                                                        type <- "continuous"
+                                          } else {
+                                                        type <- "categorical"
+                                          }
+                            }
+
+                            if (type == "continuous") {
+                                          univariate_cont_plot(data, !!rlang::sym(var))
+                            } else {
+                                          # For both categorical and ordered, we use cat_plot for now
+                                          # (could expand ordered later with specific logic if needed)
+                                          univariate_cat_plot(data, !!rlang::sym(var))
+                            }
+              })
+
+              if (length(plots) == 1) {
+                            return(plots[[1]])
+              } else {
+                            return(patchwork::wrap_plots(plots, ncol = ncol, nrow = nrow))
               }
 }
 
