@@ -348,6 +348,11 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
               na_count <- sum(is.na(data[[var_name]]))
               subtitle <- paste0("Missing: ", na_count)
 
+              # Get current theme base size for relative labeling
+              base_size <- tryCatch(ggplot2::theme_get()$text$size, error = function(e) 11)
+              if (is.null(base_size)) base_size <- 11
+              rel_label_size <- (base_size * 0.5) / ggplot2::.pt
+
               # Get current theme font
               curr_font <- tryCatch(ggplot2::theme_get()$text$family, error = function(e) "sans")
               if (is.null(curr_font) || curr_font == "") curr_font <- "sans"
@@ -358,7 +363,6 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
                             dplyr::mutate(prop = n / sum(n)) %>%
                             kkplot(aes(y = forcats::fct_reorder(factor(!!variable), prop), x = prop)) +
                             geom_col(
-                                          alpha = 0.75, # Set for gray75 look
                                           fill = "gray75",
                                           color = "gray30",
                                           width = 0.8,
@@ -367,15 +371,16 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
                             geom_label(
                                           aes(label = paste0(n, " (", scales::percent(prop, accuracy = 1), ")")),
                                           color = "black",
-                                          size = label_size,
+                                          size = rel_label_size,
                                           family = curr_font,
                                           hjust = -0.1,
                                           label.size = 0.1,
                                           fill = "white",
                                           alpha = 0.8
                             ) +
-                            # Add space between columns and y axis (mult = c(low, high))
-                            scale_x_continuous(labels = scales::percent, expand = expansion(mult = c(0.05, 0.2))) +
+                            # 2.5% expansion from Y axis, and room for labels on the right
+                            scale_x_continuous(labels = scales::percent, expand = expansion(mult = c(0.025, 0.2))) +
+                            scale_y_discrete(expand = expansion(add = c(0.5, 0.5))) +
                             labs(
                                           x = "Proportion",
                                           y = "Category",
@@ -424,19 +429,27 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
                             " | Range: [", min_val, ", ", max_val, "]"
               )
 
+              # Get current theme base size for relative labeling
+              base_size <- tryCatch(ggplot2::theme_get()$text$size, error = function(e) 11)
+              if (is.null(base_size)) base_size <- 11
+              rel_label_size <- (base_size * 0.5) / ggplot2::.pt
+
               p <- kkplot(data, aes(x = !!variable)) +
-                            geom_density(fill = "grey90", color = "black") +
+                            geom_density(fill = "#f2f3f4", color = "#2c3e50", alpha = 0.8) +
                             geom_vline(
                                           xintercept = mean(vals, na.rm = TRUE),
-                                          color = "red",
-                                          linewidth = 0.5
+                                          color = "#e74c3c",
+                                          linewidth = 0.8
                             ) +
                             geom_vline(
                                           xintercept = stats::median(vals, na.rm = TRUE),
-                                          color = "blue",
+                                          color = "#3498db",
                                           linetype = "dashed",
-                                          linewidth = 0.5
+                                          linewidth = 0.8
                             ) +
+                            # Apply consistent 2.5% expansion
+                            scale_x_continuous(expand = expansion(mult = 0.025)) +
+                            scale_y_continuous(expand = expansion(mult = 0.025)) +
                             labs(
                                           title = paste0("Univariate Continuous Plot of ", var_name),
                                           subtitle = subtitle_md,
