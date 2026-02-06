@@ -261,15 +261,13 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
               # Create and set theme if requested
               if (update_theme) {
                             # Define relative font sizes based on the `size` parameter
-                            title_size <- size * 1.5
-                            subtitle_size <- size * 1.2
-                            caption_size <- size * 0.8
-
-                            # Use dynamic scaling for axis items so they look right at all sizes
-                            # Small sizes get slightly smaller text; large sizes get relatively larger text
-                            axis_title_size <- size * (0.75 + (size / 80))
-                            axis_text_size <- size * (0.65 + (size / 80))
-                            strip_text_size <- size
+                             title_size <- size * 1.25
+                             subtitle_size <- size * 1.1
+                             caption_size <- size * 0.8
+                             
+                             axis_title_size <- size
+                             axis_text_size <- size * 0.95
+                             strip_text_size <- size
 
                             # Scale ticks and line weights relative to font size
                             tick_len <- size * (3 / 16)
@@ -357,8 +355,7 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
               # Get current theme base size for relative labeling
               base_size <- tryCatch(ggplot2::theme_get()$text$size, error = function(e) 11)
               if (is.null(base_size)) base_size <- 11
-              multiplier <- 0.6 + (base_size / 60)
-              rel_label_size <- (base_size * multiplier) / ggplot2::.pt
+              rel_label_size <- (base_size * 0.8) / ggplot2::.pt
 
               # Get current theme font
               curr_font <- tryCatch(ggplot2::theme_get()$text$family, error = function(e) "sans")
@@ -436,11 +433,10 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
                             " | Range: [", min_val, ", ", max_val, "]"
               )
 
-              # Get current theme base size for relative labeling
-              # Get current theme base size for line weighting
               base_size <- tryCatch(ggplot2::theme_get()$text$size, error = function(e) 11)
               if (is.null(base_size)) base_size <- 11
               line_w <- base_size / 60
+              rel_label_size <- (base_size * 0.8) / ggplot2::.pt
 
               p <- kkplot(data, aes(x = !!variable)) +
                             geom_density(fill = "#f2f3f4", color = "#2c3e50", alpha = 0.8, linewidth = line_w) +
