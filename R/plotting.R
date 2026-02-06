@@ -268,25 +268,25 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             axis_text_size <- size
                             strip_text_size <- size
 
-                            # Scale margins relative to font size
-                            m_val <- size / 2
+                            # Use zero margins to maximize space in grids
+                            m_val <- 0
 
                             theme_nice <- ggthemes::theme_tufte() +
                                           theme(
-                                                        axis.ticks = element_line(linewidth = 0.25, color = "black"),
-                                                        axis.ticks.length = unit(1, "mm"),
-                                                        plot.title = ggtext::element_markdown(family = font_family, size = title_size, hjust = 0, vjust = 1, margin = margin(t = m_val, b = m_val), face = "bold"),
-                                                        plot.subtitle = ggtext::element_markdown(family = font_family, size = subtitle_size, lineheight = 1.1, margin = margin(b = m_val)),
+                                                        axis.ticks = element_line(linewidth = 0.2, color = "black"),
+                                                        axis.ticks.length = unit(0.5, "mm"),
+                                                        plot.title = ggtext::element_markdown(family = font_family, size = title_size, hjust = 0, vjust = 1, margin = margin(t = 2, b = 2), face = "bold"),
+                                                        plot.subtitle = ggtext::element_markdown(family = font_family, size = subtitle_size, lineheight = 1, margin = margin(b = 2)),
                                                         plot.caption = ggtext::element_markdown(family = font_family, hjust = 0.5, vjust = 1, size = caption_size),
                                                         plot.caption.position = "plot",
                                                         axis.title = element_text(family = font_family, size = axis_title_size),
                                                         axis.text = element_text(family = font_family, size = axis_text_size),
-                                                        axis.text.x = element_text(margin = margin(t = m_val / 2)),
+                                                        axis.text.x = element_text(margin = margin(t = 2)),
                                                         strip.text = element_text(family = font_family, size = strip_text_size),
-                                                        axis.line = element_line(),
+                                                        axis.line = element_line(linewidth = 0.3),
                                                         panel.grid = element_blank(),
                                                         panel.border = element_blank(),
-                                                        plot.margin = margin(t = m_val, r = m_val, b = m_val, l = m_val)
+                                                        plot.margin = margin(1, 1, 1, 1)
                                           )
 
                             # Enable showtext only if manually requested (avoiding ggsave issues)
@@ -355,10 +355,11 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
                             dplyr::mutate(prop = n / sum(n)) %>%
                             kkplot(aes(y = forcats::fct_reorder(factor(!!variable), prop), x = prop)) +
                             geom_col(
-                                          alpha = 0.6,
-                                          fill = "gray60",
-                                          color = "black",
-                                          width = 0.8
+                                          alpha = 0.3, # Lighten categorical bars
+                                          fill = "gray90",
+                                          color = "gray30",
+                                          width = 0.8,
+                                          linewidth = 0.1
                             ) +
                             geom_label(
                                           aes(label = paste0(n, " (", scales::percent(prop, accuracy = 1), ")")),
@@ -467,18 +468,16 @@ univariate_plot <- function(data, ..., categorical = NULL, ordered = NULL, conti
                             vars <- names(vars)
               }
 
-              # Auto-calculate label size if not provided
+              # Auto-calculate label size relative to base font size if not provided
               if (is.null(label_size)) {
+                            base_size <- tryCatch(ggplot2::theme_get()$text$size, error = function(e) 11)
+                            if (is.null(base_size)) base_size <- 11
+
                             n_plots <- length(vars)
-                            if (n_plots <= 1) {
-                                          label_size <- 4.5
-                            } else if (n_plots <= 4) {
-                                          label_size <- 4
-                            } else if (n_plots <= 9) {
-                                          label_size <- 3.5
-                            } else {
-                                          label_size <- 2.5
-                            }
+                            scale_factor <- if (n_plots <= 1) 0.8 else if (n_plots <= 4) 0.7 else if (n_plots <= 9) 0.6 else 0.5
+
+                            # Convert from pts to ggplot2 internal text size (mm)
+                            label_size <- (base_size * scale_factor) / ggplot2::.pt
               }
 
               plots <- purrr::map(vars, function(var) {
