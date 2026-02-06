@@ -268,15 +268,13 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             axis_text_size <- size
                             strip_text_size <- size
 
-                            # Use zero margins to maximize space in grids
-                            m_val <- 0
-
-                            # Scale ticks relative to font size (e.g., size 16 -> 3mm)
+                            # Scale ticks and line weights relative to font size
                             tick_len <- size * (3 / 16)
+                            line_w <- size / 60
 
                             theme_nice <- ggthemes::theme_tufte() +
                                           theme(
-                                                        axis.ticks = element_line(linewidth = 0.2, color = "black"),
+                                                        axis.ticks = element_line(linewidth = line_w, color = "black"),
                                                         axis.ticks.length = unit(tick_len, "mm"),
                                                         plot.title = ggtext::element_markdown(family = font_family, size = title_size, hjust = 0, vjust = 1, margin = margin(t = 2, b = 2), face = "bold"),
                                                         plot.subtitle = ggtext::element_markdown(family = font_family, size = subtitle_size, lineheight = 1, margin = margin(b = 2)),
@@ -286,7 +284,7 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                                         axis.text = element_text(family = font_family, size = axis_text_size),
                                                         axis.text.x = element_text(margin = margin(t = 2)),
                                                         strip.text = element_text(family = font_family, size = strip_text_size),
-                                                        axis.line = element_line(linewidth = 0.3),
+                                                        axis.line = element_line(linewidth = line_w * 1.5),
                                                         panel.grid = element_blank(),
                                                         panel.border = element_blank(),
                                                         plot.margin = margin(1, 1, 1, 1)
@@ -351,7 +349,8 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
               # Get current theme base size for relative labeling
               base_size <- tryCatch(ggplot2::theme_get()$text$size, error = function(e) 11)
               if (is.null(base_size)) base_size <- 11
-              rel_label_size <- (base_size * 0.85) / ggplot2::.pt
+              multiplier <- 0.6 + (base_size / 60)
+              rel_label_size <- (base_size * multiplier) / ggplot2::.pt
 
               # Get current theme font
               curr_font <- tryCatch(ggplot2::theme_get()$text$family, error = function(e) "sans")
@@ -364,7 +363,7 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
                             kkplot(aes(y = forcats::fct_reorder(factor(!!variable), prop), x = prop)) +
                             geom_col(
                                           fill = "gray75",
-                                          color = "gray30",
+                                          color = "gray20",
                                           width = 0.8,
                                           linewidth = 0.1
                             ) +
@@ -430,22 +429,23 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
               )
 
               # Get current theme base size for relative labeling
+              # Get current theme base size for line weighting
               base_size <- tryCatch(ggplot2::theme_get()$text$size, error = function(e) 11)
               if (is.null(base_size)) base_size <- 11
-              rel_label_size <- (base_size * 0.85) / ggplot2::.pt
+              line_w <- base_size / 60
 
               p <- kkplot(data, aes(x = !!variable)) +
-                            geom_density(fill = "#f2f3f4", color = "#2c3e50", alpha = 0.8) +
+                            geom_density(fill = "#f2f3f4", color = "#2c3e50", alpha = 0.8, linewidth = line_w) +
                             geom_vline(
                                           xintercept = mean(vals, na.rm = TRUE),
                                           color = "#e74c3c",
-                                          linewidth = 0.8
+                                          linewidth = line_w * 3
                             ) +
                             geom_vline(
                                           xintercept = stats::median(vals, na.rm = TRUE),
                                           color = "#3498db",
                                           linetype = "dashed",
-                                          linewidth = 0.8
+                                          linewidth = line_w * 3
                             ) +
                             # Apply consistent 2.5% expansion
                             scale_x_continuous(expand = expansion(mult = 0.025)) +
