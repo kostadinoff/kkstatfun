@@ -272,9 +272,9 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                           theme(
                                                         axis.ticks = element_line(linewidth = 0.25, color = "black"),
                                                         axis.ticks.length = unit(2, "mm"),
-                                                        plot.title = element_text(family = font_family, size = title_size, hjust = 0, vjust = 2, margin = margin(t = 10, b = 10), face = "bold"),
-                                                        plot.subtitle = element_text(family = font_family, size = subtitle_size),
-                                                        plot.caption = element_text(family = font_family, hjust = 0.5, vjust = 1, size = caption_size),
+                                                        plot.title = ggtext::element_markdown(family = font_family, size = title_size, hjust = 0, vjust = 2, margin = margin(t = 10, b = 10), face = "bold"),
+                                                        plot.subtitle = ggtext::element_markdown(family = font_family, size = subtitle_size, lineheight = 1.2),
+                                                        plot.caption = ggtext::element_markdown(family = font_family, hjust = 0.5, vjust = 1, size = caption_size),
                                                         plot.caption.position = "plot",
                                                         axis.title = element_text(family = font_family, size = axis_title_size),
                                                         axis.text = element_text(family = font_family, size = axis_text_size),
@@ -282,11 +282,12 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                                         strip.text = element_text(family = font_family, size = strip_text_size),
                                                         axis.line = element_line(),
                                                         panel.grid = element_blank(),
-                                                        panel.border = element_blank()
+                                                        panel.border = element_blank(),
+                                                        plot.margin = margin(20, 20, 20, 20)
                                           )
 
-                            # Enable showtext for better rendering of custom fonts
-                            showtext::showtext_auto(enable = TRUE)
+                            # Enable showtext only if manually requested (avoiding ggsave issues)
+                            # showtext::showtext_auto(enable = TRUE)
 
                             theme_set(theme_nice)
                             message("✓ Updated ggplot2 theme with font '", font_family, "'")
