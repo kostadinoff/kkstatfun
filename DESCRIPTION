@@ -1,6 +1,6 @@
 Package: kkstatfun
 Title: R Statistical Analysis Toolkit for Medical and Epidemiology
-Version: 0.1.6
+Version: 0.1.7
 Authors@R: 
     person("Kostadinov", role = c("aut", "cre"),
            email = "kostadinov@example.com")
@@ -63,7 +63,8 @@ Imports:
     epiR,
     detectseparation,
     pracma,
-    zoo
+    zoo,
+    ggtext
 Suggests: 
     testthat,
     knitr,

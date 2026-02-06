@@ -384,8 +384,23 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
               plot_data <- data %>% dplyr::filter(!is.na(!!variable))
               vals <- plot_data[[var_name]]
 
-              mean_val <- if (length(vals) > 0) round(mean(vals), 2) else NA
-              median_val <- if (length(vals) > 0) round(stats::median(vals), 2) else NA
+              # Calculations
+              n_obs <- length(vals)
+              m_val <- if (n_obs > 0) round(mean(vals), 2) else NA
+              sd_val <- if (n_obs > 0) round(stats::sd(vals), 2) else NA
+              med_val <- if (n_obs > 0) round(stats::median(vals), 2) else NA
+              iqr_val <- if (n_obs > 0) round(stats::IQR(vals), 2) else NA
+              min_val <- if (n_obs > 0) round(min(vals), 2) else NA
+              max_val <- if (n_obs > 0) round(max(vals), 2) else NA
+              missing_count <- sum(is.na(data[[var_name]]))
+
+              # Construct Enhanced Subtitle (Markdown for colors)
+              subtitle_md <- paste0(
+                            "Missing: ", missing_count,
+                            " | <span style='color:red;'>Mean (SD): ", m_val, " (", sd_val, ")</span>",
+                            " | <span style='color:blue;'>Median (IQR): ", med_val, " (", iqr_val, ")</span>",
+                            " | Range: [", min_val, ", ", max_val, "]"
+              )
 
               p <- ggplot(data, aes(x = !!variable)) +
                             geom_density(fill = "grey90", color = "black") +
@@ -402,13 +417,12 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
                             ) +
                             labs(
                                           title = paste0("Univariate Continuous Plot of ", var_name),
-                                          subtitle = paste0(
-                                                        "Missing: ", sum(is.na(data[[var_name]])),
-                                                        " | Mean: ", mean_val,
-                                                        " | Median: ", median_val
-                                          ),
+                                          subtitle = subtitle_md,
                                           x = "Value",
                                           y = "Density"
+                            ) +
+                            theme(
+                                          plot.subtitle = ggtext::element_markdown(size = 9, family = "Roboto Condensed")
                             )
 
               if (length(vals) > 0) {
