@@ -268,22 +268,25 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             axis_text_size <- size
                             strip_text_size <- size
 
+                            # Scale margins relative to font size
+                            m_val <- size / 2
+
                             theme_nice <- ggthemes::theme_tufte() +
                                           theme(
                                                         axis.ticks = element_line(linewidth = 0.25, color = "black"),
-                                                        axis.ticks.length = unit(2, "mm"),
-                                                        plot.title = ggtext::element_markdown(family = font_family, size = title_size, hjust = 0, vjust = 2, margin = margin(t = 10, b = 10), face = "bold"),
-                                                        plot.subtitle = ggtext::element_markdown(family = font_family, size = subtitle_size, lineheight = 1.2),
+                                                        axis.ticks.length = unit(1, "mm"),
+                                                        plot.title = ggtext::element_markdown(family = font_family, size = title_size, hjust = 0, vjust = 1, margin = margin(t = m_val, b = m_val), face = "bold"),
+                                                        plot.subtitle = ggtext::element_markdown(family = font_family, size = subtitle_size, lineheight = 1.1, margin = margin(b = m_val)),
                                                         plot.caption = ggtext::element_markdown(family = font_family, hjust = 0.5, vjust = 1, size = caption_size),
                                                         plot.caption.position = "plot",
                                                         axis.title = element_text(family = font_family, size = axis_title_size),
                                                         axis.text = element_text(family = font_family, size = axis_text_size),
-                                                        axis.text.x = element_text(margin = margin(5, b = 10)),
+                                                        axis.text.x = element_text(margin = margin(t = m_val / 2)),
                                                         strip.text = element_text(family = font_family, size = strip_text_size),
                                                         axis.line = element_line(),
                                                         panel.grid = element_blank(),
                                                         panel.border = element_blank(),
-                                                        plot.margin = margin(20, 20, 20, 20)
+                                                        plot.margin = margin(t = m_val, r = m_val, b = m_val, l = m_val)
                                           )
 
                             # Enable showtext only if manually requested (avoiding ggsave issues)
@@ -354,17 +357,20 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
                             geom_col(
                                           alpha = 0.6,
                                           fill = "gray60",
-                                          color = "black"
+                                          color = "black",
+                                          width = 0.8
                             ) +
                             geom_label(
-                                          aes(label = paste0(n, " (", scales::percent(prop), ")")),
+                                          aes(label = paste0(n, " (", scales::percent(prop, accuracy = 1), ")")),
                                           color = "black",
                                           size = label_size,
                                           family = curr_font,
-                                          hjust = -0.1
+                                          hjust = -0.1,
+                                          label.size = 0.1,
+                                          fill = "white",
+                                          alpha = 0.8
                             ) +
-                            scale_x_continuous(labels = scales::percent) +
-                            expand_limits(x = 1) +
+                            scale_x_continuous(labels = scales::percent, expand = expansion(mult = c(0, 0.2))) +
                             labs(
                                           x = "Proportion",
                                           y = "Category",
