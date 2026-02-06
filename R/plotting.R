@@ -488,11 +488,11 @@ univariate_plot <- function(data, ..., categorical = NULL, ordered = NULL, conti
                             }
 
                             if (type == "continuous") {
-                                          univariate_cont_plot(data, var, label_size = label_size)
+                                          rlang::inject(univariate_cont_plot(data, !!rlang::sym(var), label_size = label_size))
                             } else {
                                           # For both categorical and ordered, we use cat_plot for now
                                           # (could expand ordered later with specific logic if needed)
-                                          univariate_cat_plot(data, var, label_size = label_size)
+                                          rlang::inject(univariate_cat_plot(data, !!rlang::sym(var), label_size = label_size))
                             }
               })
 
