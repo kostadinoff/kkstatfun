@@ -261,11 +261,14 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
               # Create and set theme if requested
               if (update_theme) {
                             # Define relative font sizes based on the `size` parameter
-                            title_size <- size + 4
-                            subtitle_size <- size + 2
-                            caption_size <- size - 2
-                            axis_title_size <- size
-                            axis_text_size <- size
+                            title_size <- size * 1.5
+                            subtitle_size <- size * 1.2
+                            caption_size <- size * 0.8
+
+                            # Use dynamic scaling for axis items so they look right at all sizes
+                            # Small sizes get slightly smaller text; large sizes get relatively larger text
+                            axis_title_size <- size * (0.75 + (size / 80))
+                            axis_text_size <- size * (0.65 + (size / 80))
                             strip_text_size <- size
 
                             # Scale ticks and line weights relative to font size
@@ -282,7 +285,12 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                                         plot.caption.position = "plot",
                                                         axis.title = element_text(family = font_family, size = axis_title_size),
                                                         axis.text = element_text(family = font_family, size = axis_text_size),
-                                                        axis.text.x = element_text(margin = margin(t = 2)),
+                                                        axis.text.x = element_text(margin = margin(t = size / 3)),
+                                                        # Explicitly blank out secondary axes to avoid duplication
+                                                        axis.text.y.right = element_blank(),
+                                                        axis.title.y.right = element_blank(),
+                                                        axis.text.x.top = element_blank(),
+                                                        axis.title.x.top = element_blank(),
                                                         strip.text = element_text(family = font_family, size = strip_text_size),
                                                         axis.line = element_line(linewidth = line_w * 1.5),
                                                         panel.grid = element_blank(),
