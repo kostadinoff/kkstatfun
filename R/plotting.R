@@ -320,13 +320,13 @@ kkplot <- function(...) {
 #' Univariate Categorical Plot
 #'
 #' @param data Data frame
-#' @param variable Variable to plot
+#' @param label_size Size for text labels (default: 3.5)
 #'
 #' @examples
 #' univariate_cat_plot(mtcars, "am")
 #'
 #' @export
-univariate_cat_plot <- function(data, variable) {
+univariate_cat_plot <- function(data, variable, label_size = 3.5) {
               variable <- rlang::ensym(variable)
               var_name <- rlang::as_name(variable)
               title <- paste("Univariate Categorical Plot of", var_name)
@@ -348,7 +348,7 @@ univariate_cat_plot <- function(data, variable) {
                             geom_label(
                                           aes(label = paste0(n, " (", scales::percent(prop), ")")),
                                           color = "black",
-                                          size = 5,
+                                          size = label_size,
                                           family = "Roboto Condensed",
                                           hjust = -0.1
                             ) +
@@ -365,13 +365,13 @@ univariate_cat_plot <- function(data, variable) {
 #' Univariate Continuous Plot
 #'
 #' @param data Data frame
-#' @param variable Variable to plot
+#' @param label_size Size for text labels (default: 3.5)
 #'
 #' @examples
 #' univariate_cont_plot(mtcars, "mpg")
 #'
 #' @export
-univariate_cont_plot <- function(data, variable) {
+univariate_cont_plot <- function(data, variable, label_size = 3.5) {
               variable <- rlang::ensym(variable)
               var_name <- rlang::as_name(variable)
               title <- paste("Univariate Continuous Plot of", var_name)
@@ -412,7 +412,7 @@ univariate_cont_plot <- function(data, variable) {
                                                         y = 0.9 * max(stats::density(vals)$y),
                                                         label = paste0("Mean: ", round(mean(vals), 2)),
                                                         color = "red",
-                                                        size = 5,
+                                                        size = label_size,
                                                         family = "Roboto Condensed",
                                                         hjust = -0.1
                                           ) +
@@ -422,7 +422,7 @@ univariate_cont_plot <- function(data, variable) {
                                                         y = 0.8 * max(stats::density(vals)$y),
                                                         label = paste0("Median: ", round(stats::median(vals), 2)),
                                                         color = "blue",
-                                                        size = 5,
+                                                        size = label_size,
                                                         family = "Roboto Condensed",
                                                         hjust = -0.1
                                           ) +
@@ -442,20 +442,34 @@ univariate_cont_plot <- function(data, variable) {
 #' @description Automatically detects variable type and plots accordingly
 #'
 #' @param data Data frame
-#' @param variable Variable to plot
+#' @param label_size Size for text labels (automatically calculated if NULL)
 #'
 #' @examples
 #' univariate_plot(mtcars, "mpg")
 #' univariate_plot(mtcars, "am")
 #'
 #' @export
-univariate_plot <- function(data, ..., categorical = NULL, ordered = NULL, continuous = NULL, ncol = NULL, nrow = NULL) {
+univariate_plot <- function(data, ..., categorical = NULL, ordered = NULL, continuous = NULL, label_size = NULL, ncol = NULL, nrow = NULL) {
               # Select variables
               vars <- tidyselect::eval_select(rlang::expr(c(...)), data)
               if (length(vars) == 0) {
                             vars <- names(data)
               } else {
                             vars <- names(vars)
+              }
+
+              # Auto-calculate label size if not provided
+              if (is.null(label_size)) {
+                            n_plots <- length(vars)
+                            if (n_plots <= 1) {
+                                          label_size <- 4.5
+                            } else if (n_plots <= 4) {
+                                          label_size <- 4
+                            } else if (n_plots <= 9) {
+                                          label_size <- 3.5
+                            } else {
+                                          label_size <- 2.5
+                            }
               }
 
               plots <- purrr::map(vars, function(var) {
@@ -474,11 +488,11 @@ univariate_plot <- function(data, ..., categorical = NULL, ordered = NULL, conti
                             }
 
                             if (type == "continuous") {
-                                          univariate_cont_plot(data, !!rlang::sym(var))
+                                          univariate_cont_plot(data, var, label_size = label_size)
                             } else {
                                           # For both categorical and ordered, we use cat_plot for now
                                           # (could expand ordered later with specific logic if needed)
-                                          univariate_cat_plot(data, !!rlang::sym(var))
+                                          univariate_cat_plot(data, var, label_size = label_size)
                             }
               })
 
