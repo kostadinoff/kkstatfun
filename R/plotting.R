@@ -368,9 +368,10 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5) {
                             dplyr::mutate(prop = n / sum(n)) %>%
                             kkplot(aes(y = forcats::fct_reorder(factor(!!variable), prop), x = prop)) +
                             geom_col(
-                                          fill = "gray75",
-                                          color = "gray20",
-                                          width = 0.9
+                                          fill = "gray85",
+                                          color = "gray30",
+                                          width = 0.9,
+                                          linewidth = 0.2
                             ) +
                             geom_label(
                                           aes(label = paste0(n, " (", scales::percent(prop, accuracy = 1), ")")),
