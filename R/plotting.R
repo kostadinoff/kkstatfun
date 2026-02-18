@@ -294,7 +294,8 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                                         panel.grid = element_blank(),
                                                         panel.border = element_blank(),
                                                         # Add relative top margin for breathing room when title is missing
-                                                        plot.margin = margin(t = size * 0.8, r = size / 2, b = size / 2, l = size / 2)
+                                                        plot.margin = margin(t = size * 0.8, r = size / 2, b = size / 2, l = size / 2),
+                                                         legend.key = element_blank()
                                           )
 
                             # Enable showtext only if manually requested (avoiding ggsave issues)
@@ -459,6 +460,7 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                             ) +
                             theme(
                                           legend.position = "bottom",
+                                           legend.key = element_blank(),
                                           plot.subtitle = ggtext::element_markdown()
                             )
 }
@@ -577,6 +579,7 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                             ) +
                             theme(
                                           legend.position = "bottom",
+                                           legend.key = element_blank(),
                                           plot.subtitle = ggtext::element_markdown()
                             )
 
