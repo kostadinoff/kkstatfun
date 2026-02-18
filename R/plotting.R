@@ -313,6 +313,7 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             search_sources = search_sources,
                             search_results = search_results,
                             size = size,
+                            size = size,
                             theme_updated = update_theme
               )
 
@@ -424,12 +425,16 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                                                         linewidth = 0.2
                                           ) +
                                           geom_label(
-                                                        aes(label = paste0(n, " (", scales::percent(prop, accuracy = 1), ")")),
+                                                        aes(
+                                                                      label = paste0(n, " (", scales::percent(prop, accuracy = 1), ")"),
+                                                                      group = factor(!!group_sym)
+                                                        ),
                                                         position = position_dodge(width = 0.9),
                                                         color = "black",
                                                         size = rel_label_size,
                                                         family = curr_font,
                                                         hjust = -0.1,
+                                                        vjust = 0.5,
                                                         label.size = 0.1,
                                                         fill = "white",
                                                         alpha = 0.8,
@@ -453,7 +458,10 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                                           subtitle = subtitle,
                                           fill = if (!is.null(group_name)) group_name else NULL
                             ) +
-                            theme(legend.position = "bottom")
+                            theme(
+                                          legend.position = "bottom",
+                                          plot.subtitle = ggtext::element_markdown()
+                            )
 }
 
 #' Univariate Continuous Plot
@@ -547,7 +555,10 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                                           fill = if (!is.null(group_name)) group_name else NULL,
                                           color = if (!is.null(group_name)) group_name else NULL
                             ) +
-                            theme(legend.position = "bottom")
+                            theme(
+                                          legend.position = "bottom",
+                                          plot.subtitle = ggtext::element_markdown()
+                            )
 
               if (!is.null(data[[var_name]])) {
                             p <- p + expand_limits(x = range(data[[var_name]], na.rm = TRUE))
