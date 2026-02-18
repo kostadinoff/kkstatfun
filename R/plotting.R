@@ -338,17 +338,28 @@ kkplot <- function(...) {
 #' Univariate Categorical Plot
 #'
 #' @param data Data frame
+#' @param variable Variable to plot
+#' @param group Optional grouping variable
 #' @param label_size Size for text labels (default: 3.5)
 #' @param force_100 Whether to force the x-axis to 100% (default: FALSE)
 #'
 #' @examples
 #' univariate_cat_plot(mtcars, "am")
+#' univariate_cat_plot(mtcars, "am", group = "cyl")
 #'
 #' @export
-univariate_cat_plot <- function(data, variable, label_size = 3.5, force_100 = FALSE) {
+univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, force_100 = FALSE) {
               variable <- rlang::ensym(variable)
               var_name <- rlang::as_name(variable)
-              title <- paste("Univariate Categorical Plot of", var_name)
+
+              group_sym <- if (!is.null(group)) rlang::ensym(group) else NULL
+              group_name <- if (!is.null(group_sym)) rlang::as_name(group_sym) else NULL
+
+              title <- if (is.null(group_name)) {
+                            paste("Univariate Categorical Plot of", var_name)
+              } else {
+                            paste("Univariate Categorical Plot of", var_name, "by", group_name)
+              }
 
               # Calculate missing count
               na_count <- sum(is.na(data[[var_name]]))
@@ -363,27 +374,71 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5, force_100 = FA
               curr_font <- tryCatch(ggplot2::theme_get()$text$family, error = function(e) "sans")
               if (is.null(curr_font) || curr_font == "") curr_font <- "sans"
 
-              data %>%
-                            dplyr::filter(!is.na(!!variable)) %>%
-                            dplyr::count(!!variable) %>%
-                            dplyr::mutate(prop = n / sum(n)) %>%
-                            kkplot(aes(y = forcats::fct_reorder(factor(!!variable), prop), x = prop)) +
-                            geom_col(
-                                          fill = "gray85",
-                                          color = "gray30",
-                                          width = 0.9,
-                                          linewidth = 0.2
-                            ) +
-                            geom_label(
-                                          aes(label = paste0(n, " (", scales::percent(prop, accuracy = 1), ")")),
-                                          color = "black",
-                                          size = rel_label_size,
-                                          family = curr_font,
-                                          hjust = -0.1,
-                                          label.size = 0.1,
-                                          fill = "white",
-                                          alpha = 0.8
-                            ) +
+              if (is.null(group_name)) {
+                            plot_data <- data %>%
+                                          dplyr::filter(!is.na(!!variable)) %>%
+                                          dplyr::count(!!variable) %>%
+                                          dplyr::mutate(prop = n / sum(n))
+
+                            p <- plot_data %>%
+                                          kkplot(aes(y = forcats::fct_reorder(factor(!!variable), prop), x = prop)) +
+                                          geom_col(
+                                                        fill = "gray85",
+                                                        color = "gray30",
+                                                        width = 0.9,
+                                                        linewidth = 0.2
+                                          ) +
+                                          geom_label(
+                                                        aes(label = paste0(n, " (", scales::percent(prop, accuracy = 1), ")")),
+                                                        color = "black",
+                                                        size = rel_label_size,
+                                                        family = curr_font,
+                                                        hjust = -0.1,
+                                                        label.size = 0.1,
+                                                        fill = "white",
+                                                        alpha = 0.8
+                                          )
+              } else {
+                            plot_data <- data %>%
+                                          dplyr::filter(!is.na(!!variable), !is.na(!!group_sym)) %>%
+                                          dplyr::count(!!group_sym, !!variable) %>%
+                                          dplyr::group_by(!!group_sym) %>%
+                                          dplyr::mutate(prop = n / sum(n)) %>%
+                                          dplyr::ungroup()
+
+                            # Reorder y by overall proportion
+                            overall_counts <- data %>%
+                                          dplyr::filter(!is.na(!!variable)) %>%
+                                          dplyr::count(!!variable) %>%
+                                          dplyr::mutate(total_prop = n / sum(n))
+
+                            plot_data <- plot_data %>%
+                                          dplyr::left_join(overall_counts %>% dplyr::select(!!variable, total_prop), by = var_name)
+
+                            p <- plot_data %>%
+                                          kkplot(aes(y = forcats::fct_reorder(factor(!!variable), total_prop), x = prop, fill = factor(!!group_sym))) +
+                                          geom_col(
+                                                        position = position_dodge(width = 0.9),
+                                                        color = "gray30",
+                                                        width = 0.9,
+                                                        linewidth = 0.2
+                                          ) +
+                                          geom_label(
+                                                        aes(label = paste0(n, " (", scales::percent(prop, accuracy = 1), ")")),
+                                                        position = position_dodge(width = 0.9),
+                                                        color = "black",
+                                                        size = rel_label_size,
+                                                        family = curr_font,
+                                                        hjust = -0.1,
+                                                        label.size = 0.1,
+                                                        fill = "white",
+                                                        alpha = 0.8,
+                                                        show.legend = FALSE
+                                          ) +
+                                          scale_fill_brewer(palette = "Set2")
+              }
+
+              p +
                             # 2.5% expansion from Y axis, and room for labels on the right
                             scale_x_continuous(
                                           labels = scales::percent,
@@ -395,23 +450,36 @@ univariate_cat_plot <- function(data, variable, label_size = 3.5, force_100 = FA
                                           x = "Proportion",
                                           y = "Category",
                                           title = title,
-                                          subtitle = subtitle
-                            )
+                                          subtitle = subtitle,
+                                          fill = if (!is.null(group_name)) group_name else NULL
+                            ) +
+                            theme(legend.position = "bottom")
 }
 
 #' Univariate Continuous Plot
 #'
 #' @param data Data frame
+#' @param variable Variable to plot
+#' @param group Optional grouping variable
 #' @param label_size Size for text labels (default: 3.5)
 #'
 #' @examples
 #' univariate_cont_plot(mtcars, "mpg")
+#' univariate_cont_plot(mtcars, "mpg", group = "cyl")
 #'
 #' @export
-univariate_cont_plot <- function(data, variable, label_size = 3.5) {
+univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5) {
               variable <- rlang::ensym(variable)
               var_name <- rlang::as_name(variable)
-              title <- paste("Univariate Continuous Plot of", var_name)
+
+              group_sym <- if (!is.null(group)) rlang::ensym(group) else NULL
+              group_name <- if (!is.null(group_sym)) rlang::as_name(group_sym) else NULL
+
+              title <- if (is.null(group_name)) {
+                            paste("Univariate Continuous Plot of", var_name)
+              } else {
+                            paste("Univariate Continuous Plot of", var_name, "by", group_name)
+              }
 
               # Calculate missing count
               na_count <- sum(is.na(data[[var_name]]))
@@ -444,31 +512,45 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
               line_w <- base_size / 60
               rel_label_size <- (base_size * 0.93) / ggplot2::.pt
 
-              p <- kkplot(data, aes(x = !!variable)) +
-                            geom_density(fill = "#f2f3f4", color = "#2c3e50", alpha = 0.8, linewidth = line_w) +
-                            geom_vline(
-                                          xintercept = mean(vals, na.rm = TRUE),
-                                          color = "#e74c3c",
-                                          linewidth = line_w * 3
-                            ) +
-                            geom_vline(
-                                          xintercept = stats::median(vals, na.rm = TRUE),
-                                          color = "#3498db",
-                                          linetype = "dashed",
-                                          linewidth = line_w * 3
-                            ) +
+              if (is.null(group_name)) {
+                            p <- kkplot(data, aes(x = !!variable)) +
+                                          geom_density(fill = "#f2f3f4", color = "#2c3e50", alpha = 0.8, linewidth = line_w) +
+                                          geom_vline(
+                                                        xintercept = mean(data[[var_name]], na.rm = TRUE),
+                                                        color = "#e74c3c",
+                                                        linewidth = line_w * 3
+                                          ) +
+                                          geom_vline(
+                                                        xintercept = stats::median(data[[var_name]], na.rm = TRUE),
+                                                        color = "#3498db",
+                                                        linetype = "dashed",
+                                                        linewidth = line_w * 3
+                                          )
+              } else {
+                            p <- data %>%
+                                          dplyr::filter(!is.na(!!variable), !is.na(!!group_sym)) %>%
+                                          kkplot(aes(x = !!variable, fill = factor(!!group_sym), color = factor(!!group_sym))) +
+                                          geom_density(alpha = 0.4, linewidth = line_w) +
+                                          scale_fill_brewer(palette = "Set2") +
+                                          scale_color_brewer(palette = "Set2")
+              }
+
+              p <- p +
                             # Apply consistent 2.5% expansion
                             scale_x_continuous(expand = expansion(mult = 0.025)) +
                             scale_y_continuous(expand = expansion(mult = 0.025)) +
                             labs(
-                                          title = paste0("Univariate Continuous Plot of ", var_name),
+                                          title = title,
                                           subtitle = subtitle_md,
                                           x = "Value",
-                                          y = "Density"
-                            )
+                                          y = "Density",
+                                          fill = if (!is.null(group_name)) group_name else NULL,
+                                          color = if (!is.null(group_name)) group_name else NULL
+                            ) +
+                            theme(legend.position = "bottom")
 
-              if (length(vals) > 0) {
-                            p <- p + expand_limits(x = range(vals))
+              if (!is.null(data[[var_name]])) {
+                            p <- p + expand_limits(x = range(data[[var_name]], na.rm = TRUE))
               }
 
               return(p)
@@ -479,15 +561,23 @@ univariate_cont_plot <- function(data, variable, label_size = 3.5) {
 #' @description Automatically detects variable type and plots accordingly
 #'
 #' @param data Data frame
+#' @param ... Variables to plot
+#' @param group Optional grouping variable
+#' @param categorical Explicitly mark variables as categorical
+#' @param ordered Explicitly mark variables as ordered
+#' @param continuous Explicitly mark variables as continuous
 #' @param label_size Size for text labels (automatically calculated if NULL)
+#' @param ncol Number of columns for layout
+#' @param nrow Number of rows for layout
 #' @param force_100 Whether to force categorical x-axis to 100% (default: TRUE)
 #'
 #' @examples
 #' univariate_plot(mtcars, "mpg")
 #' univariate_plot(mtcars, "am")
+#' univariate_plot(mtcars, "mpg", group = "cyl")
 #'
 #' @export
-univariate_plot <- function(data, ..., categorical = NULL, ordered = NULL, continuous = NULL, label_size = NULL, ncol = NULL, nrow = NULL, force_100 = TRUE) {
+univariate_plot <- function(data, ..., group = NULL, categorical = NULL, ordered = NULL, continuous = NULL, label_size = NULL, ncol = NULL, nrow = NULL, force_100 = TRUE) {
               # Select variables
               vars <- tidyselect::eval_select(rlang::expr(c(...)), data)
               if (length(vars) == 0) {
@@ -524,11 +614,11 @@ univariate_plot <- function(data, ..., categorical = NULL, ordered = NULL, conti
                             }
 
                             if (type == "continuous") {
-                                          rlang::inject(univariate_cont_plot(data, !!rlang::sym(var), label_size = label_size))
+                                          rlang::inject(univariate_cont_plot(data, !!rlang::sym(var), group = !!group, label_size = label_size))
                             } else {
                                           # For both categorical and ordered, we use cat_plot for now
                                           # (could expand ordered later with specific logic if needed)
-                                          rlang::inject(univariate_cat_plot(data, !!rlang::sym(var), label_size = label_size, force_100 = force_100))
+                                          rlang::inject(univariate_cat_plot(data, !!rlang::sym(var), group = !!group, label_size = label_size, force_100 = force_100))
                             }
               })
 
