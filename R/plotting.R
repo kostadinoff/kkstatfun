@@ -543,21 +543,23 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                             p <- data %>%
                                           dplyr::filter(!is.na(!!variable), !is.na(!!group_sym)) %>%
                                           kkplot(aes(x = !!variable, fill = factor(!!group_sym), color = factor(!!group_sym))) +
-                                          geom_density(alpha = 0.4, linewidth = line_w) +
+                                          geom_density(alpha = 0.4, linewidth = line_w, key_glyph = "path") +
                                           scale_fill_brewer(palette = "Set2") +
                                           scale_color_brewer(palette = "Set2") +
                                           geom_vline(
                                                         data = group_stats,
                                                         aes(xintercept = m, color = factor(!!group_sym)),
                                                         linewidth = line_w * 2,
-                                                        alpha = 0.8
+                                                        alpha = 0.8,
+                                                        show.legend = FALSE
                                           ) +
                                           geom_vline(
                                                         data = group_stats,
                                                         aes(xintercept = med, color = factor(!!group_sym)),
                                                         linetype = "dashed",
                                                         linewidth = line_w * 2,
-                                                        alpha = 0.8
+                                                        alpha = 0.8,
+                                                        show.legend = FALSE
                                           )
               }
 
