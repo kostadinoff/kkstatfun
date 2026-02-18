@@ -313,7 +313,6 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             search_sources = search_sources,
                             search_results = search_results,
                             size = size,
-                            size = size,
                             theme_updated = update_theme
               )
 
@@ -491,36 +490,31 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
 
               # Calculate missing count
               na_count <- sum(is.na(data[[var_name]]))
-              subtitle <- paste0("Missing: ", na_count)
-
-              # Filter data for calculations
-              plot_data <- data %>% dplyr::filter(!is.na(!!variable))
-              vals <- plot_data[[var_name]]
-
-              # Calculations
-              n_obs <- length(vals)
-              m_val <- if (n_obs > 0) round(mean(vals), 2) else NA
-              sd_val <- if (n_obs > 0) round(stats::sd(vals), 2) else NA
-              med_val <- if (n_obs > 0) round(stats::median(vals), 2) else NA
-              iqr_val <- if (n_obs > 0) round(stats::IQR(vals), 2) else NA
-              min_val <- if (n_obs > 0) round(min(vals), 2) else NA
-              max_val <- if (n_obs > 0) round(max(vals), 2) else NA
-              missing_count <- sum(is.na(data[[var_name]]))
-
-              # Construct Enhanced Subtitle (Markdown for colors)
-              subtitle_md <- paste0(
-                            "Missing: ", missing_count,
-                            " | <span style='color:red;'>Mean (SD): ", m_val, " (", sd_val, ")</span><br>",
-                            "<span style='color:blue;'>Median (IQR): ", med_val, " (", iqr_val, ")</span>",
-                            " | Range: [", min_val, ", ", max_val, "]"
-              )
+              subtitle_missing <- paste0("Missing: ", na_count)
 
               base_size <- tryCatch(ggplot2::theme_get()$text$size, error = function(e) 11)
               if (is.null(base_size)) base_size <- 11
               line_w <- base_size / 60
-              rel_label_size <- (base_size * 0.93) / ggplot2::.pt
 
               if (is.null(group_name)) {
+                            # Filter data for non-grouped calculations
+                            plot_data <- data %>% dplyr::filter(!is.na(!!variable))
+                            vals <- plot_data[[var_name]]
+
+                            m_val <- if (length(vals) > 0) round(mean(vals), 2) else NA
+                            sd_val <- if (length(vals) > 0) round(stats::sd(vals), 2) else NA
+                            med_val <- if (length(vals) > 0) round(stats::median(vals), 2) else NA
+                            iqr_val <- if (length(vals) > 0) round(stats::IQR(vals), 2) else NA
+                            min_val <- if (length(vals) > 0) round(min(vals), 2) else NA
+                            max_val <- if (length(vals) > 0) round(max(vals), 2) else NA
+
+                            subtitle <- paste0(
+                                          subtitle_missing,
+                                          " | <span style='color:red;'>Mean (SD): ", m_val, " (", sd_val, ")</span><br>",
+                                          "<span style='color:blue;'>Median (IQR): ", med_val, " (", iqr_val, ")</span>",
+                                          " | Range: [", min_val, ", ", max_val, "]"
+                            )
+
                             p <- kkplot(data, aes(x = !!variable)) +
                                           geom_density(fill = "#f2f3f4", color = "#2c3e50", alpha = 0.8, linewidth = line_w) +
                                           geom_vline(
@@ -535,12 +529,36 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                                                         linewidth = line_w * 3
                                           )
               } else {
+                            subtitle <- subtitle_missing
+
+                            group_stats <- data %>%
+                                          dplyr::filter(!is.na(!!variable), !is.na(!!group_sym)) %>%
+                                          dplyr::group_by(!!group_sym) %>%
+                                          dplyr::summarise(
+                                                        m = mean(!!variable, na.rm = TRUE),
+                                                        med = stats::median(!!variable, na.rm = TRUE),
+                                                        .groups = "drop"
+                                          )
+
                             p <- data %>%
                                           dplyr::filter(!is.na(!!variable), !is.na(!!group_sym)) %>%
                                           kkplot(aes(x = !!variable, fill = factor(!!group_sym), color = factor(!!group_sym))) +
                                           geom_density(alpha = 0.4, linewidth = line_w) +
                                           scale_fill_brewer(palette = "Set2") +
-                                          scale_color_brewer(palette = "Set2")
+                                          scale_color_brewer(palette = "Set2") +
+                                          geom_vline(
+                                                        data = group_stats,
+                                                        aes(xintercept = m, color = factor(!!group_sym)),
+                                                        linewidth = line_w * 2,
+                                                        alpha = 0.8
+                                          ) +
+                                          geom_vline(
+                                                        data = group_stats,
+                                                        aes(xintercept = med, color = factor(!!group_sym)),
+                                                        linetype = "dashed",
+                                                        linewidth = line_w * 2,
+                                                        alpha = 0.8
+                                          )
               }
 
               p <- p +
@@ -549,7 +567,7 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                             scale_y_continuous(expand = expansion(mult = 0.025)) +
                             labs(
                                           title = title,
-                                          subtitle = subtitle_md,
+                                          subtitle = subtitle,
                                           x = "Value",
                                           y = "Density",
                                           fill = if (!is.null(group_name)) group_name else NULL,
