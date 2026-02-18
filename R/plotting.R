@@ -262,7 +262,7 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
               if (update_theme) {
                             # Define relative font sizes based on the `size` parameter
                             title_size <- size
-                            subtitle_size <- size * 0.93
+                            subtitle_size <- size * 0.95
                             caption_size <- size * 0.7
                             axis_title_size <- size * 0.93
                             axis_text_size <- size * 0.93
