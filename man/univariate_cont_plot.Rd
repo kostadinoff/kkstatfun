@@ -5,19 +5,24 @@
 \alias{univariate_continuous_plot}
 \title{Univariate Continuous Plot}
 \usage{
-univariate_cont_plot(data, variable)
+univariate_cont_plot(data, variable, group = NULL, label_size = 3.5)
 
-univariate_continuous_plot(data, variable)
+univariate_continuous_plot(data, variable, group = NULL, label_size = 3.5)
 }
 \arguments{
 \item{data}{Data frame}
 
 \item{variable}{Variable to plot}
+
+\item{group}{Optional grouping variable}
+
+\item{label_size}{Size for text labels (default: 3.5)}
 }
 \description{
 Univariate Continuous Plot
 }
 \examples{
 univariate_cont_plot(mtcars, "mpg")
+univariate_cont_plot(mtcars, "mpg", group = "cyl")
 
 }

@@ -5,19 +5,38 @@
 \alias{univariate_categorical_plot}
 \title{Univariate Categorical Plot}
 \usage{
-univariate_cat_plot(data, variable)
+univariate_cat_plot(
+  data,
+  variable,
+  group = NULL,
+  label_size = 3.5,
+  force_100 = FALSE
+)
 
-univariate_categorical_plot(data, variable)
+univariate_categorical_plot(
+  data,
+  variable,
+  group = NULL,
+  label_size = 3.5,
+  force_100 = FALSE
+)
 }
 \arguments{
 \item{data}{Data frame}
 
 \item{variable}{Variable to plot}
+
+\item{group}{Optional grouping variable}
+
+\item{label_size}{Size for text labels (default: 3.5)}
+
+\item{force_100}{Whether to force the x-axis to 100\% (default: FALSE)}
 }
 \description{
 Univariate Categorical Plot
 }
 \examples{
 univariate_cat_plot(mtcars, "am")
+univariate_cat_plot(mtcars, "am", group = "cyl")
 
 }

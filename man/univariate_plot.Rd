@@ -7,17 +7,36 @@
 univariate_plot(
   data,
   ...,
+  group = NULL,
   categorical = NULL,
   ordered = NULL,
   continuous = NULL,
+  label_size = NULL,
   ncol = NULL,
-  nrow = NULL
+  nrow = NULL,
+  force_100 = TRUE
 )
 }
 \arguments{
 \item{data}{Data frame}
 
-\item{variable}{Variable to plot}
+\item{...}{Variables to plot}
+
+\item{group}{Optional grouping variable}
+
+\item{categorical}{Explicitly mark variables as categorical}
+
+\item{ordered}{Explicitly mark variables as ordered}
+
+\item{continuous}{Explicitly mark variables as continuous}
+
+\item{label_size}{Size for text labels (automatically calculated if NULL)}
+
+\item{ncol}{Number of columns for layout}
+
+\item{nrow}{Number of rows for layout}
+
+\item{force_100}{Whether to force categorical x-axis to 100\% (default: TRUE)}
 }
 \description{
 Automatically detects variable type and plots accordingly
@@ -25,5 +44,6 @@ Automatically detects variable type and plots accordingly
 \examples{
 univariate_plot(mtcars, "mpg")
 univariate_plot(mtcars, "am")
+univariate_plot(mtcars, "mpg", group = "cyl")
 
 }

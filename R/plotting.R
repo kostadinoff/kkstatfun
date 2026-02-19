@@ -295,7 +295,7 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                                         panel.border = element_blank(),
                                                         # Add relative top margin for breathing room when title is missing
                                                         plot.margin = margin(t = size * 0.8, r = size / 2, b = size / 2, l = size / 2),
-                                                         legend.key = element_blank()
+                                                        legend.key = element_blank()
                                           )
 
                             # Enable showtext only if manually requested (avoiding ggsave issues)
@@ -422,7 +422,8 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                                                         position = position_dodge(width = 0.9),
                                                         color = "gray30",
                                                         width = 0.9,
-                                                        linewidth = 0.2
+                                                        linewidth = 0.2,
+                                                        key_glyph = "point"
                                           ) +
                                           geom_label(
                                                         aes(
@@ -460,7 +461,7 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                             ) +
                             theme(
                                           legend.position = "bottom",
-                                           legend.key = element_blank(),
+                                          legend.key = element_blank(),
                                           plot.subtitle = ggtext::element_markdown()
                             )
 }
@@ -531,16 +532,35 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                                                         linewidth = line_w * 3
                                           )
               } else {
-                            subtitle <- subtitle_missing
-
                             group_stats <- data %>%
                                           dplyr::filter(!is.na(!!variable), !is.na(!!group_sym)) %>%
                                           dplyr::group_by(!!group_sym) %>%
                                           dplyr::summarise(
-                                                        m = mean(!!variable, na.rm = TRUE),
-                                                        med = stats::median(!!variable, na.rm = TRUE),
+                                                        m = round(mean(!!variable, na.rm = TRUE), 2),
+                                                        sd = round(stats::sd(!!variable, na.rm = TRUE), 2),
+                                                        med = round(stats::median(!!variable, na.rm = TRUE), 2),
+                                                        iqr = round(stats::IQR(!!variable, na.rm = TRUE), 2),
                                                         .groups = "drop"
                                           )
+
+                            # Build color-coded subtitle for groups
+                            # Get colors from Set2 palette
+                            n_groups <- nrow(group_stats)
+                            palette_cols <- RColorBrewer::brewer.pal(max(3, n_groups), "Set2")[1:n_groups]
+
+                            stats_text <- purrr::map2_chr(1:n_groups, group_stats[[group_name]], function(idx, g_name) {
+                                          row <- group_stats[idx, ]
+                                          col <- palette_cols[idx]
+                                          paste0(
+                                                        "<span style='color:", col, ";'>**", g_name, "**: ",
+                                                        row$m, " (", row$sd, ") | ", row$med, " (", row$iqr, ")</span>"
+                                          )
+                            })
+
+                            subtitle <- paste0(
+                                          subtitle_missing, " | Mean (SD) | Median (IQR)<br>",
+                                          paste(stats_text, collapse = " | ")
+                            )
 
                             p <- data %>%
                                           dplyr::filter(!is.na(!!variable), !is.na(!!group_sym)) %>%
@@ -551,16 +571,35 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                                           geom_vline(
                                                         data = group_stats,
                                                         aes(xintercept = m, color = factor(!!group_sym)),
-                                                        linewidth = line_w * 2,
-                                                        alpha = 0.8,
+                                                        linewidth = line_w * 4,
+                                                        alpha = 0.9,
                                                         show.legend = FALSE
                                           ) +
                                           geom_vline(
                                                         data = group_stats,
                                                         aes(xintercept = med, color = factor(!!group_sym)),
                                                         linetype = "dashed",
-                                                        linewidth = line_w * 2,
-                                                        alpha = 0.8,
+                                                        linewidth = line_w * 4,
+                                                        alpha = 0.9,
+                                                        show.legend = FALSE
+                                          ) +
+                                          # Add labels inside the plot at the top
+                                          geom_text(
+                                                        data = group_stats,
+                                                        aes(x = m, y = Inf, label = "M", color = factor(!!group_sym)),
+                                                        vjust = 1.5,
+                                                        hjust = -0.2,
+                                                        size = label_size * 0.8,
+                                                        fontface = "bold",
+                                                        show.legend = FALSE
+                                          ) +
+                                          geom_text(
+                                                        data = group_stats,
+                                                        aes(x = med, y = Inf, label = "Md", color = factor(!!group_sym)),
+                                                        vjust = 3,
+                                                        hjust = -0.2,
+                                                        size = label_size * 0.8,
+                                                        fontface = "italic",
                                                         show.legend = FALSE
                                           )
               }
@@ -579,7 +618,7 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                             ) +
                             theme(
                                           legend.position = "bottom",
-                                           legend.key = element_blank(),
+                                          legend.key = element_blank(),
                                           plot.subtitle = ggtext::element_markdown()
                             )
 
@@ -618,6 +657,12 @@ univariate_plot <- function(data, ..., group = NULL, categorical = NULL, ordered
                             vars <- names(data)
               } else {
                             vars <- names(vars)
+              }
+
+              # Exclude group variable if provided
+              if (!is.null(group)) {
+                            group_name <- rlang::as_name(rlang::ensym(group))
+                            vars <- vars[vars != group_name]
               }
 
               # Auto-calculate label size relative to base font size if not provided
