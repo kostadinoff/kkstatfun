@@ -364,7 +364,11 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
 
               # Calculate missing count
               na_count <- sum(is.na(data[[var_name]]))
-              subtitle <- paste0("Missing: ", na_count)
+              subtitle <- if (is.null(group_name)) {
+                            paste0("Missing: ", na_count)
+              } else {
+                            NULL
+              }
 
               # Get current theme base size for relative labeling
               base_size <- tryCatch(ggplot2::theme_get()$text$size, error = function(e) 11)
@@ -416,14 +420,21 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                             plot_data <- plot_data %>%
                                           dplyr::left_join(overall_counts %>% dplyr::select(!!variable, total_prop), by = var_name)
 
+                            # Calculate group sizes for legend labels
+                            group_sizes <- data %>%
+                                          dplyr::filter(!is.na(!!variable), !is.na(!!group_sym)) %>%
+                                          dplyr::count(!!group_sym) %>%
+                                          dplyr::mutate(label = paste0(!!group_sym, "\nN=", n))
+
+                            group_labels <- setNames(group_sizes$label, group_sizes[[group_name]])
+
                             p <- plot_data %>%
-                                          kkplot(aes(y = forcats::fct_reorder(factor(!!variable), total_prop), x = prop, fill = factor(!!group_sym))) +
+                                          kkplot(aes(y = forcats::fct_reorder(factor(!!variable), total_prop), x = prop, fill = factor(!!group_sym), color = factor(!!group_sym))) +
                                           geom_col(
                                                         position = position_dodge(width = 0.9),
-                                                        color = "gray30",
                                                         width = 0.9,
-                                                        linewidth = 0.2,
-                                                        key_glyph = "point"
+                                                        linewidth = 0.4,
+                                                        key_glyph = "path"
                                           ) +
                                           geom_label(
                                                         aes(
@@ -441,7 +452,8 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                                                         alpha = 0.8,
                                                         show.legend = FALSE
                                           ) +
-                                          scale_fill_brewer(palette = "Set2")
+                                          scale_fill_brewer(palette = "Set2", labels = group_labels) +
+                                          scale_color_brewer(palette = "Set2", labels = group_labels)
               }
 
               p +
@@ -457,10 +469,11 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                                           y = "Category",
                                           title = title,
                                           subtitle = subtitle,
-                                          fill = if (!is.null(group_name)) group_name else NULL
+                                          fill = NULL,
+                                          color = NULL
                             ) +
                             theme(
-                                          legend.position = "bottom",
+                                          legend.position = "top",
                                           legend.key = element_blank(),
                                           plot.subtitle = ggtext::element_markdown()
                             )
@@ -511,15 +524,19 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                             min_val <- if (length(vals) > 0) round(min(vals), 2) else NA
                             max_val <- if (length(vals) > 0) round(max(vals), 2) else NA
 
-                            subtitle <- paste0(
-                                          subtitle_missing,
-                                          " | <span style='color:red;'>Mean (SD): ", m_val, " (", sd_val, ")</span><br>",
-                                          "<span style='color:blue;'>Median (IQR): ", med_val, " (", iqr_val, ")</span>",
-                                          " | Range: [", min_val, ", ", max_val, "]"
-                            )
+                            subtitle <- if (is.null(group_name)) {
+                                          paste0(
+                                                        subtitle_missing,
+                                                        " | <span style='color:red;'>Mean (SD): ", m_val, " (", sd_val, ")</span><br>",
+                                                        "<span style='color:blue;'>Median (IQR): ", med_val, " (", iqr_val, ")</span>",
+                                                        " | Range: [", min_val, ", ", max_val, "]"
+                                          )
+                            } else {
+                                          NULL
+                            }
 
                             p <- kkplot(data, aes(x = !!variable)) +
-                                          geom_density(fill = "#f2f3f4", color = "#2c3e50", alpha = 0.8, linewidth = line_w) +
+                                          geom_density(color = "#2c3e50", alpha = 0.8, linewidth = line_w * 1.5) +
                                           geom_vline(
                                                         xintercept = mean(data[[var_name]], na.rm = TRUE),
                                                         color = "#e74c3c",
@@ -536,12 +553,16 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                                           dplyr::filter(!is.na(!!variable), !is.na(!!group_sym)) %>%
                                           dplyr::group_by(!!group_sym) %>%
                                           dplyr::summarise(
+                                                        n = dplyr::n(),
                                                         m = round(mean(!!variable, na.rm = TRUE), 2),
                                                         sd = round(stats::sd(!!variable, na.rm = TRUE), 2),
                                                         med = round(stats::median(!!variable, na.rm = TRUE), 2),
                                                         iqr = round(stats::IQR(!!variable, na.rm = TRUE), 2),
                                                         .groups = "drop"
-                                          )
+                                          ) %>%
+                                          dplyr::mutate(legend_label = paste0(!!group_sym, "\nN=", n))
+
+                            group_labels <- setNames(group_stats$legend_label, group_stats[[group_name]])
 
                             # Build color-coded subtitle for groups
                             # Get colors from Set2 palette
@@ -557,17 +578,13 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                                           )
                             })
 
-                            subtitle <- paste0(
-                                          subtitle_missing, " | Mean (SD) | Median (IQR)<br>",
-                                          paste(stats_text, collapse = " | ")
-                            )
+                            subtitle <- NULL
 
                             p <- data %>%
                                           dplyr::filter(!is.na(!!variable), !is.na(!!group_sym)) %>%
-                                          kkplot(aes(x = !!variable, fill = factor(!!group_sym), color = factor(!!group_sym))) +
-                                          geom_density(alpha = 0.4, linewidth = line_w, key_glyph = "path") +
-                                          scale_fill_brewer(palette = "Set2") +
-                                          scale_color_brewer(palette = "Set2") +
+                                          kkplot(aes(x = !!variable, color = factor(!!group_sym))) +
+                                          geom_density(linewidth = line_w * 2, key_glyph = "path") +
+                                          scale_color_brewer(palette = "Set2", labels = group_labels) +
                                           geom_vline(
                                                         data = group_stats,
                                                         aes(xintercept = m, color = factor(!!group_sym)),
@@ -586,7 +603,7 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                                           # Add labels inside the plot at the top
                                           geom_text(
                                                         data = group_stats,
-                                                        aes(x = m, y = Inf, label = "M", color = factor(!!group_sym)),
+                                                        aes(x = m, y = Inf, label = paste0("M=", m), color = factor(!!group_sym)),
                                                         vjust = 1.5,
                                                         hjust = -0.2,
                                                         size = label_size * 0.8,
@@ -595,7 +612,7 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                                           ) +
                                           geom_text(
                                                         data = group_stats,
-                                                        aes(x = med, y = Inf, label = "Md", color = factor(!!group_sym)),
+                                                        aes(x = med, y = Inf, label = paste0("Md=", med), color = factor(!!group_sym)),
                                                         vjust = 3,
                                                         hjust = -0.2,
                                                         size = label_size * 0.8,
@@ -613,11 +630,11 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                                           subtitle = subtitle,
                                           x = "Value",
                                           y = "Density",
-                                          fill = if (!is.null(group_name)) group_name else NULL,
-                                          color = if (!is.null(group_name)) group_name else NULL
+                                          fill = NULL,
+                                          color = NULL
                             ) +
                             theme(
-                                          legend.position = "bottom",
+                                          legend.position = "top",
                                           legend.key = element_blank(),
                                           plot.subtitle = ggtext::element_markdown()
                             )
