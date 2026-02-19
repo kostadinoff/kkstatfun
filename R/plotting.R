@@ -336,6 +336,105 @@ kkplot <- function(...) {
                             guides(x = guide_axis(cap = "both"), y = guide_axis(cap = "both"))
 }
 
+#' Correlation Heatmap Plot
+#'
+#' Creates a correlation heatmap (Kendall's Tau by default) for all numeric and factor variables in a data frame.
+#' Factors are automatically converted to numeric for correlation calculation.
+#'
+#' @param data A data frame or tibble.
+#' @param method Correlation method ("kendall", "pearson", or "spearman"). Defaults to "kendall".
+#' @param adjust P-value adjustment method for multiple comparisons (e.g., "fdr", "bonferroni", "none"). Defaults to "none".
+#' @param font_size Base font size for the plot. Defaults to 12.
+#'
+#' @return A ggplot2 object showing the upper triangle of the correlation matrix with coefficients and significance stars.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' kk_fullcorplot(mtcars)
+#' }
+kk_fullcorplot <- function(data, method = "kendall", adjust = "none", font_size = 12) {
+              # 1. Automatic numeric conversion
+              analysis_numeric <- data %>%
+                            dplyr::mutate(dplyr::across(dplyr::where(is.factor), as.numeric)) %>%
+                            dplyr::select(dplyr::where(is.numeric))
+
+              # 2. Correlation + p-value matrices
+              tau_test <- psych::corr.test(
+                            analysis_numeric,
+                            method = method,
+                            use    = "pairwise",
+                            adjust = adjust
+              )
+
+              # 3. Melt to long format
+              var_order <- colnames(analysis_numeric)
+
+              cor_long <- tau_test$r %>%
+                            as.data.frame() %>%
+                            tibble::rownames_to_column("Var1") %>%
+                            tidyr::pivot_longer(-Var1, names_to = "Var2", values_to = "tau") %>%
+                            dplyr::left_join(
+                                          tau_test$p %>%
+                                                        as.data.frame() %>%
+                                                        tibble::rownames_to_column("Var1") %>%
+                                                        tidyr::pivot_longer(-Var1, names_to = "Var2", values_to = "p"),
+                                          by = c("Var1", "Var2")
+                            ) %>%
+                            dplyr::mutate(
+                                          sig = dplyr::case_when(
+                                                        Var1 == Var2 ~ "",
+                                                        p < 0.001 ~ "***",
+                                                        p < 0.01 ~ "**",
+                                                        p < 0.05 ~ "*",
+                                                        TRUE ~ ""
+                                          ),
+                                          Var1 = factor(Var1, levels = var_order),
+                                          Var2 = factor(Var2, levels = var_order)
+                            )
+
+              # 4. Filter for upper triangle only
+              cor_upper <- cor_long %>%
+                            dplyr::filter(as.integer(Var1) < as.integer(Var2))
+
+              # 5. Legend label based on method
+              legend_name <- dplyr::case_when(
+                            method == "kendall" ~ "Kendall \u03c4",
+                            method == "spearman" ~ "Spearman \u03c1",
+                            TRUE ~ "Pearson r"
+              )
+
+              # 6. Plot
+              kkplot(cor_upper, ggplot2::aes(x = Var1, y = Var2, fill = tau)) +
+                            ggplot2::geom_tile(colour = "white", linewidth = 0.3) +
+                            ggplot2::geom_text(
+                                          ggplot2::aes(label = sprintf("%.2f\n%s", tau, sig)),
+                                          size = font_size / 3,
+                                          colour = "black",
+                                          lineheight = 0.8,
+                                          parse = FALSE
+                            ) +
+                            ggplot2::scale_fill_gradient2(
+                                          low      = "#2166ac",
+                                          mid      = "white",
+                                          high     = "#d6604d",
+                                          midpoint = 0,
+                                          limits   = c(-1, 1),
+                                          name     = legend_name
+                            ) +
+                            ggplot2::labs(
+                                          title = NULL,
+                                          subtitle = NULL,
+                                          x = NULL,
+                                          y = NULL
+                            ) +
+                            ggplot2::theme(
+                                          axis.text.x = ggplot2::element_text(angle = 45, vjust = 1, hjust = 1),
+                                          legend.position = "right",
+                                          panel.grid = ggplot2::element_blank()
+                            )
+}
+
 #' Univariate Categorical Plot
 #'
 #' @param data Data frame

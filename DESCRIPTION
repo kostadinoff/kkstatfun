@@ -65,7 +65,8 @@ Imports:
     pracma,
     zoo,
     ggtext,
-    RColorBrewer
+    RColorBrewer,
+    psych
 Suggests: 
     testthat,
     knitr,
