@@ -492,17 +492,13 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                                                         width = 0.9,
                                                         linewidth = 0.2
                                           ) +
-                                          geom_label(
+                                          geom_text(
                                                         aes(label = paste0(n, " (", scales::percent(prop, accuracy = 1), ")")),
                                                         color = "black",
                                                         size = rel_label_size,
                                                         family = curr_font,
                                                         hjust = -0.1,
-                                                        label.size = 0.1,
-                                                        label.padding = unit(0.1, "lines"),
-                                                        label.r = unit(0.05, "lines"),
-                                                        fill = "white",
-                                                        alpha = 0.9
+                                                        fontface = "bold"
                                           )
               } else {
                             plot_data <- data %>%
@@ -537,7 +533,7 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                                                         linewidth = 0.4,
                                                         key_glyph = "path"
                                           ) +
-                                          geom_label(
+                                          geom_text(
                                                         aes(
                                                                       label = paste0(n, " (", scales::percent(prop, accuracy = 1), ")"),
                                                                       group = factor(!!group_sym)
@@ -548,11 +544,7 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                                                         family = curr_font,
                                                         hjust = -0.1,
                                                         vjust = 0.5,
-                                                        label.size = 0.1,
-                                                        label.padding = unit(0.1, "lines"),
-                                                        label.r = unit(0.05, "lines"),
-                                                        fill = "white",
-                                                        alpha = 0.9,
+                                                        fontface = "bold",
                                                         show.legend = FALSE
                                           ) +
                                           scale_fill_brewer(palette = "Set2", labels = group_labels) +
@@ -615,8 +607,11 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5,
               if (is.null(base_size)) base_size <- 11
               line_w <- base_size / 60
 
-              # Increase label size for stats as requested
-              stat_text_size <- label_size * 1.2
+              line_w <- base_size / 60
+
+              # Significantly increase label size for stats as requested
+              # Using a larger multiplier against base_size directly for impact
+              stat_text_size <- (base_size * 1.2) / ggplot2::.pt
 
               if (is.null(group_name)) {
                             # Filter data for non-grouped calculations
@@ -698,8 +693,8 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5,
                                                         geom_text(
                                                                       data = group_stats,
                                                                       aes(x = m, y = Inf, label = paste0("M=", m), color = factor(!!group_sym)),
-                                                                      vjust = 1.5,
-                                                                      hjust = -0.1,
+                                                                      vjust = 1.1,
+                                                                      hjust = -0.05,
                                                                       size = stat_text_size,
                                                                       fontface = "bold",
                                                                       show.legend = FALSE
@@ -718,10 +713,10 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5,
                                                         geom_text(
                                                                       data = group_stats,
                                                                       aes(x = med, y = Inf, label = paste0("Md=", med), color = factor(!!group_sym)),
-                                                                      vjust = if (stats == "both") 3.5 else 1.5,
-                                                                      hjust = -0.1,
+                                                                      vjust = if (stats == "both") 2.6 else 1.1,
+                                                                      hjust = -0.05,
                                                                       size = stat_text_size,
-                                                                      fontface = "italic",
+                                                                      fontface = "bold.italic",
                                                                       show.legend = FALSE
                                                         )
                             }
