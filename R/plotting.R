@@ -499,8 +499,10 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                                                         family = curr_font,
                                                         hjust = -0.1,
                                                         label.size = 0.1,
+                                                        label.padding = unit(0.1, "lines"),
+                                                        label.r = unit(0.05, "lines"),
                                                         fill = "white",
-                                                        alpha = 0.8
+                                                        alpha = 0.9
                                           )
               } else {
                             plot_data <- data %>%
@@ -547,8 +549,10 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                                                         hjust = -0.1,
                                                         vjust = 0.5,
                                                         label.size = 0.1,
+                                                        label.padding = unit(0.1, "lines"),
+                                                        label.r = unit(0.05, "lines"),
                                                         fill = "white",
-                                                        alpha = 0.8,
+                                                        alpha = 0.9,
                                                         show.legend = FALSE
                                           ) +
                                           scale_fill_brewer(palette = "Set2", labels = group_labels) +
@@ -590,7 +594,7 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
 #' univariate_cont_plot(mtcars, "mpg", group = "cyl")
 #'
 #' @export
-univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5) {
+univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5, stats = "mean") {
               variable <- rlang::ensym(variable)
               var_name <- rlang::as_name(variable)
 
@@ -611,6 +615,9 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
               if (is.null(base_size)) base_size <- 11
               line_w <- base_size / 60
 
+              # Increase label size for stats as requested
+              stat_text_size <- label_size * 1.2
+
               if (is.null(group_name)) {
                             # Filter data for non-grouped calculations
                             plot_data <- data %>% dplyr::filter(!is.na(!!variable))
@@ -623,30 +630,38 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                             min_val <- if (length(vals) > 0) round(min(vals), 2) else NA
                             max_val <- if (length(vals) > 0) round(max(vals), 2) else NA
 
-                            subtitle <- if (is.null(group_name)) {
-                                          paste0(
-                                                        subtitle_missing,
-                                                        " | <span style='color:red;'>Mean (SD): ", m_val, " (", sd_val, ")</span><br>",
-                                                        "<span style='color:blue;'>Median (IQR): ", med_val, " (", iqr_val, ")</span>",
-                                                        " | Range: [", min_val, ", ", max_val, "]"
-                                          )
-                            } else {
-                                          NULL
+                            stats_parts <- character()
+                            if (stats %in% c("mean", "both")) {
+                                          stats_parts <- c(stats_parts, paste0("<span style='color:red;'>Mean (SD): ", m_val, " (", sd_val, ")</span>"))
+                            }
+                            if (stats %in% c("median", "both")) {
+                                          stats_parts <- c(stats_parts, paste0("<span style='color:blue;'>Median (IQR): ", med_val, " (", iqr_val, ")</span>"))
                             }
 
+                            subtitle <- paste0(
+                                          subtitle_missing,
+                                          " | ", paste(stats_parts, collapse = " | "),
+                                          " | Range: [", min_val, ", ", max_val, "]"
+                            )
+
                             p <- kkplot(data, aes(x = !!variable)) +
-                                          geom_density(color = "#2c3e50", alpha = 0.8, linewidth = line_w * 1.5) +
-                                          geom_vline(
+                                          geom_density(color = "#2c3e50", alpha = 0.8, linewidth = line_w * 1.5)
+
+                            if (stats %in% c("mean", "both")) {
+                                          p <- p + geom_vline(
                                                         xintercept = mean(data[[var_name]], na.rm = TRUE),
                                                         color = "#e74c3c",
                                                         linewidth = line_w * 3
-                                          ) +
-                                          geom_vline(
+                                          )
+                            }
+                            if (stats %in% c("median", "both")) {
+                                          p <- p + geom_vline(
                                                         xintercept = stats::median(data[[var_name]], na.rm = TRUE),
                                                         color = "#3498db",
                                                         linetype = "dashed",
                                                         linewidth = line_w * 3
                                           )
+                            }
               } else {
                             group_stats <- data %>%
                                           dplyr::filter(!is.na(!!variable), !is.na(!!group_sym)) %>%
@@ -664,34 +679,35 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                             group_labels <- setNames(group_stats$legend_label, group_stats[[group_name]])
 
                             # Build color-coded subtitle for groups
-                            # Get colors from Set2 palette
-                            n_groups <- nrow(group_stats)
-                            palette_cols <- RColorBrewer::brewer.pal(max(3, n_groups), "Set2")[1:n_groups]
-
-                            stats_text <- purrr::map2_chr(1:n_groups, group_stats[[group_name]], function(idx, g_name) {
-                                          row <- group_stats[idx, ]
-                                          col <- palette_cols[idx]
-                                          paste0(
-                                                        "<span style='color:", col, ";'>**", g_name, "**: ",
-                                                        row$m, " (", row$sd, ") | ", row$med, " (", row$iqr, ")</span>"
-                                          )
-                            })
-
                             subtitle <- NULL
 
                             p <- data %>%
                                           dplyr::filter(!is.na(!!variable), !is.na(!!group_sym)) %>%
                                           kkplot(aes(x = !!variable, color = factor(!!group_sym))) +
                                           geom_density(linewidth = line_w * 2, key_glyph = "path") +
-                                          scale_color_brewer(palette = "Set2", labels = group_labels) +
-                                          geom_vline(
+                                          scale_color_brewer(palette = "Set2", labels = group_labels)
+
+                            if (stats %in% c("mean", "both")) {
+                                          p <- p + geom_vline(
                                                         data = group_stats,
                                                         aes(xintercept = m, color = factor(!!group_sym)),
                                                         linewidth = line_w * 4,
                                                         alpha = 0.9,
                                                         show.legend = FALSE
                                           ) +
-                                          geom_vline(
+                                                        geom_text(
+                                                                      data = group_stats,
+                                                                      aes(x = m, y = Inf, label = paste0("M=", m), color = factor(!!group_sym)),
+                                                                      vjust = 1.5,
+                                                                      hjust = -0.1,
+                                                                      size = stat_text_size,
+                                                                      fontface = "bold",
+                                                                      show.legend = FALSE
+                                                        )
+                            }
+
+                            if (stats %in% c("median", "both")) {
+                                          p <- p + geom_vline(
                                                         data = group_stats,
                                                         aes(xintercept = med, color = factor(!!group_sym)),
                                                         linetype = "dashed",
@@ -699,25 +715,16 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
                                                         alpha = 0.9,
                                                         show.legend = FALSE
                                           ) +
-                                          # Add labels inside the plot at the top
-                                          geom_text(
-                                                        data = group_stats,
-                                                        aes(x = m, y = Inf, label = paste0("M=", m), color = factor(!!group_sym)),
-                                                        vjust = 1.5,
-                                                        hjust = -0.2,
-                                                        size = label_size * 0.8,
-                                                        fontface = "bold",
-                                                        show.legend = FALSE
-                                          ) +
-                                          geom_text(
-                                                        data = group_stats,
-                                                        aes(x = med, y = Inf, label = paste0("Md=", med), color = factor(!!group_sym)),
-                                                        vjust = 3,
-                                                        hjust = -0.2,
-                                                        size = label_size * 0.8,
-                                                        fontface = "italic",
-                                                        show.legend = FALSE
-                                          )
+                                                        geom_text(
+                                                                      data = group_stats,
+                                                                      aes(x = med, y = Inf, label = paste0("Md=", med), color = factor(!!group_sym)),
+                                                                      vjust = if (stats == "both") 3.5 else 1.5,
+                                                                      hjust = -0.1,
+                                                                      size = stat_text_size,
+                                                                      fontface = "italic",
+                                                                      show.legend = FALSE
+                                                        )
+                            }
               }
 
               p <- p +
@@ -766,7 +773,7 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5)
 #' univariate_plot(mtcars, "mpg", group = "cyl")
 #'
 #' @export
-univariate_plot <- function(data, ..., group = NULL, categorical = NULL, ordered = NULL, continuous = NULL, label_size = NULL, ncol = NULL, nrow = NULL, force_100 = TRUE) {
+univariate_plot <- function(data, ..., group = NULL, categorical = NULL, ordered = NULL, continuous = NULL, label_size = NULL, ncol = NULL, nrow = NULL, force_100 = TRUE, stats = "mean") {
               # Select variables
               vars <- tidyselect::eval_select(rlang::expr(c(...)), data)
               if (length(vars) == 0) {
@@ -809,7 +816,7 @@ univariate_plot <- function(data, ..., group = NULL, categorical = NULL, ordered
                             }
 
                             if (type == "continuous") {
-                                          rlang::inject(univariate_cont_plot(data, !!rlang::sym(var), group = !!group, label_size = label_size))
+                                          rlang::inject(univariate_cont_plot(data, !!rlang::sym(var), group = !!group, label_size = label_size, stats = stats))
                             } else {
                                           # For both categorical and ordered, we use cat_plot for now
                                           # (could expand ordered later with specific logic if needed)
