@@ -671,6 +671,12 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5,
                             n_groups <- nrow(group_stats)
                             palette_colors <- RColorBrewer::brewer.pal(max(3, n_groups), "Set2")[1:n_groups]
 
+                            # Helper to darken colors for text contrast (approx 30% darker)
+                            darken <- function(color, factor = 0.7) {
+                                          col <- col2rgb(color) / 255
+                                          rgb(col[1] * factor, col[2] * factor, col[3] * factor)
+                            }
+
                             stats_parts <- character()
                             if (stats %in% c("mean", "both")) {
                                           group_m_parts <- character()
@@ -678,13 +684,13 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5,
                                                         g_name <- group_stats[[group_name]][i]
                                                         g_m <- group_stats$m[i]
                                                         g_sd <- group_stats$sd[i]
-                                                        g_col <- palette_colors[i]
+                                                        g_col <- darken(palette_colors[i], 0.6) # Significantly darker for text
                                                         group_m_parts <- c(
                                                                       group_m_parts,
                                                                       paste0("<span style='color:", g_col, ";'>**", g_name, "**: ", g_m, " (", g_sd, ")</span>")
                                                         )
                                           }
-                                          stats_parts <- c(stats_parts, paste0("Mean (SD): ", paste(group_m_parts, collapse = " | ")))
+                                          stats_parts <- c(stats_parts, paste0("M (SD): ", paste(group_m_parts, collapse = " | ")))
                             }
 
                             if (stats %in% c("median", "both")) {
@@ -693,19 +699,19 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5,
                                                         g_name <- group_stats[[group_name]][i]
                                                         g_med <- group_stats$med[i]
                                                         g_iqr <- group_stats$iqr[i]
-                                                        g_col <- palette_colors[i]
+                                                        g_col <- darken(palette_colors[i], 0.6)
                                                         group_med_parts <- c(
                                                                       group_med_parts,
                                                                       paste0("<span style='color:", g_col, ";'>**", g_name, "**: ", g_med, " (", g_iqr, ")</span>")
                                                         )
                                           }
-                                          stats_parts <- c(stats_parts, paste0("Median (IQR): ", paste(group_med_parts, collapse = " | ")))
+                                          stats_parts <- c(stats_parts, paste0("Med (IQR): ", paste(group_med_parts, collapse = " | ")))
                             }
 
-                            # Add overall range to match non-grouped style
+                            # Add overall range with a line break to prevent horizontal overflow in grids
                             overall_vals <- data[[var_name]][!is.na(data[[var_name]])]
                             range_str <- if (length(overall_vals) > 0) {
-                                          paste0(" | Range: [", round(min(overall_vals), 2), ", ", round(max(overall_vals), 2), "]")
+                                          paste0("<br>Range: [", round(min(overall_vals), 2), ", ", round(max(overall_vals), 2), "]")
                             } else {
                                           ""
                             }
@@ -841,7 +847,11 @@ univariate_plot <- function(data, ..., group = NULL, categorical = NULL, ordered
               if (length(plots) == 1) {
                             return(plots[[1]])
               } else {
-                            return(patchwork::wrap_plots(plots, ncol = ncol, nrow = nrow))
+                            # Apply common theme adjustments to all plots in the grid
+                            plots <- purrr::map(plots, ~ .x + ggplot2::theme(plot.margin = ggplot2::margin(t = 5, r = 15, b = 5, l = 5)))
+
+                            return(patchwork::wrap_plots(plots, ncol = ncol, nrow = nrow, guides = "collect") &
+                                          ggplot2::theme(legend.position = "top"))
               }
 }
 
