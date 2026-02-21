@@ -555,7 +555,7 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                             # 2.5% expansion from Y axis, and room for labels on the right
                             scale_x_continuous(
                                           labels = scales::percent,
-                                          expand = expansion(mult = c(0.025, 0.2)),
+                                          expand = expansion(mult = c(0.025, 0.3)),
                                           limits = if (force_100) c(0, 1) else NULL
                             ) +
                             scale_y_discrete(expand = expansion(add = c(0.5, 0.5))) +
@@ -807,7 +807,8 @@ univariate_plot <- function(data, ..., group = NULL, categorical = NULL, ordered
                             if (is.null(base_size)) base_size <- 11
 
                             n_plots <- length(vars)
-                            scale_factor <- if (n_plots <= 1) 0.8 else if (n_plots <= 4) 0.7 else if (n_plots <= 9) 0.6 else 0.5
+                            # Slightly more generous scale factors for better legibility
+                            scale_factor <- if (n_plots <= 1) 0.9 else if (n_plots <= 4) 0.8 else if (n_plots <= 9) 0.7 else 0.6
 
                             # Convert from pts to ggplot2 internal text size (mm)
                             label_size <- (base_size * scale_factor) / ggplot2::.pt
