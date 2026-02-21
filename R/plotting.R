@@ -463,16 +463,16 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
 
               # Calculate missing count
               na_count <- sum(is.na(data[[var_name]]))
-              subtitle <- if (is.null(group_name)) {
-                            paste0("Missing: ", na_count)
-              } else {
-                            NULL
-              }
+              subtitle <- paste0("Missing: ", na_count)
 
               # Get current theme base size for relative labeling
               base_size <- tryCatch(ggplot2::theme_get()$text$size, error = function(e) 11)
               if (is.null(base_size)) base_size <- 11
-              rel_label_size <- (base_size * 0.93) / ggplot2::.pt
+
+              # Use a more readable label size by default if not explicitly overridden
+              if (label_size == 3.5) {
+                            label_size <- (base_size * 1.05) / ggplot2::.pt
+              }
 
               # Get current theme font
               curr_font <- tryCatch(ggplot2::theme_get()$text$family, error = function(e) "sans")
@@ -495,7 +495,7 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                                           geom_text(
                                                         aes(label = paste0(n, " (", scales::percent(prop, accuracy = 1), ")")),
                                                         color = "black",
-                                                        size = rel_label_size,
+                                                        size = label_size,
                                                         family = curr_font,
                                                         hjust = -0.1,
                                                         fontface = "bold"
@@ -540,7 +540,7 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
                                                         ),
                                                         position = position_dodge(width = 0.9),
                                                         color = "black",
-                                                        size = rel_label_size,
+                                                        size = label_size,
                                                         family = curr_font,
                                                         hjust = -0.1,
                                                         vjust = 0.5,
@@ -607,12 +607,6 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5,
               if (is.null(base_size)) base_size <- 11
               line_w <- base_size / 60
 
-              line_w <- base_size / 60
-
-              # Significantly increase label size for stats as requested
-              # Using a larger multiplier against base_size directly for impact
-              stat_text_size <- (base_size * 1.2) / ggplot2::.pt
-
               if (is.null(group_name)) {
                             # Filter data for non-grouped calculations
                             plot_data <- data %>% dplyr::filter(!is.na(!!variable))
@@ -673,8 +667,50 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5,
 
                             group_labels <- setNames(group_stats$legend_label, group_stats[[group_name]])
 
-                            # Build color-coded subtitle for groups
-                            subtitle <- NULL
+                            # Build color-coded subtitle for groups (matching Set2 palette)
+                            n_groups <- nrow(group_stats)
+                            palette_colors <- RColorBrewer::brewer.pal(max(3, n_groups), "Set2")[1:n_groups]
+
+                            stats_parts <- character()
+                            if (stats %in% c("mean", "both")) {
+                                          group_m_parts <- character()
+                                          for (i in seq_len(n_groups)) {
+                                                        g_name <- group_stats[[group_name]][i]
+                                                        g_m <- group_stats$m[i]
+                                                        g_sd <- group_stats$sd[i]
+                                                        g_col <- palette_colors[i]
+                                                        group_m_parts <- c(
+                                                                      group_m_parts,
+                                                                      paste0("<span style='color:", g_col, ";'>**", g_name, "**: ", g_m, " (", g_sd, ")</span>")
+                                                        )
+                                          }
+                                          stats_parts <- c(stats_parts, paste0("Mean (SD): ", paste(group_m_parts, collapse = " | ")))
+                            }
+
+                            if (stats %in% c("median", "both")) {
+                                          group_med_parts <- character()
+                                          for (i in seq_len(n_groups)) {
+                                                        g_name <- group_stats[[group_name]][i]
+                                                        g_med <- group_stats$med[i]
+                                                        g_iqr <- group_stats$iqr[i]
+                                                        g_col <- palette_colors[i]
+                                                        group_med_parts <- c(
+                                                                      group_med_parts,
+                                                                      paste0("<span style='color:", g_col, ";'>**", g_name, "**: ", g_med, " (", g_iqr, ")</span>")
+                                                        )
+                                          }
+                                          stats_parts <- c(stats_parts, paste0("Median (IQR): ", paste(group_med_parts, collapse = " | ")))
+                            }
+
+                            # Add overall range to match non-grouped style
+                            overall_vals <- data[[var_name]][!is.na(data[[var_name]])]
+                            range_str <- if (length(overall_vals) > 0) {
+                                          paste0(" | Range: [", round(min(overall_vals), 2), ", ", round(max(overall_vals), 2), "]")
+                            } else {
+                                          ""
+                            }
+
+                            subtitle <- paste0(subtitle_missing, " | ", paste(stats_parts, collapse = " | "), range_str)
 
                             p <- data %>%
                                           dplyr::filter(!is.na(!!variable), !is.na(!!group_sym)) %>%
@@ -689,16 +725,7 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5,
                                                         linewidth = line_w * 4,
                                                         alpha = 0.9,
                                                         show.legend = FALSE
-                                          ) +
-                                                        geom_text(
-                                                                      data = group_stats,
-                                                                      aes(x = m, y = Inf, label = paste0("M=", m), color = factor(!!group_sym)),
-                                                                      vjust = 1.1,
-                                                                      hjust = -0.05,
-                                                                      size = stat_text_size,
-                                                                      fontface = "bold",
-                                                                      show.legend = FALSE
-                                                        )
+                                          )
                             }
 
                             if (stats %in% c("median", "both")) {
@@ -709,16 +736,7 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5,
                                                         linewidth = line_w * 4,
                                                         alpha = 0.9,
                                                         show.legend = FALSE
-                                          ) +
-                                                        geom_text(
-                                                                      data = group_stats,
-                                                                      aes(x = med, y = Inf, label = paste0("Md=", med), color = factor(!!group_sym)),
-                                                                      vjust = if (stats == "both") 2.6 else 1.1,
-                                                                      hjust = -0.05,
-                                                                      size = stat_text_size,
-                                                                      fontface = "bold.italic",
-                                                                      show.legend = FALSE
-                                                        )
+                                          )
                             }
               }
 
