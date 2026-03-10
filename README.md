@@ -1,5 +1,7 @@
 # kkstatfun
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18936020.svg)](https://doi.org/10.5281/zenodo.18936020)
+
 **R Statistical Analysis Toolkit for Medical and Epidemiology**
 
 A comprehensive R package designed for medical statistics, epidemiology, and general data analysis. It provides a suite of tools for:
@@ -103,12 +105,13 @@ MIT
 If you use this package in your research, please cite it as follows:
 
 ```bibtex
-@Manual{kkstatfun,
+@Software{kkstatfun,
   title = {kkstatfun: R Statistical Analysis Toolkit for Medical statistics and Epidemiology},
   author = {Kostadinov, Kostadin},
-  year = {2025},
-  note = {R package version 0.1.0},
+  year = {2026},
+  version = {0.1.14},
   url = {https://github.com/kostadinoff/kkstatfun},
+  doi = {10.5281/zenodo.18936020},
 }
 ```
 
