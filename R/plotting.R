@@ -25,7 +25,8 @@
 set_plot_font <- function(font = "Roboto Condensed", size = 18,
                           search_sources = c("google", "system", "local"),
                           fallbacks = c("Arial", "Helvetica", "sans"),
-                          update_theme = TRUE) {
+                          update_theme = TRUE,
+                          enable_showtext = TRUE) {
               # Input validation
               if (!is.character(font) || length(font) != 1) {
                             stop("Font must be a single character string.")
@@ -254,9 +255,10 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
               }
 
               # Enable showtext for consistent font rendering
-              # Uncomment if you want to enable showtext
-              # showtext::showtext_auto(enable = TRUE)
-              # message("✓ Enabled showtext for font rendering")
+              if (enable_showtext) {
+                            showtext::showtext_auto(enable = TRUE)
+                            message(" ✓ Enabled showtext for font rendering")
+              }
 
               # Create and set theme if requested
               if (update_theme) {
@@ -298,8 +300,10 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                                         legend.key = element_blank()
                                           )
 
-                            # Enable showtext only if manually requested (avoiding ggsave issues)
-                            # showtext::showtext_auto(enable = TRUE)
+                            # Enable showtext conditionally (beware of possible ggsave issues with DPI)
+                            if (enable_showtext) {
+                                          showtext::showtext_auto(enable = TRUE)
+                            }
 
                             theme_set(theme_nice)
                             message("✓ Updated ggplot2 theme with font '", font_family, "'")
