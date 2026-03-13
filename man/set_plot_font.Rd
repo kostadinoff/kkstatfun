@@ -9,7 +9,9 @@ set_plot_font(
   size = 18,
   search_sources = c("google", "system", "local"),
   fallbacks = c("Arial", "Helvetica", "sans"),
-  update_theme = TRUE
+  update_theme = TRUE,
+  enable_showtext = FALSE,
+  force_ragg = TRUE
 )
 }
 \arguments{
@@ -22,6 +24,10 @@ set_plot_font(
 \item{fallbacks}{Fallback fonts}
 
 \item{update_theme}{Whether to update the current ggplot theme}
+
+\item{enable_showtext}{Whether to enable showtext for font rendering (default: FALSE)}
+
+\item{force_ragg}{Whether to attempt to force AGG (ragg) for rendering on Windows (default: TRUE)}
 }
 \value{
 List with font details

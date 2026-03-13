@@ -11,6 +11,8 @@
 #' @param search_sources Sources to search: "google", "system", "local"
 #' @param fallbacks Fallback fonts
 #' @param update_theme Whether to update the current ggplot theme
+#' @param enable_showtext Whether to enable showtext for font rendering (default: FALSE)
+#' @param force_ragg Whether to attempt to force AGG (ragg) for rendering on Windows (default: TRUE)
 #'
 #' @return List with font details
 #'
@@ -26,7 +28,8 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                           search_sources = c("google", "system", "local"),
                           fallbacks = c("Arial", "Helvetica", "sans"),
                           update_theme = TRUE,
-                          enable_showtext = TRUE) {
+                          enable_showtext = FALSE,
+                          force_ragg = TRUE) {
               # Input validation
               if (!is.character(font) || length(font) != 1) {
                             stop("Font must be a single character string.")
@@ -258,6 +261,27 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
               if (enable_showtext) {
                             showtext::showtext_auto(enable = TRUE)
                             message(" ✓ Enabled showtext for font rendering")
+              } else {
+                            if (requireNamespace("showtext", quietly = TRUE)) {
+                                          showtext::showtext_auto(enable = FALSE)
+                            }
+              }
+
+              # Force AGG rendering (ragg)
+              if (force_ragg) {
+                            if (requireNamespace("ragg", quietly = TRUE)) {
+                                          options(device = ragg::agg_png)
+                                          if (requireNamespace("knitr", quietly = TRUE)) {
+                                                        knitr::opts_chunk$set(dev = "ragg_png")
+                                          }
+                                          message(" ✓ Set default graphics device to ragg::agg_png")
+                                          
+                                          if (Sys.info()["sysname"] == "Windows") {
+                                                        message(" ℹ Note: To use AGG in RStudio plot pane, ensure Tools -> Global Options -> General -> Graphics -> Graphic Device is set to AGG")
+                                          }
+                            } else {
+                                          message(" ⚠ `ragg` package not installed. Cannot force AGG rendering.")
+                            }
               }
 
               # Create and set theme if requested
