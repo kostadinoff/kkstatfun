@@ -14,7 +14,8 @@ univariate_plot(
   label_size = NULL,
   ncol = NULL,
   nrow = NULL,
-  force_100 = TRUE
+  force_100 = TRUE,
+  stats = "mean"
 )
 }
 \arguments{

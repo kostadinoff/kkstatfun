@@ -11,7 +11,7 @@ set_plot_font(
   fallbacks = c("Arial", "Helvetica", "sans"),
   update_theme = TRUE,
   enable_showtext = FALSE,
-  force_ragg = TRUE
+  force_ragg = FALSE
 )
 }
 \arguments{
@@ -27,7 +27,7 @@ set_plot_font(
 
 \item{enable_showtext}{Whether to enable showtext for font rendering (default: FALSE)}
 
-\item{force_ragg}{Whether to attempt to force AGG (ragg) for rendering on Windows (default: TRUE)}
+\item{force_ragg}{Whether to attempt to force AGG (ragg) for rendering on Windows (default: FALSE)}
 }
 \value{
 List with font details

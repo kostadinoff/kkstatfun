@@ -12,7 +12,7 @@
 #' @param fallbacks Fallback fonts
 #' @param update_theme Whether to update the current ggplot theme
 #' @param enable_showtext Whether to enable showtext for font rendering (default: FALSE)
-#' @param force_ragg Whether to attempt to force AGG (ragg) for rendering on Windows (default: TRUE)
+#' @param force_ragg Whether to attempt to force AGG (ragg) for rendering on Windows (default: FALSE)
 #'
 #' @return List with font details
 #'
@@ -29,7 +29,7 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                           fallbacks = c("Arial", "Helvetica", "sans"),
                           update_theme = TRUE,
                           enable_showtext = FALSE,
-                          force_ragg = TRUE) {
+                          force_ragg = FALSE) {
               # Input validation
               if (!is.character(font) || length(font) != 1) {
                             stop("Font must be a single character string.")

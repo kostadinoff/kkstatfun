@@ -5,9 +5,21 @@
 \alias{univariate_continuous_plot}
 \title{Univariate Continuous Plot}
 \usage{
-univariate_cont_plot(data, variable, group = NULL, label_size = 3.5)
+univariate_cont_plot(
+  data,
+  variable,
+  group = NULL,
+  label_size = 3.5,
+  stats = "mean"
+)
 
-univariate_continuous_plot(data, variable, group = NULL, label_size = 3.5)
+univariate_continuous_plot(
+  data,
+  variable,
+  group = NULL,
+  label_size = 3.5,
+  stats = "mean"
+)
 }
 \arguments{
 \item{data}{Data frame}
