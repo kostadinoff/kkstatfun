@@ -45,6 +45,13 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                     correct = FALSE,
                                     adjust_method = "holm",
                                     conf.level = 0.95) {
+              # Capture `variables` as a quosure up front. Touching `variables`
+              # directly (e.g. is.null()) would force the promise and evaluate a
+              # tidyselect expression such as c(mpg, hp) in the caller frame,
+              # where those column names do not exist.
+              variables_quo <- rlang::enquo(variables)
+              variables_null <- rlang::quo_is_null(variables_quo)
+
               # Handle grouped data frames
               if (dplyr::is_grouped_df(data)) {
                             # Get grouping variables
@@ -78,11 +85,11 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                             results <- data %>%
                                           dplyr::group_map(~ {
                                                         # Auto-detect variables for this stratum
-                                                        vars_to_use <- if (is.null(variables)) {
+                                                        vars_to_use <- if (variables_null) {
                                                                       setdiff(names(.x), c(group_name, strata_vars))
                                                         } else {
                                                                       # Support tidyselect on .x
-                                                                      names(tidyselect::eval_select(rlang::enquo(variables), .x))
+                                                                      names(tidyselect::eval_select(variables_quo, .x))
                                                         }
 
                                                         # Run comparison on this subset
@@ -130,10 +137,10 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
               }
 
               # Resolve variables (tidyselect)
-              if (is.null(variables)) {
+              if (variables_null) {
                             variables <- setdiff(names(data), group_name)
               } else {
-                            variables <- names(tidyselect::eval_select(rlang::enquo(variables), data))
+                            variables <- names(tidyselect::eval_select(variables_quo, data))
               }
 
               # Check that group has exactly 2 levels

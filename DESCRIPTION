@@ -1,6 +1,6 @@
 Package: kkstatfun
 Title: R Statistical Analysis Toolkit for Medical and Epidemiology
-Version: 0.1.14
+Version: 0.1.16
 Authors@R: 
     person("Kostadinov", role = c("aut", "cre"),
            email = "kostadinov@example.com")
@@ -66,9 +66,10 @@ Imports:
     ggtext,
     RColorBrewer,
     psych
-Suggests: 
+Suggests:
     testthat,
     knitr,
     rmarkdown,
-    roxygen2
+    roxygen2,
+    cmprsk
 Config/roxygen2/version: 8.0.0

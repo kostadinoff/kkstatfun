@@ -104,6 +104,145 @@ Computes the sensitivity of an observed Odds Ratio or Relative Risk against unme
 kk_sensitivity_analysis(or_observed = 2.5, p_bias = 0.20)
 ```
 
+#### `kk_incidence_rate(data, cases, person_time, by = NULL)`
+
+Computes incidence rates per unit of person-time with **exact (Poisson) confidence intervals**, and — when a stratifying variable is supplied — incidence **rate ratios** versus the reference level.
+
+*   **Epidemiological Example**: Comparing the incidence rate of myocardial infarction per 1000 person-years between a high-exposure and a reference cohort.
+```r
+df_ir <- data.frame(
+  arm = c("exposed", "unexposed"),
+  cases = c(40, 15),
+  pyears = c(1000, 1200)
+)
+df_ir %>% kk_incidence_rate(cases, pyears, by = arm)
+```
+
+#### `kk_rr_reg(data, outcome, predictors)`
+
+Estimates **adjusted risk ratios** for a common binary outcome using the modified Poisson approach (Zou 2004): a log-link Poisson model with robust sandwich standard errors. This is the preferred alternative to logistic regression when the outcome is frequent, since odds ratios overstate the risk ratio.
+
+*   **Epidemiological Example**: Estimating the adjusted risk ratio of post-operative infection for an exposure, controlling for age, in a cohort where infection is common (>10%).
+```r
+df_rr <- data.frame(
+  infection = rbinom(400, 1, 0.35),
+  exposure = rbinom(400, 1, 0.5),
+  age = rnorm(400, 50, 10)
+)
+kk_rr_reg(df_rr, infection, c("exposure", "age"))
+```
+
+#### `kk_rate_reg(data, outcome, predictors, person_time)` / `kk_poisson()`
+
+Fits **Poisson rate regression** returning incidence-rate ratios (IRR), with an `offset(log(person_time))` for rate outcomes. Overdispersion is detected automatically and a **negative-binomial** model is substituted when appropriate.
+
+*   **Epidemiological Example**: Modelling the rate of hospital admissions per person-year as a function of age and sex.
+```r
+df_rate <- data.frame(
+  admissions = rpois(200, 3),
+  pyears = runif(200, 50, 150),
+  age = rnorm(200, 50, 10),
+  sex = rbinom(200, 1, 0.5)
+)
+kk_rate_reg(df_rate, admissions, c("age", "sex"), person_time = pyears)
+```
+
+#### `kk_smd(data, treatment, variables)` / `kk_balance_table()`
+
+Computes **standardized mean differences (SMD)** between two groups for each covariate — the standard diagnostic for baseline balance in matched, weighted, or propensity-score cohorts. Absolute SMD > 0.1 flags meaningful imbalance.
+
+*   **Epidemiological Example**: Checking covariate balance between treated and control arms after propensity-score matching.
+```r
+df_bal <- data.frame(
+  arm = rep(c("treated", "control"), each = 100),
+  age = c(rnorm(100, 55, 8), rnorm(100, 50, 8)),
+  smoker = rbinom(200, 1, 0.4)
+)
+df_bal %>% kk_smd(arm, variables = c("age", "smoker"))
+```
+
+#### `kk_iptw(data, treatment, outcome, covariates)`
+
+Estimates a **propensity score**, forms **inverse-probability-of-treatment weights** (ATE or ATT, optionally stabilized), and returns the weighted **risk difference and risk ratio** with robust CIs. Use `kk_smd` on the weighted sample to confirm the covariates are balanced.
+
+*   **Epidemiological Example**: Estimating the causal effect of a treatment on a binary outcome from observational data, adjusting for confounding by age and sex via IPTW.
+```r
+df_ip <- data.frame(
+  trt = rbinom(500, 1, 0.5),
+  age = rnorm(500, 50, 10),
+  sex = rbinom(500, 1, 0.5)
+)
+df_ip$out <- rbinom(500, 1, plogis(-1 + 0.5 * df_ip$trt + 0.02 * df_ip$age))
+kk_iptw(df_ip, trt, out, covariates = c("age", "sex"))
+```
+
+#### `kk_epi_stats(data, exposure, outcome)`
+
+Computes the **Odds Ratio and Relative Risk** (with confidence intervals) from two binary variables — a lightweight alternative to `kk_twobytwo` when only OR and RR are needed.
+
+*   **Epidemiological Example**: Estimating the OR and RR of disease among exposed vs. unexposed subjects.
+```r
+df_epi <- data.frame(
+  exposure = c(rep(1, 50), rep(0, 50)),
+  outcome = c(rep(1, 20), rep(0, 30), rep(1, 10), rep(0, 40))
+)
+kk_epi_stats(df_epi, exposure, outcome)
+```
+
+#### `odds_ratio(data, exposure, outcome)` / `risk_ratio(data, exposure, outcome)`
+
+Convenience wrappers that return a single measure of association (the OR or the RR, respectively) with its confidence interval and p-value.
+
+```r
+df_or <- data.frame(exposure = c(1, 1, 0, 0, 1, 0), outcome = c(1, 0, 1, 0, 1, 0))
+odds_ratio(df_or, exposure, outcome)
+risk_ratio(df_or, exposure, outcome)
+```
+
+#### `kk_std_rates(data, count, pop, std_pop)`
+
+Performs **direct age-standardization** of rates against a reference (standard) population, returning crude and standardized rates with confidence intervals.
+
+*   **Epidemiological Example**: Age-standardizing cancer incidence to the WHO world standard population to allow comparison across regions.
+```r
+df_std <- data.frame(
+  age_group = c("0-19", "20-39", "40-59", "60+"),
+  cases = c(10, 25, 50, 100),
+  pop = c(5000, 8000, 6000, 4000)
+)
+std_pop <- c(4000, 7000, 6000, 3000)
+kk_std_rates(df_std, cases, pop, std_pop, multiplier = 1000)
+```
+
+#### `kk_smr(data, observed, pop, ref_rate)`
+
+Performs **indirect standardization**, comparing observed events with those expected under a reference population's stratum-specific rates to give the **Standardized Mortality/Morbidity Ratio (SMR)** with an exact Poisson CI. The counterpart to the direct `kk_std_rates` when stratum-specific rates in the study population are unstable.
+
+*   **Epidemiological Example**: Assessing whether mortality in an occupational cohort exceeds that expected from national age-specific death rates.
+```r
+df_smr <- data.frame(
+  age_group = c("0-39", "40-59", "60+"),
+  deaths = c(5, 20, 60),
+  pyears = c(20000, 15000, 8000),
+  ref_rate = c(0.0002, 0.0015, 0.008)
+)
+kk_smr(df_smr, deaths, pyears, ref_rate)
+```
+
+#### `kk_risk_plot(data, title)`
+
+Renders a **forest plot** of risk estimates (OR / RR and CIs) from the output of `kk_twobytwo`, `kk_epi_stats`, or any tibble with `Metric`, `Estimate`, `Lower`, `Upper` columns.
+
+```r
+res <- tibble::tibble(
+  Metric = c("OR", "RR"),
+  Estimate = c(1.5, 1.2),
+  Lower = c(1.1, 1.0),
+  Upper = c(2.0, 1.5)
+)
+kk_risk_plot(res)
+```
+
 ---
 
 ### 2. Diagnostic Tests, Agreement & Rater Studies
@@ -120,6 +259,38 @@ df_test <- data.frame(
   pcr_test = c(rep(1, 95), rep(0, 5), rep(1, 20), rep(0, 880))
 )
 df_test %>% kk_diagnostic(gold_standard, pcr_test)
+```
+
+#### `kk_roc(data, truth, predictor)`
+
+Builds an ROC curve for a continuous marker, returning the **AUC with a DeLong confidence interval** and the **Youden-optimal cutoff** together with the sensitivity, specificity, PPV, and NPV achieved at that threshold.
+
+*   **Clinical Example**: Determining the optimal biomarker cutoff and discriminative accuracy for identifying sepsis.
+```r
+df_marker <- data.frame(disease = rbinom(300, 1, 0.4))
+df_marker$biomarker <- df_marker$disease * 0.8 + rnorm(300)
+df_marker %>% kk_roc(disease, biomarker)
+```
+
+#### `kk_compare_roc(data, truth, predictor1, predictor2)`
+
+Compares the AUCs of two markers measured on the same subjects using **DeLong's test** for paired ROC curves.
+
+*   **Clinical Example**: Testing whether a novel biomarker significantly improves discrimination over an established one for the same patients.
+```r
+df_marker$established <- df_marker$disease * 0.3 + rnorm(300)
+df_marker %>% kk_compare_roc(disease, biomarker, established)
+```
+
+#### `kk_calibration(data, truth, predicted)`
+
+Assesses **calibration** of a risk model — the **Brier score**, the **Hosmer-Lemeshow** goodness-of-fit test, and a decile table of predicted vs. observed risk for a calibration plot. The complement to `kk_roc`: discrimination tells you *if* the model separates cases, calibration tells you whether the predicted probabilities are *accurate*.
+
+*   **Clinical Example**: Checking whether a cardiovascular risk score's predicted 10-year probabilities agree with observed event rates before deploying it.
+```r
+df_cal <- data.frame(y = rbinom(500, 1, 0.3))
+df_cal$p <- plogis(qlogis(0.3) + 0.8 * df_cal$y + rnorm(500))
+kk_calibration(df_cal, y, p)
 ```
 
 #### `kk_kappa(data, rater1, rater2)`
@@ -163,6 +334,75 @@ df_paired <- data.frame(
 df_paired %>% kk_mcnemar(mammography, ultrasound)
 ```
 
+#### `kk_confusion_matrix(x, ...)`
+
+Computes a **full panel of classifier metrics** with confidence intervals (sensitivity, specificity, PPV, NPV, accuracy, F1, MCC, likelihood ratios, and more) directly from TP/FP/FN/TN counts. Optional bootstrap CIs via `boot = TRUE`. Supersedes the deprecated `confusion_metrics_ci()`.
+
+*   **Clinical Example**: Full performance characterization of a screening test with 85 true positives, 10 false positives, 15 false negatives, and 890 true negatives.
+```r
+kk_confusion_matrix(c(tp = 85, fp = 10, fn = 15, tn = 890))
+```
+
+#### `diagnostic_summary(data, truth, test)`
+
+Produces a tidy summary of diagnostic metrics from **raw patient-level data**, applying a cutoff to numeric test results automatically.
+
+```r
+df_diag <- data.frame(truth = c(1, 0, 1, 0, 1, 0), test = c(1, 0, 0, 1, 1, 0))
+diagnostic_summary(df_diag, truth, test)
+```
+
+#### `kk_agreement(data, rater1, rater2, weights)`
+
+Computes **weighted Cohen's Kappa** (unweighted, linear, or quadratic weights) for ordinal rater agreement, with standard error and confidence interval.
+
+*   **Clinical Example**: Quantifying agreement between two raters scoring tumour grade on an ordinal scale, giving partial credit for near-misses via quadratic weights.
+```r
+df_rate <- data.frame(rater1 = c(1, 0, 1, 0, 1), rater2 = c(1, 1, 0, 0, 1))
+kk_agreement(df_rate, rater1, rater2, weights = "quadratic")
+```
+
+#### `kk_icc(data, raters)`
+
+Computes the **Intraclass Correlation Coefficient** in all six Shrout-Fleiss forms (single and average rater) with F-tests and CIs, for the agreement of continuous measurements — the continuous-scale counterpart to `kk_kappa`.
+
+*   **Clinical Example**: Quantifying the reliability of a tumour-size measurement made by three radiologists on the same set of scans.
+```r
+ratings <- data.frame(
+  r1 = c(9, 6, 8, 7, 10, 6, 8, 7, 9, 5),
+  r2 = c(8, 6, 7, 8, 9, 5, 8, 6, 9, 6),
+  r3 = c(9, 5, 8, 8, 9, 6, 7, 7, 8, 5)
+)
+kk_icc(ratings)
+```
+
+#### `kk_reliability(data, items)`
+
+Computes **Cronbach's alpha** (raw and standardized) with per-item statistics including alpha-if-item-dropped, for validating multi-item scales and questionnaires.
+
+*   **Clinical Example**: Assessing the internal consistency of a four-item patient-reported quality-of-life scale.
+```r
+items <- data.frame(
+  q1 = c(4, 5, 3, 4, 5, 2, 4, 5),
+  q2 = c(4, 4, 3, 5, 5, 2, 3, 5),
+  q3 = c(5, 5, 2, 4, 4, 3, 4, 4),
+  q4 = c(4, 5, 3, 4, 5, 2, 4, 5)
+)
+kk_reliability(items)
+```
+
+#### `kk_chisq_test(data, r, c)`
+
+Chi-square test of independence for **r × c contingency tables** (data frame or matrix input) with expected counts, residuals, and effect sizes (Cramér's V).
+
+*   **Epidemiological Example**: Testing association between species and biting frequency across multiple categories.
+```r
+species <- c(rep("Mice", 60), rep("Gerbils", 50))
+biting <- c(rep("Not", 30), rep("Mild", 30), rep("Not", 25), rep("Mild", 25))
+df_chi <- data.frame(species = species, biting = biting)
+kk_chisq_test(df_chi, species, biting)
+```
+
 ---
 
 ### 3. Non-Parametric Tests & Baseline Group Comparisons
@@ -175,6 +415,30 @@ Builds a standard, publication-ready "Table 1" summarizing baseline demographics
 
 ```r
 kk_table1(mtcars, by = "am", variables = c("mpg", "hp", "wt"))
+```
+
+#### `kk_compare_groups_table(data, group, variables)` / `compare_groups_table()`
+
+Produces a **detailed two-group comparison table** with per-group summaries, mean/proportion differences, confidence intervals, effect sizes, and p-values. Fully tidyselect- and `group_by()`-aware for stratified analyses.
+
+*   **Clinical Example**: Comparing continuous outcomes between two treatment arms, optionally stratified by a third variable.
+```r
+# Direct comparison
+kk_compare_groups_table(mtcars, am, c(mpg, hp))
+
+# Stratified by a third variable
+library(dplyr)
+mtcars |>
+  group_by(vs) |>
+  kk_compare_groups_table(am, c(mpg, hp))
+```
+
+#### `table1_summary(data, by, variables)`
+
+A `gtsummary`-backed "Table 1" builder returning a publication-styled summary object (an alternative rendering to `kk_table1`).
+
+```r
+table1_summary(mtcars, by = "am", variables = c("mpg", "hp", "wt"))
 ```
 
 #### `kk_median_test(data, x, group)`
@@ -242,7 +506,7 @@ kk_mssd_test(bp_ticks)
 
 ### 5. Regression Modeling & Proportions Comparisons
 
-#### `kk_reg(data, outcome, predictors)` / `regression_analysis()`
+#### `kk_reg(data, outcome, predictors)` / `regression_analysis()` / `krk_reg()`
 A unified modeling wrapper that automatically detects binomial outcomes (triggering Logistic Regression with odds ratios and ROC curve diagnostics) or continuous outcomes (triggering Linear Regression with check plots).
 
 *   **Epidemiological Example**: Modeling the risk of hypertension based on age, BMI, and family history.
@@ -261,6 +525,43 @@ df_prop <- data.frame(
   clinic = c("A", "B", "C")
 )
 compare_proportions(df_prop)
+```
+
+#### `pcit(data, conf.level)`
+
+Computes **binomial confidence intervals for proportions** from a data frame of successes and trials (the first two numeric columns), returning the proportion and its CI per row.
+
+```r
+df_ci <- data.frame(successes = c(10, 20), trials = c(100, 100), group = c("A", "B"))
+pcit(df_ci)
+```
+
+#### `compare_proportions_kk_glm(data, group, x, n)`
+
+Compares proportions between groups using **logistic regression with robust (sandwich) standard errors**, supporting covariate adjustment and stratification — more flexible than the normal-approximation `compare_proportions`.
+
+*   **Epidemiological Example**: Comparing event rates across treatment arms while adjusting for a confounder.
+```r
+df_glm <- data.frame(group = c("A", "B"), x = c(15, 25), n = c(50, 50))
+compare_proportions_kk_glm(df_glm, group, x, n)
+```
+
+#### `power_proportions(n, p1, p2, power, sig.level)`
+
+Power / sample-size calculation for **two-sample proportion tests**; supply all but one parameter to solve for the missing one.
+
+*   **Clinical Example**: Finding the power to detect a difference between a 50% and 60% response rate with 100 patients per arm.
+```r
+power_proportions(n = 100, p1 = 0.5, p2 = 0.6)
+```
+
+#### `plot_proportion_comparisons(results)`
+
+Renders a **forest plot** of the pairwise differences produced by `compare_proportions` or `compare_proportions_kk_glm`.
+
+```r
+res <- compare_proportions(df_prop)
+plot_proportion_comparisons(res)
 ```
 
 #### `kk_compare_independent_correlations(r, n)`
@@ -285,6 +586,20 @@ Steiger's t-test comparing two dependent correlations sharing a common criterion
 kk_compare_dependent_correlations(0.72, 0.35, 0.28, 50)
 ```
 
+#### `kk_firth(data, outcome, predictors)`
+
+Fits **Firth-penalized logistic regression**, which yields finite, bias-reduced odds ratios under complete or quasi-complete **separation** (rare events or a zero cell) where ordinary logistic regression breaks down. Separation is detected and reported.
+
+*   **Epidemiological Example**: Estimating an odds ratio for a rare adverse event where one exposure category has zero events, so standard logistic regression returns an infinite estimate.
+```r
+df_sep <- data.frame(
+  y = c(0, 0, 0, 0, 1, 1, 1, 1),
+  x = c(1, 2, 3, 4, 5, 6, 7, 8),
+  z = rnorm(8)
+)
+kk_firth(df_sep, y, c("x", "z"))
+```
+
 ---
 
 ### 6. Survival Analysis & Time-to-Event
@@ -297,6 +612,50 @@ library(survival)
 kk_survival_plot(lung, time, status, sex)
 ```
 
+#### `kk_coxph(data, time, status, predictors)`
+
+Fits univariate and multivariable **Cox proportional hazards models**, returning a tidy hazard-ratio table alongside the **Schoenfeld residual test** of the proportional-hazards assumption (per-term and global) plus concordance and AIC.
+
+*   **Clinical Example**: Modelling time-to-death by age, sex, and ECOG performance status, while checking whether the proportional-hazards assumption holds.
+```r
+library(survival)
+kk_coxph(lung, time, status, predictors = c("age", "sex", "ph.ecog"))
+```
+
+#### `kk_logrank(data, time, status, group)`
+
+Compares survival across groups with the **log-rank test** (`rho = 0`) or the Peto-Peto / Gehan-Wilcoxon weighting (`rho = 1`), returning per-group observed/expected counts and the overall statistic.
+
+*   **Clinical Example**: Testing whether survival differs between two chemotherapy regimens.
+```r
+library(survival)
+kk_logrank(lung, time, status, sex)
+```
+
+#### `kk_rmst(data, time, status, group, tau)`
+
+Computes the **Restricted Mean Survival Time** (area under the KM curve up to a horizon `tau`) for each group, plus the between-group **difference and ratio** with confidence intervals — an assumption-light effect measure to reach for when `kk_coxph` flags a proportional-hazards violation.
+
+*   **Clinical Example**: Reporting the mean survival time gained (in days, within the first year) for women vs. men with lung cancer, without assuming proportional hazards.
+```r
+library(survival)
+kk_rmst(lung, time, status, sex, tau = 365)
+```
+
+#### `kk_cuminc(data, time, status, group, cause)`
+
+Estimates the **competing-risks cumulative incidence** (Aalen-Johansen) for an event of interest in the presence of competing events, with **Gray's test** across groups (when the `cmprsk` package is installed).
+
+*   **Epidemiological Example**: Estimating the cumulative incidence of relapse when death without relapse is a competing risk, compared across two treatment arms.
+```r
+df_cr <- data.frame(
+  time = rexp(200, 0.1),
+  status = sample(0:2, 200, replace = TRUE), # 0 = censored, 1 = relapse, 2 = death
+  arm = rep(c("A", "B"), each = 100)
+)
+df_cr %>% kk_cuminc(time, status, arm, cause = 1)
+```
+
 ---
 
 ### 7. Demographics & EGN Utilities (Bulgarian Registry)
@@ -307,6 +666,117 @@ Parses, validates, and extracts demographic profiles (Date of Birth, Gender, Age
 ```r
 egn_sample <- c("9201014321", "8812128765")
 extract_egn_info(egn_sample)
+```
+
+---
+
+### 8. Descriptive Statistics & Summaries
+
+#### `kk_summary(data, col)` / `comprehensive_summary()`
+
+Computes an extensive numeric summary for a variable — central tendency, dispersion, robust estimators (Huber M), skewness/kurtosis, and normality tests — with full `group_by()` support.
+
+*   **Clinical Example**: Describing the distribution of a biomarker overall and by treatment arm before modelling.
+```r
+kk_summary(mtcars, mpg)
+
+# Grouped and abbreviated
+library(dplyr)
+mtcars |>
+  group_by(am) |>
+  kk_summary(mpg, verbose = "basic")
+```
+
+---
+
+### 9. Time-Series Analysis
+
+#### `kk_time_series(data, value_col, date_col)` / `time_series_analysis()`
+
+Analyzes a time series end-to-end: decomposition, stationarity tests (ADF/KPSS), autocorrelation, and automatic ARIMA modelling, with optional grouping.
+
+*   **Epidemiological Example**: Characterising a monthly surveillance count series and fitting a forecasting model.
+```r
+date <- seq(as.Date("2020-01-01"), by = "month", length.out = 24)
+value <- 100 + cumsum(rnorm(24, 2, 5))
+df_ts <- data.frame(date = date, value = value)
+kk_time_series(df_ts)
+```
+
+#### `kk_time_metrics(data, value_col, date_col)`
+
+Returns compact time-series descriptors — entropy, stability, linearity, and trend strength — useful for screening many series at once.
+```r
+kk_time_metrics(df_ts)
+```
+
+---
+
+### 10. Visualization
+
+#### `kkplot(...)`
+
+A drop-in `ggplot()` replacement that adds capped axis guides for a cleaner publication look; combine with any `geom_*`.
+```r
+library(ggplot2)
+kkplot(mtcars, aes(x = mpg, y = wt)) + geom_point()
+```
+
+#### `univariate_plot(data, variable)` / `univariate_cat_plot()` / `univariate_cont_plot()`
+
+Automatically renders the appropriate univariate figure — bar chart for categorical variables, density/histogram for continuous — with optional grouping. The `_cat_` and `_cont_` variants (also aliased as `univariate_categorical_plot()` and `univariate_continuous_plot()`) force a specific type.
+```r
+univariate_plot(mtcars, "mpg")          # continuous -> density
+univariate_plot(mtcars, "am")           # categorical -> bar
+univariate_cont_plot(mtcars, "mpg", group = "cyl")
+univariate_cat_plot(mtcars, "am", group = "cyl")
+```
+
+#### `kk_fullcorplot(data, method)`
+
+Produces a full **correlation matrix plot** with significance annotations (Pearson, Spearman, or Kendall), with optional multiple-comparison adjustment.
+```r
+kk_fullcorplot(mtcars, method = "kendall")
+```
+
+#### `set_plot_font(font, size)`
+
+Sets a global ggplot2 theme font (loaded via `sysfonts`/`showtext`) for consistent typography across all figures.
+```r
+set_plot_font("Roboto Condensed", size = 14)
+```
+
+---
+
+### 11. Data Utilities & Setup
+
+#### `kkonehot(data, column)` / `one_hot_encode()`
+
+One-hot encodes a categorical column into indicator variables.
+```r
+df_oh <- tibble::tibble(id = 1:3, color = c("red", "blue", "red"))
+kkonehot(df_oh, "color")
+```
+
+#### `mutate_round(data, digits)`
+
+Rounds all numeric columns in a data frame to a given number of digits (half-up rounding).
+```r
+mutate_round(data.frame(a = c(1.234, 5.678), b = c("x", "y")), 1)
+```
+
+#### `format_tibble(data, digits)`
+
+Formats numeric values in a results tibble for display (fixed decimals, thousands separators).
+```r
+format_tibble(tibble::tibble(Value = c(10.567, 2.3, NA)))
+```
+
+#### `kk_setup(cores, scipen)`
+
+One-call session setup: configures parallel cores, the Bayesian backend, display options, and disables scientific notation.
+```r
+kk_setup()
 ```
 
 ---
@@ -324,7 +794,7 @@ If you use this package in your research, please cite it as follows:
   title = {kkstatfun: R Statistical Analysis Toolkit for Medical statistics and Epidemiology},
   author = {Kostadinov, Kostadin},
   year = {2026},
-  version = {0.1.14},
+  version = {0.1.16},
   url = {https://github.com/kostadinoff/kkstatfun},
   doi = {10.5281/zenodo.18936020},
 }
