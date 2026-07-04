@@ -6,7 +6,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18936020.svg)](https://doi.org/10.5281/zenodo.18936020)
 
-**R Statistical Analysis Toolkit for Medical and Epidemiology**
+**R Statistical Analysis Toolkit for Medical Statistics, Health Economics and Epidemiology**
 
 A comprehensive R package designed for medical statistics, epidemiology, and general clinical data analysis. It provides a suite of tidyverse-friendly tools with full support for piping (`%>%` / `|>`) and grouping (`group_by()`).
 
