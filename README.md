@@ -27,8 +27,11 @@ devtools::install_github("kostadinoff/kkstatfun")
 ### 1. Epidemiology & Measures of Association
 
 #### `kk_twobytwo(data, exposure, outcome)`
+
 Computes classic measures of association from $2 \times 2$ contingency tables: Odds Ratio (OR), Relative Risk (RR), Risk Difference (RD), Attributable Fraction (AF), Population Attributable Fraction (PAF), and Preventable Fraction (PF) with 95% confidence intervals.
+
 *   **Epidemiological Example**: Assessing the risk of developing lung cancer among smokers vs. non-smokers.
+
 ```r
 library(kkstatfun)
 df <- data.frame(
@@ -39,7 +42,9 @@ df %>% kk_twobytwo(smoking, lung_cancer)
 ```
 
 #### `kk_stratified_2x2(data, exposure, outcome, stratum)`
+
 Performs stratified analysis on $2 \times 2$ tables, calculating stratum-specific ORs, the Cochran-Mantel-Haenszel (CMH) pooled Odds Ratio, and the Breslow-Day test for homogeneity of odds ratios to detect confounding and effect modification.
+
 *   **Epidemiological Example**: Studying the association between coffee consumption and coronary heart disease, stratified by smoking status to control for confounding.
 ```r
 df_strat <- data.frame(
@@ -51,7 +56,9 @@ df_strat %>% kk_stratified_2x2(coffee, chd, smoking)
 ```
 
 #### `kk_reri(data, exp1, exp2, outcome)`
+
 Calculates the Relative Excess Risk due to Interaction (RERI), Attributable Proportion due to Interaction (AP), and Synergy Index (S) to evaluate additive interactions.
+
 *   **Epidemiological Example**: Assessing if the combined effect of asbestos exposure and smoking on lung cancer is greater than the sum of their individual effects.
 ```r
 df_int <- data.frame(
