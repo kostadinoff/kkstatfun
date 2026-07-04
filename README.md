@@ -70,7 +70,9 @@ df_int %>% kk_reri(asbestos, smoking, cancer)
 ```
 
 #### `kk_trend_test(data, exposure_level, outcome)` / `prop_trend_test()`
+
 Performs the Cochran-Armitage test for trend in proportions to evaluate linear trends in binomial proportions across ordinal levels.
+
 *   **Epidemiological Example**: Evaluating if the prevalence of cardiovascular disease increases with increasing levels of daily alcohol intake (None, Low, Moderate, High).
 ```r
 df_trend <- data.frame(
@@ -81,7 +83,9 @@ df_trend %>% kk_trend_test(alcohol, cvd)
 ```
 
 #### `kk_nnt(data, exposure, outcome)`
+
 Calculates the Number Needed to Treat (NNT) or Number Needed to Harm (NNH) alongside the Absolute Risk Reduction (ARR) and Relative Risk Reduction (RRR).
+
 *   **Clinical Example**: Calculating the number of patients required to be treated with a new statin to prevent one primary cardiovascular event.
 ```r
 df_treatment <- data.frame(
@@ -92,7 +96,9 @@ df_treatment %>% kk_nnt(statin, event)
 ```
 
 #### `kk_sensitivity_analysis(or_observed, p_bias)`
+
 Computes the sensitivity of an observed Odds Ratio or Relative Risk against unmeasured confounding, assessing the strength of a potential confounder required to explain away the finding.
+
 ```r
 # Observed OR of 2.5 with 20% estimated confounding bias prevalence
 kk_sensitivity_analysis(or_observed = 2.5, p_bias = 0.20)
@@ -103,8 +109,11 @@ kk_sensitivity_analysis(or_observed = 2.5, p_bias = 0.20)
 ### 2. Diagnostic Tests, Agreement & Rater Studies
 
 #### `kk_diagnostic(data, truth, prediction)` / `confusion_metrics_ci()`
+
 Computes key diagnostic test performance parameters: Sensitivity, Specificity, Positive/Negative Predictive Value (PPV/NPV), and Likelihood Ratios (LR+/LR-) with Wilson score confidence intervals.
+
 *   **Clinical Example**: Evaluating the diagnostic accuracy of a rapid PCR test against the gold standard viral culture.
+
 ```r
 df_test <- data.frame(
   gold_standard = c(rep(1, 100), rep(0, 900)),
@@ -114,8 +123,11 @@ df_test %>% kk_diagnostic(gold_standard, pcr_test)
 ```
 
 #### `kk_kappa(data, rater1, rater2)`
+
 Computes Cohen's Kappa coefficient ($\kappa$), standard error, Z-statistic, and confidence intervals to evaluate inter-rater agreement for categorical classifications.
+
 *   **Clinical Example**: Assessing diagnostic agreement between two independent neurologists classifying MRI scans as "Normal", "Inconclusive", or "Pathological".
+
 ```r
 df_agree <- data.frame(
   neuro1 = c(rep("Normal", 50), rep("Abnormal", 50)),
@@ -125,8 +137,11 @@ df_agree %>% kk_kappa(neuro1, neuro2)
 ```
 
 #### `kk_bland_altman(data, method1, method2)`
+
 Computes limits of agreement and constructs Bland-Altman plots to evaluate the clinical agreement between two continuous measurement methods.
+
 *   **Clinical Example**: Assessing agreement between systolic blood pressure measurements from an arterial line vs. an oscillometric arm cuff.
+
 ```r
 df_bp <- data.frame(
   arterial = rnorm(50, 120, 15),
@@ -135,9 +150,11 @@ df_bp <- data.frame(
 df_bp %>% kk_bland_altman(arterial, cuff)
 ```
 
-#### `kk_mcnemar(data, exposure, outcome)`
+#### `kk_mcnemar(data, test1, test2)`
 Performs McNemar's test for paired categorical data (e.g. matched case-control designs or two diagnostic tests on the same subjects).
+
 *   **Epidemiological Example**: Comparing the screening outcomes of Mammography and Ultrasound performed on the same cohort of patients.
+
 ```r
 df_paired <- data.frame(
   mammography = c(rep(1, 80), rep(0, 120)),
@@ -151,14 +168,19 @@ df_paired %>% kk_mcnemar(mammography, ultrasound)
 ### 3. Non-Parametric Tests & Baseline Group Comparisons
 
 #### `kk_table1(data, by, variables)` / `kk_compare_groups_table()`
+
 Builds a standard, publication-ready "Table 1" summarizing baseline demographics and clinical variables across groups, automatically performing parametric or non-parametric tests depending on variable characteristics.
+
 *   **Clinical Example**: Summarizing age, gender, blood pressure, and smoking status at baseline stratified by placebo vs. active treatment arm.
+
 ```r
 kk_table1(mtcars, by = "am", variables = c("mpg", "hp", "wt"))
 ```
 
 #### `kk_median_test(data, x, group)`
+
 Performs the Median Test for $k$ Independent Samples, comparing proportions above vs. below/equal to the composite median.
+
 *   **Clinical Example**: Comparing the median hospital stay duration (continuous days) across three different surgical wards when stay durations are highly non-normally distributed.
 ```r
 df_stay <- data.frame(
@@ -169,8 +191,11 @@ df_stay %>% kk_median_test(days, ward)
 ```
 
 #### `kk_vdw_test(data, x, group)`
+
 Performs the van der Waerden Normal-Scores Test as a highly powerful non-parametric alternative to ANOVA, converting ranks to normal distribution quantiles.
+
 *   **Clinical Example**: Evaluating clinical cognitive scores under three independent noise environments when data shape assumptions are violated.
+
 ```r
 df_noise <- data.frame(
   score = c(8, 10, 9, 10, 9, 7, 8, 5, 8, 5, 4, 8, 7, 5, 7),
@@ -185,14 +210,18 @@ df_noise %>% kk_vdw_test(score, noise)
 
 #### `kk_runs_test(data, x, method)` / `kk_random_seq()`
 Wald-Wolfowitz runs test for categorical variables, or Wallis-Moore up-down runs test for quantitative serial randomness.
+
 *   **Epidemiological Example**: Evaluating if successive healthcare-associated infection outbreaks in an ICU follow a random temporal sequence.
+
 ```r
 infection_seq <- c("N", "N", "Y", "N", "Y", "Y", "N", "N", "Y", "N")
 kk_runs_test(infection_seq)
 ```
 
 #### `kk_frequency_test(data, x)`
+
 Chi-Square Goodness-of-Fit or Binomial test checking if categories occur with equal probability.
+
 *   **Epidemiological Example**: Verifying if congenital abnormality admissions occur uniformly across days of the week.
 ```r
 admission_days <- c(1, 3, 2, 7, 5, 2, 4, 3, 1, 6, 7, 2, 5, 3)
@@ -200,7 +229,9 @@ kk_frequency_test(admission_days)
 ```
 
 #### `kk_mssd_test(data, x)`
+
 Von Neumann Mean Square Successive Difference (MSSD) test for serial correlation on continuous quantitative data.
+
 *   **Clinical Example**: Checking if continuous blood pressure readings over time represent independent random fluctuations or exhibit serial correlation.
 ```r
 bp_ticks <- c(120, 122, 121, 125, 124, 122, 120, 118, 119, 122)
@@ -213,13 +244,16 @@ kk_mssd_test(bp_ticks)
 
 #### `kk_reg(data, outcome, predictors)` / `regression_analysis()`
 A unified modeling wrapper that automatically detects binomial outcomes (triggering Logistic Regression with odds ratios and ROC curve diagnostics) or continuous outcomes (triggering Linear Regression with check plots).
+
 *   **Epidemiological Example**: Modeling the risk of hypertension based on age, BMI, and family history.
 ```r
 regression_analysis(mtcars, outcome = "am", predictors = c("mpg", "wt"))
 ```
 
 #### `compare_proportions(data)` / `compare_proportions_by()`
+
 Pairwise comparison of proportions utilizing normal approximations with multiple comparison adjustments (e.g. Holm/Bonferroni).
+
 ```r
 df_prop <- data.frame(
   proportion = c(0.3, 0.5, 0.25),
@@ -230,16 +264,22 @@ compare_proportions(df_prop)
 ```
 
 #### `kk_compare_independent_correlations(r, n)`
+
 Fisher Z-transformation tests evaluating differences between correlation coefficients obtained from independent samples.
+
 *   **Epidemiological Example**: Comparing the correlation of daily dietary sodium intake and systolic blood pressure in males vs. females.
+
 ```r
 # Male: r = 0.65 (n=50), Female: r = 0.40 (n=60)
 kk_compare_independent_correlations(c(0.65, 0.40), c(50, 60))
 ```
 
 #### `kk_compare_dependent_correlations(rxz, ryz, rxy, n)`
+
 Steiger's t-test comparing two dependent correlations sharing a common criterion variable within the same sample.
+
 *   **Epidemiological Example**: Evaluating if daily sugar intake ($X$) is a significantly stronger predictor of dental cavities ($Z$) than daily sodium intake ($Y$) in the same cohort.
+
 ```r
 # BP vs Sugar (rxz) = 0.72, BP vs Salt (ryz) = 0.35, Sugar vs Salt (rxy) = 0.28, n = 50
 kk_compare_dependent_correlations(0.72, 0.35, 0.28, 50)
