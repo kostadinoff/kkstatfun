@@ -69,6 +69,8 @@ df %>% kk_twobytwo(smoking, lung_cancer)
 #> 19 NNH                                3.43     2.45    5.73   0.000000438 Chi-…       0.95
 ```
 
+> **Interpretation.** Smokers had 4.5× the risk of lung cancer (RR 4.5, 95% CI 2.3–8.7) and 6.6× the odds (OR 6.6). Because the outcome is common (20% overall), the OR overstates the RR — report the RR here. The risk difference of 0.29 means ~29 extra cases per 100 smokers, i.e. one extra case for every ~3.4 smokers (NNH 3.4). 78% of cancers *among smokers* are attributable to smoking (AF), and 58% of *all* cancers in the population would be prevented if smoking were removed (PAF). Every CI excludes the null, so the association is significant.
+
 #### `kk_stratified_2x2(data, exposure, outcome, stratum)`
 
 Performs stratified analysis on $2 \times 2$ tables, calculating stratum-specific ORs, the Cochran-Mantel-Haenszel (CMH) pooled Odds Ratio, and the Breslow-Day test for homogeneity of odds ratios to detect confounding and effect modification.
@@ -114,6 +116,8 @@ df_strat %>% kk_stratified_2x2(coffee, chd, smoking)
 #> 2 Non-Smoker  1.33  1.25            10            40              12              60
 ```
 
+> **Interpretation.** Pooling across smoking strata, coffee is associated with 2.16× the odds of CHD (Mantel-Haenszel OR 2.16, 95% CI 1.07–4.35). The Breslow-Day test is non-significant (p = 0.085), so the odds ratios are reasonably *homogeneous* across strata — no strong evidence of effect modification, and the single pooled estimate is a fair summary. The stratum-specific ORs (3.86 in smokers vs 1.33 in non-smokers) hint at a stronger effect among smokers, but the sample is too small to confirm interaction.
+
 #### `kk_reri(data, exp1, exp2, outcome)`
 
 Calculates the Relative Excess Risk due to Interaction (RERI), Attributable Proportion due to Interaction (AP), and Synergy Index (S) to evaluate additive interactions.
@@ -135,6 +139,8 @@ df_int %>% kk_reri(asbestos, smoking, cancer)
 #> 3 S         0.271  0.00746  9.87 0.498       0.95
 ```
 
+> **Interpretation.** RERI is the excess risk on the *additive* scale beyond the sum of the two separate exposure effects. Here RERI = 0.44 but its 95% CI (−0.42 to 1.29) includes 0, so there is no evidence of additive interaction — the joint effect is consistent with independent effects. (Simulated data, so the point estimate will differ from a real study.)
+
 #### `kk_trend_test(data, exposure_level, outcome)` / `prop_trend_test()`
 
 Performs the Cochran-Armitage test for trend in proportions to evaluate linear trends in binomial proportions across ordinal levels.
@@ -153,6 +159,8 @@ df_trend %>% kk_trend_test(alcohol, cvd)
 #> 1 Cochran-Armitage Trend     0.212 NA    NA    0.832         0.95        4     200
 #> 2 Trend OR (per unit)        1.62   1.17  2.24 0.00337       0.95        4     200
 ```
+
+> **Interpretation.** Read the *Trend OR (per unit)* row: the odds of CVD rise 1.62× (95% CI 1.17–2.24) for each step up the ordered alcohol scale (None → Low → Med → High), a significant monotonic dose-response (p = 0.003). A trend OR with a CI excluding 1 is the key evidence of increasing risk across ordinal categories.
 
 #### `kk_nnt(data, exposure, outcome)`
 
@@ -174,6 +182,8 @@ df_treatment %>% kk_nnt(statin, event)
 #> 3 RRR       0.571  0.225   0.763        0.95 ""
 ```
 
+> **Interpretation.** The statin cut the event rate from 7% to 3% — an absolute risk reduction of 4% (ARR 0.04) and a 57% relative reduction (RRR). You would need to treat 25 patients (NNT, 95% CI 15–76) to prevent one cardiovascular event; the CI excludes infinity, consistent with a significant benefit.
+
 #### `kk_sensitivity_analysis(or_observed, p_bias)`
 
 Computes the sensitivity of an observed Odds Ratio or Relative Risk against unmeasured confounding, assessing the strength of a potential confounder required to explain away the finding.
@@ -189,6 +199,8 @@ kk_sensitivity_analysis(or_observed = 2.5, p_bias = 0.20)
 #> 2 Confounder Prevalence Difference (p_bias)   0.2 Assumed maximum prevalence differ… Assu…
 #> 3 Required Confounder Association (RR_UD)     8.5 Low sensitivity (robust) - a very… Mini…
 ```
+
+> **Interpretation.** To fully explain away the observed OR of 2.5 through unmeasured confounding, a confounder would need to be associated with the outcome by a risk ratio of at least 8.5 (given the assumed 20% prevalence difference). Such a strong hidden confounder is implausible in most settings, so the finding is relatively robust.
 
 #### `kk_incidence_rate(data, cases, person_time, by = NULL)`
 
@@ -211,6 +223,8 @@ df_ir %>% kk_incidence_rate(cases, pyears, by = arm)
 #> # ℹ 4 more variables: rr_low <dbl>, rr_high <dbl>, rr_p <dbl>, reference <chr>
 ```
 
+> **Interpretation.** The exposed cohort had 40 events per 1000 person-years (exact 95% CI 28.6–54.5) versus 12.5 (7.0–20.6) in the unexposed. The rate ratio is computed against the first row (exposed = reference), so the unexposed value of 0.31 means the exposed had ~3.2× the event rate. The non-overlapping exact Poisson CIs indicate a real rate difference.
+
 #### `kk_rr_reg(data, outcome, predictors)`
 
 Estimates **adjusted risk ratios** for a common binary outcome using the modified Poisson approach (Zou 2004): a log-link Poisson model with robust sandwich standard errors. This is the preferred alternative to logistic regression when the outcome is frequent, since odds ratios overstate the risk ratio.
@@ -232,6 +246,8 @@ kk_rr_reg(df_rr, infection, c("exposure", "age"))
 #> 3 exposure multivari…       1.01    0.779      1.30   0.131      0.0483   0.961       0.95
 #> 4 age      multivari…       1.00    0.992      1.02   0.00596    0.616    0.538       0.95
 ```
+
+> **Interpretation.** Each row is an adjusted risk ratio; read the `multivariable` rows for the mutually-adjusted estimates. Exposure has RR ≈ 1.01 (95% CI 0.78–1.30, p ≈ 0.96) — no association, as expected since the outcome was simulated independently. The advantage over logistic regression: these are risk ratios, directly interpretable even though infection is common.
 
 #### `kk_rate_reg(data, outcome, predictors, person_time)` / `kk_poisson()`
 
@@ -257,6 +273,8 @@ kk_rate_reg(df_rate, admissions, c("age", "sex"), person_time = pyears)
 #> # ℹ 2 more variables: AIC <dbl>, conf.level <dbl>
 ```
 
+> **Interpretation.** Coefficients are incidence-rate ratios (per person-year via the offset). The `dispersion` column (~1.5) is checked automatically; here it stayed below the negative-binomial threshold so a Poisson fit was kept (`family = poisson`). Neither age (IRR ≈ 1.00) nor sex (IRR ≈ 1.13, p ≈ 0.14) is significant in this simulated data.
+
 #### `kk_smd(data, treatment, variables)` / `kk_balance_table()`
 
 Computes **standardized mean differences (SMD)** between two groups for each covariate — the standard diagnostic for baseline balance in matched, weighted, or propensity-score cohorts. Absolute SMD > 0.1 flags meaningful imbalance.
@@ -276,6 +294,8 @@ df_bal %>% kk_smd(arm, variables = c("age", "smoker"))
 #> 1 age      <NA>  continuous   49.2   54.8  -0.683   0.683 TRUE      
 #> 2 smoker   1     categorical   0.37   0.44 -0.143   0.143 TRUE
 ```
+
+> **Interpretation.** SMDs measure imbalance independent of sample size. Both covariates exceed the conventional |SMD| > 0.1 threshold (age −0.68, smoker −0.14) and are flagged `imbalanced = TRUE`, so the raw treated and control groups are not comparable — weighting or matching (e.g. `kk_iptw`) is warranted before estimating an effect.
 
 #### `kk_iptw(data, treatment, outcome, covariates)`
 
@@ -298,6 +318,8 @@ kk_iptw(df_ip, trt, out, covariates = c("age", "sex"))
 #> 2 ATE      Risk ratio        1.18     1.02       1.37   0.0289       0.95
 ```
 
+> **Interpretation.** After inverse-probability weighting to balance age and sex, the *average treatment effect* is a risk difference of +0.097 (95% CI 0.010–0.183) and a risk ratio of 1.18 (1.02–1.37); both exclude the null (p ≈ 0.03), so treatment raises the outcome probability by ~10 percentage points. Confirm the weights achieved balance by re-running `kk_smd` on the weighted sample.
+
 #### `kk_epi_stats(data, exposure, outcome)`
 
 Computes the **Odds Ratio and Relative Risk** (with confidence intervals) from two binary variables — a lightweight alternative to `kk_twobytwo` when only OR and RR are needed.
@@ -317,6 +339,8 @@ kk_epi_stats(df_epi, exposure, outcome)
 #> 2 Relative Ri…     2     1.04  3.83       0.95            20            50              10
 #> # ℹ 1 more variable: Unexposed_Total <int>
 ```
+
+> **Interpretation.** Exposed subjects had twice the risk (RR 2.0, 95% CI 1.04–3.83) and 2.67× the odds (OR 2.67) of the outcome; both CIs exclude 1, so the association is significant. As always the OR sits further from 1 than the RR, so with a 20% exposed-group risk the RR is the more faithful effect measure.
 
 #### `odds_ratio(data, exposure, outcome)` / `risk_ratio(data, exposure, outcome)`
 
@@ -358,6 +382,8 @@ kk_std_rates(df_std, cases, pop, std_pop, multiplier = 1000)
 #> 2 Adjusted Rate  7.74  6.62  8.87       1000       0.95
 ```
 
+> **Interpretation.** The crude rate (8.04 per 1000) is what you observe; the age-standardized rate (7.74, 95% CI 6.62–8.87) is what the population *would* experience under the reference age structure. Standardizing removes age as a confounder so regions or periods can be compared fairly. The small drop from crude to adjusted shows this population is slightly older than the standard.
+
 #### `kk_smr(data, observed, pop, ref_rate)`
 
 Performs **indirect standardization**, comparing observed events with those expected under a reference population's stratum-specific rates to give the **Standardized Mortality/Morbidity Ratio (SMR)** with an exact Poisson CI. The counterpart to the direct `kk_std_rates` when stratum-specific rates in the study population are unstable.
@@ -377,6 +403,8 @@ kk_smr(df_smr, deaths, pyears, ref_rate)
 #>      <dbl>    <dbl> <dbl>   <dbl>    <dbl>    <dbl>      <dbl>   <dbl>      <dbl>
 #> 1       85     90.5 0.939   0.750     1.16     1.98       1000   0.599       0.95
 ```
+
+> **Interpretation.** 85 deaths were observed against 90.5 expected from the reference population's age-specific rates, giving an SMR of 0.94 (95% CI 0.75–1.16). Because the CI includes 1 (p = 0.60), the cohort's mortality is not significantly different from expected — no excess risk. An SMR > 1 with a CI excluding 1 would signal excess mortality.
 
 #### `kk_risk_plot(data, title)`
 
@@ -427,6 +455,8 @@ df_test %>% kk_diagnostic(gold_standard, pcr_test)
 #> 7 AUC         0.964
 ```
 
+> **Interpretation.** The PCR test is highly accurate: 95% sensitivity and 97.8% specificity, AUC 0.96. Note the gap between PPV (0.83) and NPV (0.99) — driven by the low 10% prevalence, a positive result is only ~83% likely to be a true case, while a negative result all but rules disease out.
+
 #### `kk_roc(data, truth, predictor)`
 
 Builds an ROC curve for a continuous marker, returning the **AUC with a DeLong confidence interval** and the **Youden-optimal cutoff** together with the sensitivity, specificity, PPV, and NPV achieved at that threshold.
@@ -444,6 +474,8 @@ df_marker %>% kk_roc(disease, biomarker)
 #> # ℹ 2 more variables: n <int>, conf.level <dbl>
 ```
 
+> **Interpretation.** The marker discriminates cases moderately well (AUC 0.73, DeLong 95% CI 0.67–0.78; 0.5 is chance). The Youden-optimal cutoff of 0.52 balances sensitivity (0.66) and specificity (0.69) — use it when you need a single decision threshold rather than the whole curve.
+
 #### `kk_compare_roc(data, truth, predictor1, predictor2)`
 
 Compares the AUCs of two markers measured on the same subjects using **DeLong's test** for paired ROC curves.
@@ -458,6 +490,8 @@ df_marker %>% kk_compare_roc(disease, biomarker, established)
 #>   <chr>     <chr>       <dbl> <dbl>          <dbl>     <dbl>   <dbl> <chr>           <dbl>
 #> 1 biomarker established 0.726 0.582          0.144      3.15 0.00165 DeLong's …       0.95
 ```
+
+> **Interpretation.** The first biomarker discriminates significantly better than the established one (AUC 0.73 vs 0.58; difference 0.14, DeLong p = 0.0017). Because both markers are measured on the *same* subjects, the paired DeLong test is the correct comparison — a two-sample test would ignore their correlation and overstate uncertainty.
 
 #### `kk_calibration(data, truth, predicted)`
 
@@ -484,6 +518,8 @@ kk_calibration(df_cal, y, p)
 #> 10    10    50              28          0.56         0.743
 ```
 
+> **Interpretation.** Each row is a risk decile: compare `observed_rate` with `predicted_rate`. Good calibration means the two track closely. Here the model over-predicts in the higher-risk deciles (decile 7: 22% observed vs 44% predicted; decile 10: 56% vs 74%), so its probabilities are too high for high-risk patients. Retrieve the Brier score and Hosmer-Lemeshow test from `attr(x, "brier")` and `attr(x, "hosmer_lemeshow")`.
+
 #### `kk_kappa(data, rater1, rater2)`
 
 Computes Cohen's Kappa coefficient ($\kappa$), standard error, Z-statistic, and confidence intervals to evaluate inter-rater agreement for categorical classifications.
@@ -503,6 +539,8 @@ df_agree %>% kk_kappa(neuro1, neuro2)
 #> 1 Cohen's Kappa  0.74    0.0673        11.0 3.74e-28      0.608      0.872   100
 #> # ℹ 2 more variables: observed_agreement <dbl>, chance_agreement <dbl>
 ```
+
+> **Interpretation.** Cohen's κ of 0.74 (95% CI 0.61–0.87) indicates *substantial* agreement between the two neurologists beyond chance (Landis-Koch: 0.61–0.80 = substantial). The CI excludes 0 and p is minuscule, so the agreement is well above what chance alone would produce.
 
 #### `kk_bland_altman(data, method1, method2)`
 
@@ -543,6 +581,8 @@ df_paired %>% kk_mcnemar(mammography, ultrasound)
 #> 2 McNemar's Test     NA    NA     NA      0.500 Exac…           15           20       0.95
 ```
 
+> **Interpretation.** McNemar's test uses only the *discordant* pairs (15 vs 20 here). The conditional OR is 1.33 with p = 0.50, so there is no significant difference in the positivity rates of the two paired tests — mammography and ultrasound detect at similar rates in this cohort.
+
 #### `kk_confusion_matrix(x, ...)`
 
 Computes a **full panel of classifier metrics** with confidence intervals (sensitivity, specificity, PPV, NPV, accuracy, F1, MCC, likelihood ratios, and more) directly from TP/FP/FN/TN counts. Optional bootstrap CIs via `boot = TRUE`. Supersedes the deprecated `confusion_metrics_ci()`.
@@ -564,6 +604,8 @@ kk_confusion_matrix(c(tp = 85, fp = 10, fn = 15, tn = 890))
 #> 8 FNR                 0.15   0.0865  0.235      0.95 complement of sensitivity CI <NA> 
 #> # ℹ 13 more rows
 ```
+
+> **Interpretation.** From the four cell counts the function derives 21 metrics with exact CIs. Sensitivity is 0.85 and specificity 0.99; despite the high specificity, the 10% prevalence still shapes the predictive values (PPV 0.90, NPV 0.98). Scroll the full tibble for likelihood ratios and MCC, which summarise performance in a single prevalence-independent number.
 
 #### `diagnostic_summary(data, truth, test)`
 
@@ -605,6 +647,8 @@ kk_agreement(df_rate, rater1, rater2, weights = "quadratic")
 #> 4 Percent Agreement   60     NA     NA    NA           0.95     5            2
 ```
 
+> **Interpretation.** With a binary rating the *weighted* κ is undefined (weights need ≥3 ordered categories), so read the unweighted κ (0.17) and PABAK (0.20). Both are low, but the tiny sample (n = 5) makes them unstable (CI −0.73 to 1.06). Quadratic weights pay off only when the scale is genuinely ordinal with 3+ levels, giving partial credit for near-misses.
+
 #### `kk_icc(data, raters)`
 
 Computes the **Intraclass Correlation Coefficient** in all six Shrout-Fleiss forms (single and average rater) with F-tests and CIs, for the agreement of continuous measurements — the continuous-scale counterpart to `kk_kappa`.
@@ -629,6 +673,8 @@ kk_icc(ratings)
 #> 6 ICC3k 0.943    0.834     0.985   17.7     9    18 0.000000335       0.95
 ```
 
+> **Interpretation.** Read `ICC2` for the reliability of a *single* rater (0.85) and `ICC2k` for the *average* of the three raters (0.94) under a two-way random model. Values above 0.75 indicate excellent reliability, so these raters are highly consistent. Pick the row matching your design: ICC1 (one-way), ICC2 (two-way random), ICC3 (two-way fixed).
+
 #### `kk_reliability(data, items)`
 
 Computes **Cronbach's alpha** (raw and standardized) with per-item statistics including alpha-if-item-dropped, for validating multi-item scales and questionnaires.
@@ -651,6 +697,8 @@ kk_reliability(items)
 #> 3 q3        8 0.778 0.789 0.716  0.638  3.88 0.991            0.958
 #> 4 q4        8 0.973 0.972 0.814  0.949  4    1.07             0.858
 ```
+
+> **Interpretation.** The per-item table shows each item's correlation with the scale total and the alpha the scale would have if that item were dropped. No `alpha_if_dropped` value exceeds the overall α (retrieve it via `attr(x, "alpha")` — here raw α ≈ 0.92), so every item contributes and none should be removed. α ≥ 0.7 is the usual bar for acceptable internal consistency.
 
 #### `kk_chisq_test(data, r, c)`
 
@@ -690,6 +738,8 @@ kk_table1(mtcars, by = "am", variables = c("mpg", "hp", "wt"))
 #> 3 __wt__         32    3.52 (3.44, 3.85)       2.32 (1.94, 2.78)      <0.001
 ```
 
+> **Interpretation.** Each cell is median (IQR) by group, with an automatically chosen test in the p-value column. Automatic-transmission cars (am = 1) have higher mpg (22.8 vs 17.3, p = 0.001) and lower weight (2.32 vs 3.52, p < 0.001). This is the standard baseline-characteristics "Table 1" for a manuscript.
+
 #### `kk_compare_groups_table(data, group, variables)` / `compare_groups_table()`
 
 Produces a **detailed two-group comparison table** with per-group summaries, mean/proportion differences, confidence intervals, effect sizes, and p-values. Fully tidyselect- and `group_by()`-aware for stratified analyses.
@@ -720,6 +770,8 @@ mtcars |>
 #> 4     1 hp             14      91.36 (24… 7     80.5… 7     102.… -21.57     -47.… 0.100  
 #> # ℹ 4 more variables: Test <chr>, Statistic <chr>, df <chr>, effect_size <chr>
 ```
+
+> **Interpretation.** Unlike Table 1, this reports the actual between-group *difference* with its CI and effect size. Manual cars average 7.24 mpg higher (p = 0.001), while the horsepower difference (−33) is not significant (p = 0.22). The stratified call repeats the comparison within each `vs` level — useful for checking effect modification.
 
 #### `table1_summary(data, by, variables)`
 
@@ -754,6 +806,8 @@ df_stay %>% kk_median_test(days, ward)
 #> 1 Media… two.sided   Chi-Square         0.536     2   0.765                5 Ward A: Abov…
 ```
 
+> **Interpretation.** The median test dichotomises each observation at the pooled (composite) median of 5 days and compares the above/below split across wards. χ² = 0.54 on 2 df, p = 0.77 — no evidence that median stay differs by ward. It trades power for robustness, so it is most useful with heavily skewed data.
+
 #### `kk_vdw_test(data, x, group)`
 
 Performs the van der Waerden Normal-Scores Test as a highly powerful non-parametric alternative to ANOVA, converting ranks to normal distribution quantiles.
@@ -772,6 +826,8 @@ df_noise %>% kk_vdw_test(score, noise)
 #>   <chr>        <dbl> <int>   <dbl>                  <dbl> <chr>           <list>          
 #> 1 van der…      8.51     2  0.0142                  0.709 Classical: n=5… <tibble [3 × 5]>
 ```
+
+> **Interpretation.** The van der Waerden normal-scores test is a rank-based, more powerful alternative to Kruskal-Wallis/ANOVA. Here the statistic is 8.51 on 2 df, p = 0.014, so cognitive scores differ significantly across the three noise environments; the `pairwise_results` list column localises which environments differ.
 
 ---
 
@@ -792,6 +848,8 @@ kk_runs_test(infection_seq)
 #> 1 Single-… two.sided      10             7           5.8          1.92       0.506   0.613
 ```
 
+> **Interpretation.** The Wald-Wolfowitz runs test checks whether a binary sequence is randomly ordered. Observed runs (7) are close to the number expected under randomness (5.8), giving z = 0.51, p = 0.61 — no evidence of clustering or alternation, so the outbreak sequence is consistent with random timing.
+
 #### `kk_frequency_test(data, x)`
 
 Chi-Square Goodness-of-Fit or Binomial test checking if categories occur with equal probability.
@@ -807,6 +865,8 @@ kk_frequency_test(admission_days)
 #> 1 Chi-Square Goodnes… two.sided   Chi-Square             2     6   0.920 1=2, 2=… 1=2, 2=…
 ```
 
+> **Interpretation.** A goodness-of-fit test for whether categories occur equally often. χ² = 2 on 6 df, p = 0.92 — admissions are spread evenly across the days of the week, with no evidence of a "busy day" pattern.
+
 #### `kk_mssd_test(data, x)`
 
 Von Neumann Mean Square Successive Difference (MSSD) test for serial correlation on continuous quantitative data.
@@ -821,6 +881,8 @@ kk_mssd_test(bp_ticks)
 #>   <chr>       <chr>       <int>       <dbl>      <dbl>           <dbl>       <dbl>   <dbl>
 #> 1 Mean Squar… two.sided      10       0.477       4.68            2.44        1.68  0.0930
 ```
+
+> **Interpretation.** The von Neumann MSSD test detects serial correlation in a continuous sequence. z = 1.68, p = 0.093 — borderline but not significant at 5%, so these blood-pressure readings are (just) consistent with independent fluctuations rather than a drifting/autocorrelated trend.
 
 ---
 
@@ -849,6 +911,8 @@ regression_analysis(mtcars, outcome = "am", predictors = c("mpg", "wt"))
 #> #   predictor <chr>
 ```
 
+> **Interpretation.** The wrapper returns both univariate and multivariable models in one tidy frame (`model_type` column). Univariately both mpg and wt predict transmission, but in the multivariable model mpg loses significance (p = 0.99) while wt remains (coef −0.36, p = 0.015) — evidence that mpg and weight are collinear and weight carries the signal. For a binary outcome the estimates would be odds ratios with ROC diagnostics attached.
+
 #### `compare_proportions(data)` / `compare_proportions_by()`
 
 Pairwise comparison of proportions utilizing normal approximations with multiple comparison adjustments (e.g. Holm/Bonferroni).
@@ -868,6 +932,8 @@ compare_proportions(df_prop)
 #> 2 A          C               0.05   0.773 0.439     -0.0768   0.177     0.439   
 #> 3 B          C               0.25   3.87  0.000108   0.123    0.377     0.000323
 ```
+
+> **Interpretation.** All pairwise differences in proportion with unpooled (Wald) z-tests and Holm-adjusted p-values. Clinic B differs significantly from both A and C (adjusted p = 0.004 and 0.0003), while A vs C does not (adjusted p = 0.44). Read `adj_p_value` — not the raw `p_value` — when drawing conclusions across multiple comparisons.
 
 #### `pcit(data, conf.level)`
 
@@ -899,6 +965,8 @@ compare_proportions_kk_glm(df_glm, group, x, n)
 #> 1 A      B          -0.2  0.0371 holm         0.95
 ```
 
+> **Interpretation.** The estimate is the difference in proportion (A − B = −0.20) from a logistic model with robust SEs; p = 0.037, so group B's event rate is significantly higher. Unlike `compare_proportions`, this route accepts covariates and strata for adjusted contrasts.
+
 #### `power_proportions(n, p1, p2, power, sig.level)`
 
 Power / sample-size calculation for **two-sample proportion tests**; supply all but one parameter to solve for the missing one.
@@ -919,6 +987,8 @@ power_proportions(n = 100, p1 = 0.5, p2 = 0.6)
 #> 
 #> NOTE: n is number in *each* group
 ```
+
+> **Interpretation.** With 100 patients per arm, a study comparing a 50% vs 60% response rate has only **29% power** — far below the conventional 80% target. In other words this design would miss a true 10-point difference most of the time; you would need a substantially larger sample. Leave `power` out and supply `n` to solve for power, or leave `n` out to solve for the required sample size.
 
 #### `plot_proportion_comparisons(results)`
 
@@ -951,6 +1021,8 @@ kk_compare_independent_correlations(c(0.65, 0.40), c(50, 60))
 #> 1 Comparison … two.sided   Z                   1.78    NA  0.0743    0.525 1: r=0.650 (n=…
 ```
 
+> **Interpretation.** A Fisher z-test for whether two correlations from *independent* samples differ. z = 1.78, p = 0.074 — the male (r = 0.65) and female (r = 0.40) correlations are not significantly different at 5%, despite the apparent gap, because the samples are modest. `common_r` (0.53) is the pooled estimate under the null.
+
 #### `kk_compare_dependent_correlations(rxz, ryz, rxy, n)`
 
 Steiger's t-test comparing two dependent correlations sharing a common criterion variable within the same sample.
@@ -966,6 +1038,8 @@ kk_compare_dependent_correlations(0.72, 0.35, 0.28, 50)
 #>   <chr>         <chr>       <chr>              <dbl> <int>   <dbl> <dbl> <dbl> <dbl> <int>
 #> 1 Comparison o… two.sided   t                  -2.95    47 0.00494  0.72  0.35  0.28    50
 ```
+
+> **Interpretation.** Steiger's test compares two correlations that share a variable *within the same sample*. Sugar correlates with cavities more strongly (0.72) than salt does (0.35), and the difference is significant (t = −2.95, df = 47, p = 0.005) — sugar is the stronger predictor even after accounting for the sugar–salt correlation (0.28).
 
 #### `kk_firth(data, outcome, predictors)`
 
@@ -986,6 +1060,8 @@ kk_firth(df_sep, y, c("x", "z"))
 #> 1 x           2.34   0.779       7.01     0.561     1.51    0.130       0.95
 #> 2 z           1.22   0.0585     25.6      1.55      0.130   0.897       0.95
 ```
+
+> **Interpretation.** Here `x` perfectly separates the outcome, so ordinary logistic regression would return an infinite coefficient. Firth's penalty shrinks it to a finite, usable OR of 2.34 (95% CI 0.78–7.01). The `attr(x, "separation")` flag is `TRUE`, confirming separation was detected — the reason to use this instead of `glm()`.
 
 ---
 
@@ -1027,6 +1103,8 @@ kk_coxph(lung, time, status, predictors = c("age", "sex", "ph.ecog"))
 #> #   AIC <dbl>, conf.level <dbl>
 ```
 
+> **Interpretation.** Read the `multivariable` rows for mutually-adjusted hazard ratios: female sex (sex = 2) roughly halves the hazard of death (HR 0.58, 95% CI 0.41–0.80) and worse ECOG performance raises it (HR 1.59 per level), while age is not independently significant. Crucially, every `ph_p` (Schoenfeld test) is > 0.05, so the proportional-hazards assumption holds and the HRs are valid; had `ph_p` been small, you would switch to `kk_rmst`.
+
 #### `kk_logrank(data, time, status, group)`
 
 Compares survival across groups with the **log-rank test** (`rho = 0`) or the Peto-Peto / Gehan-Wilcoxon weighting (`rho = 1`), returning per-group observed/expected counts and the overall statistic.
@@ -1042,6 +1120,8 @@ kk_logrank(lung, time, status, sex)
 #> 1 1       138      112     91.6    1.22   10.3     1 0.00131 Log-rank
 #> 2 2        90       53     73.4    0.722  10.3     1 0.00131 Log-rank
 ```
+
+> **Interpretation.** Group 1 (male) had more deaths than expected (observed 112 vs expected 91.6; O/E 1.22) and group 2 (female) fewer (53 vs 73.4; O/E 0.72). The log-rank test is significant (χ² = 10.3, df = 1, p = 0.0013), so survival differs by sex — consistent with the protective HR seen in `kk_coxph`.
 
 #### `kk_rmst(data, time, status, group, tau)`
 
@@ -1060,6 +1140,8 @@ kk_rmst(lung, time, status, sex, tau = 365)
 #> 3 RMST difference (2 - 1)   365  56.0   15.0    26.7      85.3   0.000183       0.95
 #> 4 RMST ratio (2 / 1)        365   1.23  NA       1.10      1.38  0.000207       0.95
 ```
+
+> **Interpretation.** Within the first year, women lived on average 297 days versus 241 for men — a **56-day gain** (95% CI 26.7–85.3, p < 0.001), equivalently an RMST ratio of 1.23. Unlike the hazard ratio, this is a direct, clinically meaningful contrast in mean survival time that needs no proportional-hazards assumption, which is why it is the fallback when `kk_coxph`'s Schoenfeld test fails.
 
 #### `kk_cuminc(data, time, status, group, cause)`
 
@@ -1080,6 +1162,8 @@ df_cr %>% kk_cuminc(time, status, arm, cause = 1)
 #> 1 A      42.6 0.523 0.0612 1    
 #> 2 B      61.1 0.435 0.0626 1
 ```
+
+> **Interpretation.** The cumulative incidence of relapse (cause 1), accounting for death as a competing risk, reaches ~0.52 in arm A and ~0.44 in arm B by the reported times. Using the Aalen-Johansen estimator (not naïve 1 − KM) avoids over-stating incidence when competing events remove people from risk. Gray's test — available via `attr(x, "gray_test")` when `cmprsk` is installed — formally compares the two curves.
 
 ---
 
