@@ -5,37 +5,55 @@
 \title{E-value for Unmeasured Confounding (KK)}
 \usage{
 kk_sensitivity_analysis(
-  estimate,
+  estimate = NULL,
   lower = NULL,
   upper = NULL,
   type = c("RR", "OR", "HR"),
-  rare_outcome = FALSE
+  rare_outcome = FALSE,
+  or_observed = NULL,
+  p_bias = NULL
 )
 }
 \arguments{
-\item{estimate}{Point estimate (OR, RR, or HR)}
+\item{estimate}{Point estimate (OR, RR, or HR) for E-value analysis}
 
-\item{lower}{Lower confidence limit (optional)}
+\item{lower}{Lower confidence limit (optional, for E-value analysis)}
 
-\item{upper}{Upper confidence limit (optional)}
+\item{upper}{Upper confidence limit (optional, for E-value analysis)}
 
 \item{type}{Type of estimate: "RR" (default), "OR", or "HR"}
 
 \item{rare_outcome}{For ORs, is the outcome rare (<15\%)? If TRUE, OR approximates RR}
+
+\item{or_observed}{Observed Odds Ratio or Relative Risk for Bross sensitivity analysis (optional)}
+
+\item{p_bias}{Confounding bias prevalence difference between exposed and unexposed for Bross sensitivity analysis (optional)}
 }
 \value{
-Tibble with E-values for point estimate and confidence limit
+Tibble with sensitivity analysis parameters, values, and interpretations.
 }
 \description{
 Calculates E-value to assess robustness of findings to unmeasured confounding.
 The E-value is the minimum strength of association that an unmeasured confounder
 would need to have with both the exposure and outcome to fully explain away the observed effect.
+
+Sensitivity Analysis for Unmeasured Confounding
+
+Computes sensitivity analysis for unmeasured confounding.
+Supports both VanderWeele's E-value sensitivity analysis and Bross's classical
+prevalence-prevalence sensitivity analysis.
 }
 \examples{
+# E-value analysis
 kk_sensitivity_analysis(estimate = 1.5, lower = 1.1, upper = 2.0)
+
+# Bross analysis (as in README.md)
+kk_sensitivity_analysis(or_observed = 2.5, p_bias = 0.20)
 
 }
 \references{
 VanderWeele TJ, Ding P (2017). Sensitivity Analysis in
 Observational Research. Ann Intern Med 167:268-274.
+
+Bross ID (1966). Spurious association due to bias. Biometrics 22:564-577.
 }

@@ -4,16 +4,23 @@
 \alias{kk_mcnemar}
 \title{McNemar's Test for Matched Pairs (KK)}
 \usage{
-kk_mcnemar(data, exposure, outcome, pair_id, conf.level = 0.95, exact = TRUE)
+kk_mcnemar(
+  data,
+  exposure,
+  outcome,
+  pair_id = NULL,
+  conf.level = 0.95,
+  exact = TRUE
+)
 }
 \arguments{
-\item{data}{Data frame containing exposure, outcome, and pair ID}
+\item{data}{Data frame containing exposure and outcome variables}
 
 \item{exposure}{Exposure or treatment variable (binary)}
 
 \item{outcome}{Outcome variable (binary)}
 
-\item{pair_id}{Variable identifying matched pairs}
+\item{pair_id}{Optional variable identifying matched pairs}
 
 \item{conf.level}{Confidence level (default 0.95)}
 

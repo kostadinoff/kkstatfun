@@ -4,18 +4,15 @@
 \alias{kk_bland_altman}
 \title{Bland-Altman Plot and Analysis (KK)}
 \usage{
-kk_bland_altman(
-  method1,
-  method2,
-  conf.level = 0.95,
-  plot = TRUE,
-  title = "Bland-Altman Plot"
-)
+kk_bland_altman(method1, method2 = NULL, ...)
 }
 \arguments{
-\item{method1}{Vector of measurements from method 1}
+\item{method1}{Vector of measurements from method 1, or a data frame. If a data frame is provided, the
+column names representing the two methods must follow.}
 
-\item{method2}{Vector of measurements from method 2}
+\item{method2}{Vector of measurements from method 2, or column name/symbol if \code{method1} is a data frame.}
+
+\item{...}{Additional arguments passed to methods.}
 
 \item{conf.level}{Confidence level for limits of agreement (default 0.95)}
 
@@ -28,9 +25,19 @@ If plot=TRUE, a ggplot object. If plot=FALSE, a tibble with stats.
 }
 \description{
 Performs Bland-Altman analysis to assess agreement between two methods of measurement.
+Supports both vector inputs and passing a data frame directly with column symbols or strings.
 }
 \examples{
+# Vector mode
 m1 <- c(10, 12, 15, 20, 25)
 m2 <- c(11, 13, 14, 21, 24)
 kk_bland_altman(m1, m2)
+
+# DataFrame mode
+df_bp <- data.frame(
+  arterial = rnorm(50, 120, 15),
+  cuff = rnorm(50, 118, 14)
+)
+kk_bland_altman(df_bp, arterial, cuff)
+
 }

@@ -14,11 +14,14 @@ kk_nnt(
 )
 }
 \arguments{
-\item{estimate}{Point estimate (Risk Difference, OR, or RR)}
+\item{estimate}{Point estimate (Risk Difference, OR, or RR) OR a data frame. If a data frame is
+provided, the exposure and outcome variables must be specified as the next arguments.}
 
-\item{type}{Type of estimate: "risk_diff" (default), "odds_ratio", or "risk_ratio"}
+\item{type}{Type of estimate: "risk_diff" (default), "odds_ratio", or "risk_ratio" OR exposure variable
+(as symbol or string) if \code{estimate} is a data frame.}
 
-\item{baseline_risk}{Baseline risk (Control Event Rate) - required for OR/RR}
+\item{baseline_risk}{Baseline risk (Control Event Rate) - required for OR/RR OR outcome variable
+(as symbol or string) if \code{estimate} is a data frame.}
 
 \item{conf.level}{Confidence level (default 0.95)}
 
@@ -27,12 +30,12 @@ kk_nnt(
 \item{ci_high}{Upper bound of CI for the estimate (optional)}
 }
 \value{
-Tibble with NNT/NNH and CIs
+Tibble with NNT/NNH, absolute risk metrics, and relative risk metrics.
 }
 \description{
 Calculates Number Needed to Treat (NNT) or Number Needed to Harm (NNH)
 with confidence intervals. Can calculate from Risk Difference, OR, or RR.
-For OR and RR, a baseline risk (Control Event Rate) must be provided.
+Also supports passing a data frame directly to calculate these metrics from raw data.
 }
 \examples{
 # From Risk Difference (RD = -0.1)
@@ -40,4 +43,11 @@ kk_nnt(-0.1)
 
 # From Odds Ratio (OR = 0.5, Baseline Risk = 0.2)
 kk_nnt(0.5, type = "odds_ratio", baseline_risk = 0.2)
+
+# From raw data frame
+df_treatment <- data.frame(
+  statin = c(rep(1, 500), rep(0, 500)),
+  event = c(rep(1, 15), rep(0, 485), rep(1, 35), rep(0, 465))
+)
+kk_nnt(df_treatment, statin, event)
 }

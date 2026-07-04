@@ -135,7 +135,7 @@ df_bp <- data.frame(
 df_bp %>% kk_bland_altman(arterial, cuff)
 ```
 
-#### `kk_mcnemar(data, test1, test2)`
+#### `kk_mcnemar(data, exposure, outcome)`
 Performs McNemar's test for paired categorical data (e.g. matched case-control designs or two diagnostic tests on the same subjects).
 *   **Epidemiological Example**: Comparing the screening outcomes of Mammography and Ultrasound performed on the same cohort of patients.
 ```r

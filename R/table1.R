@@ -61,17 +61,25 @@ kk_table1 <- function(data, by = NULL, variables = NULL, label_list = NULL,
         # Ensure data is a data frame
         if (!is.data.frame(data)) stop("Input must be a data frame")
 
-        # Handle 'by' argument if it's a tidy selection (enquo)
-        by_enquo <- rlang::enquo(by)
-        by_str <- tryCatch(rlang::as_name(by_enquo), error = function(e) NULL)
-
-        # If by_str is NULL or empty string, check if 'by' was passed as string
-        if (is.null(by_str) || by_str == "") {
-                if (!is.null(by) && is.character(by)) {
-                        by_str <- by
-                } else {
-                        by_str <- NULL
+        # Resolve 'by' argument safely (handles strings, symbols, or NULL)
+        resolve_arg <- function(arg_expr, pf = parent.frame()) {
+                if (is.null(arg_expr)) return(NULL)
+                if (is.character(arg_expr)) return(arg_expr)
+                if (is.symbol(arg_expr)) {
+                        val <- tryCatch(eval(arg_expr, pf), error = function(e) NULL)
+                        if (is.character(val) && length(val) == 1) return(val)
+                        return(as.character(arg_expr))
                 }
+                dep_val <- deparse(arg_expr)
+                if (identical(dep_val, "NULL")) return(NULL)
+                return(dep_val)
+        }
+
+        by_expr <- substitute(by)
+        by_str <- resolve_arg(by_expr, parent.frame())
+
+        if (is.null(by_str) || by_str == "") {
+                by_str <- NULL
         }
 
         # Call internal or existing logic

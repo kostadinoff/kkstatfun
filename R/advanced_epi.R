@@ -187,10 +187,10 @@ kk_stratified_2x2 <- function(data, exposure, outcome, strata, conf.level = 0.95
 #' @description Performs McNemar's test for matched/paired case-control or before-after studies.
 #'   Calculates conditional odds ratio with exact and asymptotic confidence intervals.
 #'
-#' @param data Data frame containing exposure, outcome, and pair ID
+#' @param data Data frame containing exposure and outcome variables
 #' @param exposure Exposure or treatment variable (binary)
 #' @param outcome Outcome variable (binary)
-#' @param pair_id Variable identifying matched pairs
+#' @param pair_id Optional variable identifying matched pairs
 #' @param conf.level Confidence level (default 0.95)
 #' @param exact Use exact test (default TRUE), otherwise continuity-corrected chi-square
 #'
@@ -205,20 +205,22 @@ kk_stratified_2x2 <- function(data, exposure, outcome, strata, conf.level = 0.95
 #' kk_mcnemar(data, exposure, outcome, id)
 #'
 #' @export
-kk_mcnemar <- function(data, exposure, outcome, pair_id, conf.level = 0.95, exact = TRUE) {
+kk_mcnemar <- function(data, exposure, outcome, pair_id = NULL, conf.level = 0.95, exact = TRUE) {
               exposure_enquo <- rlang::enquo(exposure)
               outcome_enquo <- rlang::enquo(outcome)
               pair_enquo <- rlang::enquo(pair_id)
 
               exp_vec <- data %>% dplyr::pull(!!exposure_enquo)
               out_vec <- data %>% dplyr::pull(!!outcome_enquo)
-              pair_vec <- data %>% dplyr::pull(!!pair_enquo)
 
-              # Create contingency table for discordant pairs
-              # We need to reshape to get exposure status for each member of pair
-              pair_data <- data %>%
-                            dplyr::select(!!pair_enquo, !!exposure_enquo, !!outcome_enquo) %>%
-                            dplyr::arrange(!!pair_enquo)
+              if (!rlang::quo_is_null(pair_enquo)) {
+                            pair_vec <- tryCatch(data %>% dplyr::pull(!!pair_enquo), error = function(e) NULL)
+                            if (!is.null(pair_vec)) {
+                                          pair_data <- data %>%
+                                                        dplyr::select(!!pair_enquo, !!exposure_enquo, !!outcome_enquo) %>%
+                                                        dplyr::arrange(!!pair_enquo)
+                            }
+              }
 
               # Count discordant pairs
               # b = outcome+/exposure-, c = outcome-/exposure+
@@ -477,90 +479,151 @@ kk_agreement <- function(data, rater1, rater2, weights = "unweighted", conf.leve
 #'   The E-value is the minimum strength of association that an unmeasured confounder
 #'   would need to have with both the exposure and outcome to fully explain away the observed effect.
 #'
-#' @param estimate Point estimate (OR, RR, or HR)
-#' @param lower Lower confidence limit (optional)
-#' @param upper Upper confidence limit (optional)
+#' Sensitivity Analysis for Unmeasured Confounding
+#'
+#' @description Computes sensitivity analysis for unmeasured confounding.
+#'   Supports both VanderWeele's E-value sensitivity analysis and Bross's classical
+#'   prevalence-prevalence sensitivity analysis.
+#'
+#' @param estimate Point estimate (OR, RR, or HR) for E-value analysis
+#' @param lower Lower confidence limit (optional, for E-value analysis)
+#' @param upper Upper confidence limit (optional, for E-value analysis)
 #' @param type Type of estimate: "RR" (default), "OR", or "HR"
 #' @param rare_outcome For ORs, is the outcome rare (<15%)? If TRUE, OR approximates RR
+#' @param or_observed Observed Odds Ratio or Relative Risk for Bross sensitivity analysis (optional)
+#' @param p_bias Confounding bias prevalence difference between exposed and unexposed for Bross sensitivity analysis (optional)
 #'
-#' @return Tibble with E-values for point estimate and confidence limit
+#' @return Tibble with sensitivity analysis parameters, values, and interpretations.
 #'
 #' @references VanderWeele TJ, Ding P (2017). Sensitivity Analysis in
 #'   Observational Research. Ann Intern Med 167:268-274.
+#' @references Bross ID (1966). Spurious association due to bias. Biometrics 22:564-577.
 #'
 #' @examples
+#' # E-value analysis
 #' kk_sensitivity_analysis(estimate = 1.5, lower = 1.1, upper = 2.0)
 #'
+#' # Bross analysis (as in README.md)
+#' kk_sensitivity_analysis(or_observed = 2.5, p_bias = 0.20)
+#'
 #' @export
-kk_sensitivity_analysis <- function(estimate, lower = NULL, upper = NULL,
-                                    type = c("RR", "OR", "HR"), rare_outcome = FALSE) {
-              type <- match.arg(type)
+kk_sensitivity_analysis <- function(estimate = NULL, lower = NULL, upper = NULL,
+                                    type = c("RR", "OR", "HR"), rare_outcome = FALSE,
+                                    or_observed = NULL, p_bias = NULL) {
+  
+  # Support passing estimate as or_observed if p_bias is provided
+  if (is.null(or_observed) && !is.null(estimate) && !is.null(p_bias)) {
+    or_observed <- estimate
+  }
 
-              # Convert OR to RR if outcome is rare
-              if (type == "OR" && rare_outcome) {
-                            estimate_rr <- estimate
-                            if (!is.null(lower)) lower <- lower # Already approximate RR
-                            if (!is.null(upper)) upper <- upper
-              } else if (type == "OR" && !rare_outcome) {
-                            # Conservative: bound OR with RR
-                            # For harmful effect (OR > 1): RR < OR
-                            # For protective effect (OR < 1): RR > OR
-                            warning("OR does not directly give RR for common outcomes. E-value may be conservative.")
-                            estimate_rr <- estimate
-              } else {
-                            estimate_rr <- estimate
-              }
+  if (!is.null(or_observed) || !is.null(p_bias)) {
+    if (is.null(or_observed) || is.null(p_bias)) {
+      stop("Both 'or_observed' and 'p_bias' must be specified for Bross sensitivity analysis.")
+    }
+    if (p_bias <= 0 || p_bias >= 1) {
+      stop("Confounding bias prevalence 'p_bias' must be between 0 and 1 (exclusive).")
+    }
+    
+    is_protective <- or_observed < 1
+    or_val <- if (is_protective) 1 / or_observed else or_observed
+    
+    rr_ud_required <- (or_val - 1) / p_bias + 1
+    
+    interpretation <- dplyr::case_when(
+      rr_ud_required < 2.0 ~ "High sensitivity - even a weak confounder (RR < 2.0) could explain away the association",
+      rr_ud_required >= 2.0 && rr_ud_required < 5.0 ~ "Moderate sensitivity - a moderate confounder (RR 2.0 - 5.0) could explain away the association",
+      rr_ud_required >= 5.0 ~ "Low sensitivity (robust) - a very strong confounder (RR >= 5.0) would be required to explain away the association",
+      TRUE ~ "Unable to interpret"
+    )
+    
+    return(tibble::tibble(
+      Metric = c("Observed Association", "Confounder Prevalence Difference (p_bias)", "Required Confounder Association (RR_UD)"),
+      Value = c(or_observed, p_bias, if (is_protective) 1 / rr_ud_required else rr_ud_required),
+      Interpretation = c(
+        if (is_protective) "Protective association" else "Harmful association",
+        "Assumed maximum prevalence difference between exposed and unexposed",
+        interpretation
+      ),
+      Note = c(
+        "Based on Bross (1966) sensitivity analysis",
+        "Assumes perfect correlation between exposure and confounder for maximum bias",
+        "Minimum relative risk between confounder and outcome to explain away observed association"
+      )
+    ))
+  }
 
-              # E-value function
-              calc_evalue <- function(rr) {
-                            if (is.na(rr)) {
-                                          return(NA)
-                            }
-                            if (rr >= 1) {
-                                          rr + sqrt(rr * (rr - 1))
-                            } else if (rr < 1) {
-                                          1 / rr + sqrt((1 / rr) * ((1 / rr) - 1))
-                            } else {
-                                          1
-                            }
-              }
+  # Legacy E-value code path
+  if (is.null(estimate)) {
+    stop("Argument 'estimate' is missing with no default.")
+  }
 
-              # Calculate E-values
-              e_point <- calc_evalue(estimate_rr)
+  type <- match.arg(type)
 
-              # E-value for CI limit closest to null
-              if (!is.null(lower) && !is.null(upper)) {
-                            if (estimate >= 1) {
-                                          # Harmful/positive association: use lower CI
-                                          e_ci <- calc_evalue(lower)
-                                          ci_limit <- lower
-                            } else {
-                                          # Protective/negative association: use upper CI
-                                          e_ci <- calc_evalue(upper)
-                                          ci_limit <- upper
-                            }
-              } else {
-                            e_ci <- NA
-                            ci_limit <- NA
-              }
+  # Convert OR to RR if outcome is rare
+  if (type == "OR" && rare_outcome) {
+                estimate_rr <- estimate
+                if (!is.null(lower)) lower <- lower # Already approximate RR
+                if (!is.null(upper)) upper <- upper
+  } else if (type == "OR" && !rare_outcome) {
+                # Conservative: bound OR with RR
+                # For harmful effect (OR > 1): RR < OR
+                # For protective effect (OR < 1): RR > OR
+                warning("OR does not directly give RR for common outcomes. E-value may be conservative.")
+                estimate_rr <- estimate
+  } else {
+                estimate_rr <- estimate
+  }
 
-              # Interpretation
-              interpretation <- dplyr::case_when(
-                            e_point < 1.5 ~ "Weak evidence - estimate sensitive to small confounding",
-                            e_point >= 1.5 && e_point < 2.5 ~ "Moderate evidence - some robustness to confounding",
-                            e_point >= 2.5 ~ "Strong evidence - substantial robustness to confounding",
-                            TRUE ~ "Unable to interpret"
-              )
+  # E-value function
+  calc_evalue <- function(rr) {
+                if (is.na(rr)) {
+                              return(NA)
+                }
+                if (rr >= 1) {
+                              rr + sqrt(rr * (rr - 1))
+                } else if (rr < 1) {
+                              1 / rr + sqrt((1 / rr) * ((1 / rr) - 1))
+                } else {
+                              1
+                }
+  }
 
-              tibble::tibble(
-                            Parameter = c("Point Estimate", "CI Limit (closest to null)"),
-                            Value = c(estimate, ci_limit),
-                            E_Value = c(e_point, e_ci),
-                            Interpretation = c(interpretation, NA),
-                            Type = type,
-                            Note = c(
-                                          "E-value: Minimum RR of confounder with exposure AND outcome to explain away effect",
-                                          "If E-value > strength of known risk factors, estimate is robust"
-                            )
-              )
+  # Calculate E-values
+  e_point <- calc_evalue(estimate_rr)
+
+  # E-value for CI limit closest to null
+  if (!is.null(lower) && !is.null(upper)) {
+                if (estimate >= 1) {
+                              # Harmful/positive association: use lower CI
+                              e_ci <- calc_evalue(lower)
+                              ci_limit <- lower
+                } else {
+                              # Protective/negative association: use upper CI
+                              e_ci <- calc_evalue(upper)
+                              ci_limit <- upper
+                }
+  } else {
+                e_ci <- NA
+                ci_limit <- NA
+  }
+
+  # Interpretation
+  interpretation <- dplyr::case_when(
+                e_point < 1.5 ~ "Weak evidence - estimate sensitive to small confounding",
+                e_point >= 1.5 && e_point < 2.5 ~ "Moderate evidence - some robustness to confounding",
+                e_point >= 2.5 ~ "Strong evidence - substantial robustness to confounding",
+                TRUE ~ "Unable to interpret"
+  )
+
+  tibble::tibble(
+                Parameter = c("Point Estimate", "CI Limit (closest to null)"),
+                Value = c(estimate, ci_limit),
+                E_Value = c(e_point, e_ci),
+                Interpretation = c(interpretation, NA),
+                Type = type,
+                Note = c(
+                              "E-value: Minimum RR of confounder with exposure AND outcome to explain away effect",
+                              "If E-value > strength of known risk factors, estimate is robust"
+                )
+  )
 }

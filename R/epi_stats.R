@@ -160,6 +160,7 @@ kk_twobytwo <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95
               p1 <- a / n1 # Risk in Exposed
               p0 <- c / n0 # Risk in Unexposed
               pe <- n1 / n_total # Prevalence of exposure
+              p_total <- (a + c) / n_total # Population risk / Outcome prevalence
 
               # Risk Ratio (RR)
               rr <- p1 / p0
@@ -188,26 +189,68 @@ kk_twobytwo <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95
               rd_low <- rd - z * se_rd
               rd_high <- rd + z * se_rd
 
-              # Attributable Fraction among Exposed (AF_e)
-              af_e <- (rr - 1) / rr
-              af_e_low <- (rr_low - 1) / rr_low
-              af_e_high <- (rr_high - 1) / rr_high
+              # Fisher's Exact Test for p-value
+              fisher <- stats::fisher.test(tbl)
+              chisq <- suppressWarnings(stats::chisq.test(tbl, correct = FALSE))
 
-              # Population Attributable Fraction (PAF)
-              p_total <- (a + c) / n_total
-              paf <- (p_total - p0) / p_total
+              # Phi Coefficient
+              phi <- as.numeric(sqrt(chisq$statistic / n_total))
 
-              # PAF CI using delta method (Leung & Kupper 1981)
-              var_ln_rr <- se_ln_rr^2
-              var_paf <- (pe^2 * (1 - pe)^2 * var_ln_rr * rr^2) / (1 + pe * (rr - 1))^4
-              se_paf <- sqrt(var_paf)
-              paf_low <- paf - z * se_paf
-              paf_high <- paf + z * se_paf
+              # Yule's Q & Y
+              q_val <- (or - 1) / (or + 1)
+              q_low <- (or_low - 1) / (or_low + 1)
+              q_high <- (or_high - 1) / (or_high + 1)
 
-              # Preventable Fraction among Exposed (PF_e)
-              pf_e <- 1 - rr
-              pf_e_low <- 1 - rr_high
-              pf_e_high <- 1 - rr_low
+              y_val <- (sqrt(or) - 1) / (sqrt(or) + 1)
+              y_low <- (sqrt(or_low) - 1) / (sqrt(or_low) + 1)
+              y_high <- (sqrt(or_high) - 1) / (sqrt(or_high) + 1)
+
+              # Cohen's h
+              cohen_h <- 2 * asin(sqrt(p1)) - 2 * asin(sqrt(p0))
+
+              # Conditional Attributable / Preventable metrics based on harmful vs protective
+              if (rr >= 1) {
+                            # Attributable Fraction among Exposed (AF_e)
+                            af_e <- (rr - 1) / rr
+                            af_e_low <- (rr_low - 1) / rr_low
+                            af_e_high <- (rr_high - 1) / rr_high
+
+                            # Population Attributable Fraction (PAF)
+                            paf <- (p_total - p0) / p_total
+
+                            # PAF CI using delta method (Leung & Kupper 1981)
+                            var_ln_rr <- se_ln_rr^2
+                            var_paf <- (pe^2 * (1 - pe)^2 * var_ln_rr * rr^2) / (1 + pe * (rr - 1))^4
+                            se_paf <- sqrt(var_paf)
+                            paf_low <- paf - z * se_paf
+                            paf_high <- paf + z * se_paf
+
+                            # Population Attributable Risk (PAR)
+                            par <- p_total - p0
+
+                            # Preventable Fraction (Exposed) and Prevented Fraction in Population are NA
+                            pf_e <- NA
+                            pf_e_low <- NA
+                            pf_e_high <- NA
+                            pf_p <- NA
+              } else {
+                            # Attributable Fraction (Exposed), PAF, PAR are NA
+                            af_e <- NA
+                            af_e_low <- NA
+                            af_e_high <- NA
+                            paf <- NA
+                            paf_low <- NA
+                            paf_high <- NA
+                            par <- NA
+
+                            # Preventable Fraction among Exposed (PF_e)
+                            pf_e <- 1 - rr
+                            pf_e_low <- 1 - rr_high
+                            pf_e_high <- 1 - rr_low
+
+                            # Prevented Fraction in Population (PF_p)
+                            pf_p <- pe * (1 - rr)
+              }
 
               # Number Needed to Treat (NNT) or Number Needed to Harm (NNH)
               nnt_nnh <- ifelse(abs(rd) > 0, 1 / abs(rd), Inf)
@@ -223,27 +266,64 @@ kk_twobytwo <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95
                             nnt_high <- max(abs(nnt_bounds))
               }
 
-              # Fisher's Exact Test for p-value
-              fisher <- stats::fisher.test(tbl)
-              chisq <- suppressWarnings(stats::chisq.test(tbl, correct = FALSE))
-
               # Compile results
               res <- tibble::tibble(
                             Metric = c(
                                           "Odds Ratio", "Relative Risk", "Risk Difference",
+                                          "Risk in Exposed", "Risk in Unexposed", "Population Risk",
+                                          "Exposure Prevalence", "Outcome Prevalence", "Phi Coefficient",
+                                          "Yule's Q", "Yule's Y", "Cohen's h",
                                           "Attributable Fraction (Exposed)", "Population Attributable Fraction",
-                                          "Preventable Fraction (Exposed)", nnt_label
+                                          "Population Attributable Risk", "Preventable Fraction (Exposed)",
+                                          "Prevented Fraction in Population", "Excess cases per 1000 exposed", nnt_label
                             ),
-                            Estimate = c(or, rr, rd, af_e, paf, pf_e, nnt_nnh),
-                            Lower = c(or_low, rr_low, rd_low, af_e_low, paf_low, pf_e_low, nnt_low),
-                            Upper = c(or_high, rr_high, rd_high, af_e_high, paf_high, pf_e_high, nnt_high),
+                            Estimate = c(
+                                          or, rr, rd,
+                                          p1, p0, p_total,
+                                          pe, p_total, phi,
+                                          q_val, y_val, cohen_h,
+                                          af_e, paf, par, pf_e,
+                                          pf_p, rd * 1000, nnt_nnh
+                            ),
+                            Lower = c(
+                                          or_low, rr_low, rd_low,
+                                          NA, NA, NA,
+                                          NA, NA, NA,
+                                          q_low, y_low, NA,
+                                          af_e_low, paf_low, NA, pf_e_low,
+                                          NA, rd_low * 1000, nnt_low
+                            ),
+                            Upper = c(
+                                          or_high, rr_high, rd_high,
+                                          NA, NA, NA,
+                                          NA, NA, NA,
+                                          q_high, y_high, NA,
+                                          af_e_high, paf_high, NA, pf_e_high,
+                                          NA, rd_high * 1000, nnt_high
+                            ),
                             P_Value = c(
                                           fisher$p.value, chisq$p.value, chisq$p.value,
-                                          chisq$p.value, chisq$p.value, chisq$p.value, chisq$p.value
+                                          NA, NA, NA,
+                                          NA, NA, NA,
+                                          fisher$p.value, fisher$p.value, NA,
+                                          if (rr >= 1) chisq$p.value else NA,
+                                          if (rr >= 1) chisq$p.value else NA,
+                                          if (rr >= 1) chisq$p.value else NA,
+                                          if (rr < 1) chisq$p.value else NA,
+                                          if (rr < 1) chisq$p.value else NA,
+                                          chisq$p.value, chisq$p.value
                             ),
                             Test = c(
                                           "Fisher's Exact", "Chi-Square", "Chi-Square",
-                                          "Chi-Square", "Chi-Square", "Chi-Square", "Chi-Square"
+                                          NA, NA, NA,
+                                          NA, NA, NA,
+                                          "Fisher's Exact", "Fisher's Exact", NA,
+                                          if (rr >= 1) "Chi-Square" else NA,
+                                          if (rr >= 1) "Chi-Square" else NA,
+                                          if (rr >= 1) "Chi-Square" else NA,
+                                          if (rr < 1) "Chi-Square" else NA,
+                                          if (rr < 1) "Chi-Square" else NA,
+                                          "Chi-Square", "Chi-Square"
                             ),
                             Conf_Level = conf.level
               )
@@ -277,16 +357,17 @@ kk_diagnostic <- function(data, truth, prediction, cutoff = 0.5, positive = NULL
               # Handle numeric predictions
               if (is.numeric(pred_vec) && length(unique(pred_vec)) > 2) {
                             pred_class <- ifelse(pred_vec >= cutoff, 1, 0)
-                            auc_val <- NA
-                            if (requireNamespace("pROC", quietly = TRUE)) {
-                                          roc_obj <- try(pROC::roc(truth_vec, pred_vec, quiet = TRUE), silent = TRUE)
-                                          if (!inherits(roc_obj, "try-error")) {
-                                                        auc_val <- as.numeric(pROC::auc(roc_obj))
-                                          }
-                            }
               } else {
                             pred_class <- pred_vec
-                            auc_val <- NA
+              }
+
+              # Calculate AUC using pROC if available
+              auc_val <- NA
+              if (requireNamespace("pROC", quietly = TRUE)) {
+                            roc_obj <- try(pROC::roc(truth_vec, pred_vec, quiet = TRUE), silent = TRUE)
+                            if (!inherits(roc_obj, "try-error")) {
+                                          auc_val <- as.numeric(pROC::auc(roc_obj))
+                            }
               }
 
               # Simple calculation if we can identify TP, TN, FP, FN
@@ -306,6 +387,34 @@ kk_diagnostic <- function(data, truth, prediction, cutoff = 0.5, positive = NULL
               npv <- tn / (tn + fn)
               acc <- (tp + tn) / (tp + tn + fp + fn)
               f1 <- 2 * (ppv * sens) / (ppv + sens)
+
+              # Fallback AUC calculation if pROC is not available
+              if (is.na(auc_val)) {
+                            if (length(unique(pred_vec)) <= 2) {
+                                          auc_val <- (sens + spec) / 2
+                            } else {
+                                          mean_pos <- mean(pred_vec[truth_vec == positive], na.rm = TRUE)
+                                          mean_neg <- mean(pred_vec[truth_vec != positive], na.rm = TRUE)
+                                          
+                                          n0 <- sum(truth_vec != positive, na.rm = TRUE)
+                                          n1 <- sum(truth_vec == positive, na.rm = TRUE)
+                                          
+                                          if (n0 > 0 && n1 > 0) {
+                                                        w_res <- try(stats::wilcox.test(pred_vec ~ truth_vec), silent = TRUE)
+                                                        if (!inherits(w_res, "try-error")) {
+                                                                      u_stat <- w_res$statistic
+                                                                      auc_val <- u_stat / (n0 * n1)
+                                                                      if (mean_pos > mean_neg) {
+                                                                                    auc_val <- 1 - auc_val
+                                                                      }
+                                                                      # If it's still NA or invalid, default to NA
+                                                                      if (is.nan(auc_val)) {
+                                                                                    auc_val <- NA
+                                                                      }
+                                                        }
+                                          }
+                            }
+              }
 
               tibble::tibble(
                             Metric = c("Sensitivity", "Specificity", "PPV", "NPV", "Accuracy", "F1 Score", "AUC"),

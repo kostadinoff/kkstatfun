@@ -4,19 +4,22 @@
 \alias{kk_reri}
 \title{Relative Excess Risk due to Interaction (RERI)}
 \usage{
-kk_reri(model, exp1, exp2, conf.level = 0.95)
+kk_reri(model, exp1, exp2, outcome = NULL, conf.level = 0.95)
 }
 \arguments{
-\item{model}{A glm object (family = binomial)}
+\item{model}{A glm object (family = binomial) or a data frame. If a data frame is provided, the variables
+must be specified in \code{exp1}, \code{exp2}, and \code{outcome}.}
 
-\item{exp1}{Name of first exposure variable (string)}
+\item{exp1}{Name of first exposure variable (string or symbol)}
 
-\item{exp2}{Name of second exposure variable (string)}
+\item{exp2}{Name of second exposure variable (string or symbol)}
+
+\item{outcome}{Name of outcome variable (string or symbol), required only if \code{model} is a data frame}
 
 \item{conf.level}{Confidence level (default 0.95)}
 }
 \value{
-Tibble with RERI estimate and CIs (using delta method)
+Tibble with RERI, AP, and S estimates and CIs (using delta method)
 }
 \description{
 Calculates RERI (Relative Excess Risk due to Interaction) on the additive scale
@@ -26,7 +29,11 @@ Model formula should be roughly: outcome ~ exp1 * exp2 + covariates
 }
 \examples{
 \dontrun{
+# Using a fitted glm model
 model <- glm(outcome ~ exp1 * exp2 + age, family = binomial, data = df)
 kk_reri(model, "exp1", "exp2")
+
+# Using a data frame directly
+kk_reri(df, exp1, exp2, outcome)
 }
 }
