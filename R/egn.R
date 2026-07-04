@@ -161,20 +161,23 @@ extract_age_from_egn <- function(egn, admission_date = Sys.Date()) {
                                           output$gender <- if (ninth_digit %% 2 == 0) "Male" else "Female"
 
                                           three_digit_code <- as.numeric(substr(egn[i], 7, 9))
-                                          if (ninth_digit %% 2 == 0) {
-                                                        output$birth_order <- (ninth_digit / 2) + 1
-                                          } else {
-                                                        output$birth_order <- ((ninth_digit + 1) / 2)
-                                          }
 
+                                          # Region and its allocated starting number
                                           output$region <- "Other/Unknown"
+                                          region_start <- 926 # start of the "Other/Unknown" block
                                           for (range in names(region_codes)) {
                                                         range_bounds <- as.numeric(unlist(strsplit(range, "-")))
                                                         if (three_digit_code >= range_bounds[1] && three_digit_code <= range_bounds[2]) {
                                                                       output$region <- region_codes[[range]]
+                                                                      region_start <- range_bounds[1]
                                                                       break
                                                         }
                                           }
+
+                                          # Birth order (по област и пол): the 7th-9th digits form a
+                                          # sequential number within the region, alternating male (even)
+                                          # / female (odd). Order = how many same-sex births preceded + 1.
+                                          output$birth_order <- floor((three_digit_code - region_start) / 2) + 1
                             } else {
                                           output$invalid_egn <- egn[i]
                                           output$invalid_reason <- sprintf("Invalid length (%d) or non-numeric", egn_length)
