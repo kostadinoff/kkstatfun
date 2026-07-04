@@ -16,11 +16,11 @@ table1_summary(data, by = NULL, variables = NULL, label_list = NULL)
 \item{label_list}{Named list of labels for variables}
 }
 \value{
-gtsummary object
+Tibble containing summary statistics
 }
 \description{
 Generates a summary table of descriptive statistics, stratified by a group
-variable, with p-values.
+variable, with p-values, returned as a standard tibble.
 }
 \examples{
 \dontrun{

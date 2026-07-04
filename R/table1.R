@@ -5,14 +5,14 @@
 #' Create Publication-Ready Table 1
 #'
 #' @description Generates a summary table of descriptive statistics, stratified by a group
-#'   variable, with p-values.
+#'   variable, with p-values, returned as a standard tibble.
 #'
 #' @param data Data frame
 #' @param by Grouping variable (character)
 #' @param variables Vector of variables to include (optional, defaults to all)
 #' @param label_list Named list of labels for variables
 #'
-#' @return gtsummary object
+#' @return Tibble containing summary statistics
 #'
 #' @examples
 #' \dontrun{
@@ -42,12 +42,17 @@ table1_summary <- function(data, by = NULL, variables = NULL, label_list = NULL)
                 gtsummary::add_p() %>%
                 gtsummary::bold_labels()
 
-        tbl
+        res_tibble <- gtsummary::as_tibble(tbl)
+        names(res_tibble) <- gsub("\\*\\*", "", names(res_tibble))
+        names(res_tibble) <- gsub("\\n", " ", names(res_tibble))
+
+        res_tibble
 }
 
 #' Wrapper for Table 1 Generation
 #'
-#' @description A wrapper around `table1_summary` to generate a publication-ready descriptive table.
+#' @description A wrapper around `table1_summary` to generate a publication-ready descriptive table
+#'   returned as a standard tibble.
 #'
 #' @examples
 #' \dontrun{
@@ -56,8 +61,6 @@ table1_summary <- function(data, by = NULL, variables = NULL, label_list = NULL)
 #' @export
 kk_table1 <- function(data, by = NULL, variables = NULL, label_list = NULL,
                       digits = 2, p_value = TRUE) {
-        # Wrapper around table1_summary with kk_ prefix and potentially more options
-
         # Ensure data is a data frame
         if (!is.data.frame(data)) stop("Input must be a data frame")
 
@@ -83,7 +86,6 @@ kk_table1 <- function(data, by = NULL, variables = NULL, label_list = NULL,
         }
 
         # Call internal or existing logic
-        # We can reuse table1_summary logic but improve it
 
         if (!requireNamespace("gtsummary", quietly = TRUE)) {
                 stop("Package 'gtsummary' is required for kk_table1")
@@ -95,8 +97,6 @@ kk_table1 <- function(data, by = NULL, variables = NULL, label_list = NULL,
                 if (is.character(variables)) {
                         data_subset <- data %>% dplyr::select(dplyr::all_of(c(variables, by_str)))
                 } else {
-                        # If variables is a tidy selection, this is harder to pass directly without more complex handling
-                        # For now assume character vector or NULL
                         warning("variables argument should be a character vector of column names.")
                         data_subset <- data
                 }
@@ -118,5 +118,9 @@ kk_table1 <- function(data, by = NULL, variables = NULL, label_list = NULL,
                 tbl <- tbl %>% gtsummary::add_p()
         }
 
-        return(tbl)
+        res_tibble <- gtsummary::as_tibble(tbl)
+        names(res_tibble) <- gsub("\\*\\*", "", names(res_tibble))
+        names(res_tibble) <- gsub("\\n", " ", names(res_tibble))
+
+        return(res_tibble)
 }

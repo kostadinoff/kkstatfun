@@ -14,7 +14,8 @@ kk_table1(
 )
 }
 \description{
-A wrapper around \code{table1_summary} to generate a publication-ready descriptive table.
+A wrapper around \code{table1_summary} to generate a publication-ready descriptive table
+returned as a standard tibble.
 }
 \examples{
 \dontrun{
