@@ -297,6 +297,20 @@ kk_trend_test <- function(data, outcome, dose_group, scores = NULL, conf.level =
               out_vec <- data %>% dplyr::pull(!!outcome_enquo)
               dose_vec <- data %>% dplyr::pull(!!dose_enquo)
 
+              # Auto-detect if arguments are swapped:
+              # The outcome variable must be binary (usually 2 unique values).
+              # If the dose_group has 2 unique values and outcome has more than 2 unique values,
+              # we swap them to match user expectations (exposure_level, outcome).
+              if (length(unique(out_vec)) > 2 && length(unique(dose_vec)) == 2) {
+                            tmp_vec <- out_vec
+                            out_vec <- dose_vec
+                            dose_vec <- tmp_vec
+
+                            tmp_enquo <- outcome_enquo
+                            outcome_enquo <- dose_enquo
+                            dose_enquo <- tmp_enquo
+              }
+
               # Convert to factor and get levels
               dose_fac <- factor(dose_vec)
               levels_dose <- levels(dose_fac)
