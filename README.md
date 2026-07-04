@@ -1453,6 +1453,163 @@ kk_setup()
 
 ---
 
+### 12. Health Economics & HTA (Cost-Effectiveness)
+
+Functions for the economic-evaluation side of health technology assessment: incremental cost-effectiveness analysis with dominance/frontier logic, net benefit at a willingness-to-pay threshold, acceptability curves from probabilistic sensitivity analysis, discounting, and a Markov cohort engine for cost-utility models.
+
+#### `kk_icer(data, cost, effect, strategy)`
+
+Runs an **incremental cost-effectiveness analysis** over mutually exclusive strategies: ranks by effectiveness, flags **strongly dominated** options, removes **extendedly (weakly) dominated** ones by the standard iterative algorithm, and reports the **ICER** along the resulting efficiency frontier.
+
+*   **HTA Example**: Comparing standard care against two new drugs on total cost and QALYs to find the frontier and the ICER of each additional step.
+
+``` r
+ce <- data.frame(
+  strategy = c("Standard care", "Drug A", "Drug B"),
+  cost = c(2000, 8000, 12000),
+  effect = c(3.5, 5.0, 5.5)
+)
+kk_icer(ce, cost, effect, strategy)
+#> # A tibble: 3 × 7
+#>   strategy       cost effect inc_cost inc_effect  icer status
+#>   <chr>         <dbl>  <dbl>    <dbl>      <dbl> <dbl> <chr>
+#> 1 Standard care  2000    3.5       NA       NA      NA frontier
+#> 2 Drug A         8000    5       6000        1.5  4000 frontier
+#> 3 Drug B        12000    5.5     4000        0.5  8000 frontier
+```
+
+> **Interpretation.** Both drugs are on the efficiency frontier. Moving from standard care to Drug A costs an extra 4,000 per QALY gained; the further step to Drug B costs 8,000 per QALY. Against a 20,000/QALY threshold, both steps are good value. A strategy that cost more for fewer QALYs would be labelled `dominated`; one whose ICER exceeded that of a more effective option, `ext.dominated`.
+
+#### `kk_nmb(data, cost, effect, wtp, strategy)`
+
+Computes the **net monetary benefit** (`NMB = effect × WTP − cost`) and **net health benefit** (`NHB = effect − cost / WTP`) at one or more willingness-to-pay thresholds, flagging the optimal (benefit-maximising) strategy at each.
+
+``` r
+kk_nmb(ce, cost, effect, wtp = c(20000, 50000), strategy = strategy)
+#> # A tibble: 6 × 7
+#>   strategy        wtp  cost effect    nmb   nhb optimal
+#>   <chr>         <dbl> <dbl>  <dbl>  <dbl> <dbl> <lgl>
+#> 1 Standard care 20000  2000    3.5  68000  3.4  FALSE
+#> 2 Drug A        20000  8000    5    92000  4.6  FALSE
+#> 3 Drug B        20000 12000    5.5  98000  4.9  TRUE
+#> 4 Standard care 50000  2000    3.5 173000  3.46 FALSE
+#> 5 Drug A        50000  8000    5   242000  4.84 FALSE
+#> 6 Drug B        50000 12000    5.5 263000  5.26 TRUE
+```
+
+> **Interpretation.** At both thresholds Drug B maximises net benefit, so it is the optimal choice. Net benefit avoids the awkward ratios of the ICER and turns the decision into a simple "highest value wins" comparison at the chosen threshold.
+
+#### `kk_ceac(data, sim, strategy, cost, effect, wtp)`
+
+Builds a **cost-effectiveness acceptability curve** from **probabilistic sensitivity analysis** draws: for each WTP threshold it reports the probability that each strategy has the highest NMB across simulations, and marks the strategy on the acceptability frontier (`on_frontier`).
+
+``` r
+set.seed(1)
+psa <- do.call(rbind, lapply(1:200, function(i) data.frame(
+  sim = i, strategy = c("A", "B"),
+  cost = c(rnorm(1, 8000, 1500), rnorm(1, 12000, 2000)),
+  effect = c(rnorm(1, 5.0, 0.3), rnorm(1, 5.5, 0.3))
+)))
+kk_ceac(psa, sim, strategy, cost, effect, wtp = seq(0, 60000, 20000))
+```
+
+#### `kk_markov(transition, costs, utilities, cycles)`
+
+Runs a **Markov cohort model**, the standard engine for cost-utility models in HTA. A closed cohort moves through health states under a transition matrix; per-cycle costs and utilities are accumulated, **discounted**, and **half-cycle corrected** to give total expected cost and QALYs. Supports time-varying transitions (a `state × state × cycle` array). Returns a `trace` tibble and a `summary` tibble.
+
+*   **HTA Example**: A three-state Healthy → Sick → Dead model over 30 annual cycles.
+
+``` r
+P <- matrix(c(
+  0.85, 0.10, 0.05,
+  0.00, 0.80, 0.20,
+  0.00, 0.00, 1.00
+), nrow = 3, byrow = TRUE,
+dimnames = list(c("Healthy", "Sick", "Dead"), c("Healthy", "Sick", "Dead")))
+
+kk_markov(
+  transition = P,
+  costs = c(Healthy = 500, Sick = 8000, Dead = 0),
+  utilities = c(Healthy = 1, Sick = 0.6, Dead = 0),
+  cycles = 30
+)$summary
+#> # A tibble: 1 × 8
+#>   total_cost total_qaly total_cost_disc total_qaly_disc disc_cost disc_effect cycles half_cycle
+#>        <dbl>      <dbl>           <dbl>           <dbl>     <dbl>       <dbl>  <dbl> <lgl>
+#> 1     29063.       8.07          22276.            6.68      0.03        0.03     30 TRUE
+```
+
+> **Interpretation.** Over the modelled horizon the cohort accrues about 29,063 in undiscounted cost and 8.07 QALYs; discounting future costs and effects at 3% lowers these to 22,276 and 6.68. Pairing two such runs (e.g. treatment vs. no treatment) feeds directly into `kk_icer` / `kk_nmb`.
+
+#### `kk_discount(x, rate, times)`
+
+Discounts a stream of future costs or effects to **present value** with `PV = Σ x_t / (1 + rate)^t`; the first element is treated as occurring now.
+
+``` r
+kk_discount(rep(2000, 5), rate = 0.035)
+#> # A tibble: 1 × 3
+#>   undiscounted present_value  rate
+#>          <dbl>         <dbl> <dbl>
+#> 1        10000         9346. 0.035
+```
+
+---
+
+### 13. Infectious Disease Transmission Modeling
+
+Deterministic compartmental models for epidemic dynamics, with a dependency-free Runge-Kutta solver, plus reproduction-number and final-size tools. Useful for teaching outbreak dynamics and for scenario analysis of interventions (vaccination, isolation).
+
+#### `kk_seir(beta, gamma, sigma, S0, I0, ...)`
+
+Simulates a deterministic **SIR** model, or an **SEIR** model when a latent rate `sigma` is supplied. Optional **vital dynamics** (`mu`) and **vaccination** (`nu`) are supported. Returns a time series of compartments with incidence and cumulative incidence; the implied `R0` is attached as an attribute.
+
+*   **Epidemiological Example**: A closed SIR outbreak with `R0 = beta / gamma = 2.5`.
+
+``` r
+sir <- kk_seir(beta = 0.5, gamma = 0.2, S0 = 999, I0 = 1, R0_init = 0)
+attr(sir, "R0")
+#> [1] 2.5
+head(sir[c("time", "S", "I", "R", "incidence")], 3)
+#> # A tibble: 3 × 5
+#>    time     S     I     R incidence
+#>   <int> <dbl> <dbl> <dbl>     <dbl>
+#> 1     0  999   1    0         0
+#> 2     1  998.  1.35 0.233     0.582
+#> 3     2  998.  1.82 0.548     0.785
+```
+
+> **Interpretation.** The `incidence` column gives new infections per time step (the epidemic curve). For an SEIR model add `sigma` (e.g. `sigma = 0.2` for a 5-day latent period); an exposed compartment `E` then appears in the output. Set `mu` for births/deaths in endemic models or `nu` to divert susceptibles to immunity via vaccination.
+
+#### `kk_r0(method, ...)`
+
+Estimates the **basic reproduction number** from transmission parameters (`"params"`: `beta / gamma`), from the **early exponential growth rate** (`"growth"`: `1 + r / gamma`, extended to SEIR with `sigma`), or from the **final attack rate** (`"final_size"`).
+
+``` r
+kk_r0("growth", r = 0.15, gamma = 0.2)
+#> # A tibble: 1 × 2
+#>      R0 method
+#>   <dbl> <chr>
+#> 1  1.75 growth
+```
+
+> **Interpretation.** An observed early doubling implying a growth rate of 0.15 per day, with a 5-day infectious period, corresponds to R0 ≈ 1.75. Supplying `sigma` uses the SEIR relationship `(1 + r/gamma)(1 + r/sigma)`, which yields a higher R0 for the same growth rate because the latent period slows spread.
+
+#### `kk_final_size(R0)`
+
+Solves the final-size relation `z = 1 − exp(−R0 · z)` for the total proportion infected in a closed, fully susceptible population, and reports the **herd-immunity threshold** `1 − 1/R0`.
+
+``` r
+kk_final_size(2.5)
+#> # A tibble: 1 × 3
+#>      R0 attack_rate herd_immunity
+#>   <dbl>       <dbl>         <dbl>
+#> 1   2.5       0.893           0.6
+```
+
+> **Interpretation.** With R0 = 2.5 and no intervention, about 89% of the population is eventually infected, while vaccinating 60% (the herd-immunity threshold) would be enough to prevent sustained transmission. The final size exceeds the herd-immunity threshold because an unchecked epidemic overshoots.
+
+---
+
 ## License
 
 MIT

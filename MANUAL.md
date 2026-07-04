@@ -332,3 +332,46 @@ Wrapper around `ggplot()` that adds `guide_axis(cap = "both")` to axes.
 
 ### `univariate_plot(data, variable)`
 Automatically creates a bar chart (categorical) or density plot (numeric).
+
+---
+
+## Health Economics & HTA (`R/health_economics.R`)
+
+Tools for the economic evaluation side of health technology assessment.
+
+### `kk_icer(data, cost, effect, strategy = NULL)`
+Incremental cost-effectiveness analysis over mutually exclusive strategies. Ranks by effectiveness, flags strongly **dominated** and extendedly (**ext.dominated**) options, and reports the ICER along the efficiency **frontier**.
+
+**Arguments:**
+- `data`: Data frame (one row per strategy) or a numeric vector of costs.
+- `cost`, `effect`: Columns of total cost and total effect (e.g. QALYs). When `data` is numeric, `cost` is the effects vector.
+- `strategy`: Optional column of strategy labels.
+
+**Returns:** Tibble ordered by cost with `inc_cost`, `inc_effect`, `icer`, and a `status` column (`frontier` / `dominated` / `ext.dominated`).
+
+### `kk_nmb(data, cost, effect, wtp = 50000, strategy = NULL)`
+Net monetary benefit (`effect * wtp - cost`) and net health benefit (`effect - cost / wtp`) at one or more willingness-to-pay thresholds, flagging the optimal strategy per threshold. Returns a strategies × thresholds tibble with `nmb`, `nhb`, `optimal`.
+
+### `kk_ceac(data, sim, strategy, cost, effect, wtp)`
+Cost-effectiveness acceptability curve from probabilistic sensitivity analysis draws (long format). For each threshold, returns the probability each strategy has the highest NMB (`prob_ce`) and the acceptability-frontier flag (`on_frontier`).
+
+### `kk_markov(transition, costs, utilities, cycles, init = NULL, disc_cost = 0.03, disc_effect = 0.03, cycle_length = 1, half_cycle = TRUE)`
+Markov cohort model for cost-utility analysis. A closed cohort moves through health states under a transition matrix (or a `state × state × cycle` array for time-varying transitions); per-cycle costs and utilities are accumulated, discounted, and half-cycle corrected. Returns a list with `trace` (cohort distribution by cycle) and `summary` (total discounted/undiscounted cost and QALYs).
+
+### `kk_discount(x, rate = 0.03, times = NULL)`
+Discounts a stream of costs or effects to present value (`PV = sum(x_t / (1 + rate)^t)`). Returns a one-row tibble with `undiscounted`, `present_value`, `rate`.
+
+---
+
+## Infectious Disease Transmission Modeling (`R/infectious_models.R`)
+
+Deterministic compartmental epidemic models with a dependency-free Runge-Kutta solver, plus reproduction-number and final-size tools.
+
+### `kk_seir(beta, gamma, sigma = NULL, S0, I0, R0_init = 0, E0 = 0, times = 0:180, mu = 0, nu = 0)`
+Simulates an **SIR** model, or an **SEIR** model when a latent rate `sigma` is supplied. Optional vital dynamics (`mu`) and vaccination (`nu`). Returns a time-series tibble of compartments with `incidence` and cumulative incidence `C`; the implied `R0` is attached as an attribute (`attr(out, "R0")`).
+
+### `kk_r0(method = c("params", "growth", "final_size"), beta, gamma, r, sigma, attack_rate)`
+Estimates the basic reproduction number from transmission parameters (`beta / gamma`), from the early exponential growth rate (`1 + r / gamma`, extended to SEIR with `sigma`), or from the final attack rate. Returns a one-row tibble with `R0` and `method`.
+
+### `kk_final_size(R0)`
+Solves `z = 1 - exp(-R0 * z)` for the final proportion infected in a closed, fully susceptible population, and reports the herd-immunity threshold `1 - 1/R0`. Returns a one-row tibble with `R0`, `attack_rate`, `herd_immunity`.
