@@ -303,10 +303,16 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                                         text = element_text(size = size, family = font_family),
                                                         axis.ticks = element_line(linewidth = line_w, color = "black"),
                                                         axis.ticks.length = unit(tick_len, "mm"),
+                                                        # Subtle minor ticks (half the major length); only rendered
+                                                        # when requested via kkplot(minor_ticks = TRUE).
+                                                        axis.minor.ticks.length = unit(tick_len / 2, "mm"),
                                                         plot.title = ggtext::element_markdown(family = font_family, size = title_size, hjust = 0, vjust = 1, margin = margin(t = 2, b = 2), face = "bold"),
                                                         plot.subtitle = ggtext::element_markdown(family = font_family, size = subtitle_size, lineheight = 1, margin = margin(b = 2)),
                                                         plot.caption = ggtext::element_markdown(family = font_family, hjust = 0.5, vjust = 1, size = caption_size),
                                                         plot.caption.position = "plot",
+                                                        # Flush-left title/subtitle to the figure edge (Tufte layout),
+                                                        # consistent with the flush caption.
+                                                        plot.title.position = "plot",
                                                         axis.title = element_text(family = font_family, size = axis_title_size),
                                                         axis.text = element_text(family = font_family, size = axis_text_size),
                                                         axis.text.x = element_text(margin = margin(t = size / 3)),
@@ -319,6 +325,9 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                                         axis.line = element_line(linewidth = line_w * 1.5),
                                                         panel.grid = element_blank(),
                                                         panel.border = element_blank(),
+                                                        # Strip non-data ink from colour/fill guides (Tufte de-junking)
+                                                        legend.ticks = element_blank(),
+                                                        legend.frame = element_blank(),
                                                         # Add relative top margin for breathing room when title is missing
                                                         plot.margin = margin(t = size * 0.8, r = size / 2, b = size / 2, l = size / 2),
                                                         legend.key = element_blank()
@@ -349,19 +358,58 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
               return(invisible(result))
 }
 
-#' KK Plot Wrapper
+#' KK Plot Wrapper (Tufte-style axes)
 #'
-#' @description Wrapper for ggplot with axis caps
+#' @description A drop-in replacement for [ggplot2::ggplot()] that applies
+#'   Edward Tufte's data-ink principles to the axes. By default the axis lines
+#'   are capped at the outermost ticks (a light range-frame approximation).
+#'   Optionally a true Tufte **range frame** (axis lines spanning exactly the
+#'   data range) and subtle **minor ticks** (for precise value reading) can be
+#'   enabled.
 #'
-#' @param ... Arguments passed to ggplot
+#' @param ... Arguments passed to [ggplot2::ggplot()] (typically `data` and
+#'   `aes(...)`).
+#' @param rangeframe If TRUE, draw a true Tufte range frame with
+#'   [ggthemes::geom_rangeframe()] and suppress the panel axis lines so they are
+#'   not duplicated (default FALSE). Best for plots with continuous x and y.
+#' @param minor_ticks If TRUE, add subtle minor ticks to both axes for finer
+#'   reading of the scale (default FALSE).
+#' @param cap How to cap the axis lines: "both" (default), "none", "lower", or
+#'   "upper". Ignored when `rangeframe = TRUE`.
+#'
+#' @return A ggplot object.
 #'
 #' @examples
 #' kkplot(mtcars, aes(x = mpg, y = wt)) + geom_point()
 #'
+#' # True Tufte range frame with minor ticks
+#' kkplot(mtcars, aes(x = mpg, y = wt), rangeframe = TRUE, minor_ticks = TRUE) +
+#'   geom_point()
+#'
 #' @export
-kkplot <- function(...) {
-              ggplot(...) +
-                            guides(x = guide_axis(cap = "both"), y = guide_axis(cap = "both"))
+kkplot <- function(..., rangeframe = FALSE, minor_ticks = FALSE, cap = "both") {
+              p <- ggplot(...)
+
+              if (rangeframe) {
+                            if (!requireNamespace("ggthemes", quietly = TRUE)) {
+                                          stop("Package 'ggthemes' is required for rangeframe = TRUE.")
+                            }
+                            # A genuine range frame replaces the panel axis lines.
+                            p <- p +
+                                          ggthemes::geom_rangeframe(colour = "black", na.rm = TRUE) +
+                                          guides(
+                                                        x = guide_axis(cap = "none", minor.ticks = minor_ticks),
+                                                        y = guide_axis(cap = "none", minor.ticks = minor_ticks)
+                                          ) +
+                                          theme(axis.line = element_blank())
+              } else {
+                            p <- p +
+                                          guides(
+                                                        x = guide_axis(cap = cap, minor.ticks = minor_ticks),
+                                                        y = guide_axis(cap = cap, minor.ticks = minor_ticks)
+                                          )
+              }
+              p
 }
 
 #' Correlation Heatmap Plot

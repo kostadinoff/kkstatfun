@@ -714,12 +714,16 @@ kk_time_metrics(df_ts)
 
 ### 10. Visualization
 
-#### `kkplot(...)`
+#### `kkplot(..., rangeframe, minor_ticks, cap)`
 
-A drop-in `ggplot()` replacement that adds capped axis guides for a cleaner publication look; combine with any `geom_*`.
+A drop-in `ggplot()` replacement applying **Edward Tufte's data-ink principles** to the axes. By default the axis lines are capped at the outermost ticks (a light range-frame look). Set `rangeframe = TRUE` for a **true Tufte range frame** (axis lines spanning exactly the data range) and `minor_ticks = TRUE` for subtle minor ticks that aid precise reading. Pairs with the Tufte theme from `set_plot_font()`.
 ```r
 library(ggplot2)
 kkplot(mtcars, aes(x = mpg, y = wt)) + geom_point()
+
+# True Tufte range frame with minor ticks
+kkplot(mtcars, aes(x = mpg, y = wt), rangeframe = TRUE, minor_ticks = TRUE) +
+  geom_point()
 ```
 
 #### `univariate_plot(data, variable)` / `univariate_cat_plot()` / `univariate_cont_plot()`
@@ -794,7 +798,7 @@ If you use this package in your research, please cite it as follows:
   title = {kkstatfun: R Statistical Analysis Toolkit for Medical statistics and Epidemiology},
   author = {Kostadinov, Kostadin},
   year = {2026},
-  version = {0.1.16},
+  version = {0.1.17},
   url = {https://github.com/kostadinoff/kkstatfun},
   doi = {10.5281/zenodo.18936020},
 }

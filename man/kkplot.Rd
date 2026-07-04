@@ -2,17 +2,40 @@
 % Please edit documentation in R/plotting.R
 \name{kkplot}
 \alias{kkplot}
-\title{KK Plot Wrapper}
+\title{KK Plot Wrapper (Tufte-style axes)}
 \usage{
-kkplot(...)
+kkplot(..., rangeframe = FALSE, minor_ticks = FALSE, cap = "both")
 }
 \arguments{
-\item{...}{Arguments passed to ggplot}
+\item{...}{Arguments passed to \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} (typically \code{data} and
+\code{aes(...)}).}
+
+\item{rangeframe}{If TRUE, draw a true Tufte range frame with
+\code{\link[ggthemes:geom_rangeframe]{ggthemes::geom_rangeframe()}} and suppress the panel axis lines so they are
+not duplicated (default FALSE). Best for plots with continuous x and y.}
+
+\item{minor_ticks}{If TRUE, add subtle minor ticks to both axes for finer
+reading of the scale (default FALSE).}
+
+\item{cap}{How to cap the axis lines: "both" (default), "none", "lower", or
+"upper". Ignored when \code{rangeframe = TRUE}.}
+}
+\value{
+A ggplot object.
 }
 \description{
-Wrapper for ggplot with axis caps
+A drop-in replacement for \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}} that applies
+Edward Tufte's data-ink principles to the axes. By default the axis lines
+are capped at the outermost ticks (a light range-frame approximation).
+Optionally a true Tufte \strong{range frame} (axis lines spanning exactly the
+data range) and subtle \strong{minor ticks} (for precise value reading) can be
+enabled.
 }
 \examples{
 kkplot(mtcars, aes(x = mpg, y = wt)) + geom_point()
+
+# True Tufte range frame with minor ticks
+kkplot(mtcars, aes(x = mpg, y = wt), rangeframe = TRUE, minor_ticks = TRUE) +
+  geom_point()
 
 }
