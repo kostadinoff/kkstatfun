@@ -338,9 +338,12 @@ kk_trend_test <- function(data, outcome, dose_group, scores = NULL, conf.level =
               R <- sum(r)
               N <- sum(n)
 
-              # Cochran-Armitage test statistic
+              # Cochran-Armitage test statistic.
+              # With numerator U* = N * sum(s_i (r_i - n_i R/N)), the matching
+              # variance carries a 1/N factor; omitting it understates z by a
+              # factor of sqrt(N). Verified against stats::prop.trend.test().
               numerator <- N * sum(scores * r) - R * sum(scores * n)
-              denominator <- sqrt(R * (N - R) * (N * sum(scores^2 * n) - (sum(scores * n))^2))
+              denominator <- sqrt(R * (N - R) * (N * sum(scores^2 * n) - (sum(scores * n))^2) / N)
               z_ca <- numerator / denominator
               pvalue_ca <- 2 * stats::pnorm(abs(z_ca), lower.tail = FALSE)
 

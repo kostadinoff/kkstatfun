@@ -156,11 +156,11 @@ df_trend %>% kk_trend_test(alcohol, cvd)
 #> # A tibble: 2 × 8
 #>   Test                   Statistic Lower Upper P_Value Conf_Level N_Groups Total_N
 #>   <chr>                      <dbl> <dbl> <dbl>   <dbl>      <dbl>    <int>   <int>
-#> 1 Cochran-Armitage Trend     0.212 NA    NA    0.832         0.95        4     200
-#> 2 Trend OR (per unit)        1.62   1.17  2.24 0.00337       0.95        4     200
+#> 1 Cochran-Armitage Trend      3.00 NA    NA    0.00268       0.95        4     200
+#> 2 Trend OR (per unit)         1.62  1.17  2.24 0.00337       0.95        4     200
 ```
 
-> **Interpretation.** Read the *Trend OR (per unit)* row: the odds of CVD rise 1.62× (95% CI 1.17–2.24) for each step up the ordered alcohol scale (None → Low → Med → High), a significant monotonic dose-response (p = 0.003). A trend OR with a CI excluding 1 is the key evidence of increasing risk across ordinal categories.
+> **Interpretation.** Both rows agree that risk rises across the ordered alcohol scale (None → Low → Med → High). The *Cochran-Armitage* row is the formal linear-trend test on the proportions, and the *Trend OR (per unit)* gives the effect size: the odds of CVD rise ~1.6× per step up the scale, with the CI excluding 1. A significant trend with a CI excluding 1 is the key evidence of a monotonic dose-response.
 
 #### `kk_nnt(data, exposure, outcome)`
 
@@ -1466,7 +1466,7 @@ If you use this package in your research, please cite it as follows:
   title = {kkstatfun: R Statistical Analysis Toolkit for Medical statistics and Epidemiology},
   author = {Kostadinov, Kostadin},
   year = {2026},
-  version = {0.1.17},
+  version = {0.1.18},
   url = {https://github.com/kostadinoff/kkstatfun},
   doi = {10.5281/zenodo.18936020},
 }
