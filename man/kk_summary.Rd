@@ -36,7 +36,8 @@ Tibble with summary statistics
 Computes full summary statistics with grouped data support.
 }
 \examples{
-kk_summary(mtcars, mpg)
-kk_summary(mtcars, mpg, verbose = "basic")
+patients <- data.frame(sbp = rnorm(100, 135, 15))
+kk_summary(patients, sbp)
+kk_summary(patients, sbp, verbose = "basic")
 
 }

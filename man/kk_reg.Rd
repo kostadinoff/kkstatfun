@@ -59,7 +59,12 @@ Unified function for univariate and multivariate regression
 (linear, logistic, ordinal) with automatic diagnostics.
 }
 \examples{
-kk_reg(mtcars, "mpg", c("wt", "hp"))
-kk_reg(mtcars, "am", c("wt", "hp"))
+set.seed(1)
+cohort <- data.frame(
+  sbp = rnorm(100, 135, 15), age = rnorm(100, 60, 10), bmi = rnorm(100, 27, 4),
+  event = factor(sample(c("No", "Yes"), 100, replace = TRUE))
+)
+kk_reg(cohort, "sbp", c("age", "bmi"))      # linear regression
+kk_reg(cohort, "event", c("age", "bmi"))    # logistic regression
 
 }

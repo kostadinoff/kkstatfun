@@ -24,6 +24,10 @@ Factors are automatically converted to numeric for correlation calculation.
 }
 \examples{
 \dontrun{
-kk_fullcorplot(mtcars)
+labs <- data.frame(
+  age = rnorm(80, 60, 10), bmi = rnorm(80, 27, 4),
+  sbp = rnorm(80, 135, 15), chol = rnorm(80, 5, 1)
+)
+kk_fullcorplot(labs)
 }
 }

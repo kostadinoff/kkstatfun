@@ -43,8 +43,13 @@ univariate_plot(
 Automatically detects variable type and plots accordingly
 }
 \examples{
-univariate_plot(mtcars, "mpg")
-univariate_plot(mtcars, "am")
-univariate_plot(mtcars, "mpg", group = "cyl")
+patients <- data.frame(
+  sbp = rnorm(100, 135, 15),
+  smoker = sample(c("No", "Yes"), 100, replace = TRUE),
+  arm = sample(c("Control", "Treatment"), 100, replace = TRUE)
+)
+univariate_plot(patients, "sbp")
+univariate_plot(patients, "smoker")
+univariate_plot(patients, "sbp", group = "arm")
 
 }

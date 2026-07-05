@@ -380,10 +380,11 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
 #' @return A ggplot object.
 #'
 #' @examples
-#' kkplot(mtcars, aes(x = mpg, y = wt)) + geom_point()
+#' patients <- data.frame(age = round(rnorm(50, 60, 10)), sbp = round(rnorm(50, 135, 15)))
+#' kkplot(patients, aes(x = age, y = sbp)) + geom_point()
 #'
 #' # True Tufte range frame with minor ticks
-#' kkplot(mtcars, aes(x = mpg, y = wt), rangeframe = TRUE, minor_ticks = TRUE) +
+#' kkplot(patients, aes(x = age, y = sbp), rangeframe = TRUE, minor_ticks = TRUE) +
 #'   geom_point()
 #'
 #' @export
@@ -427,7 +428,11 @@ kkplot <- function(..., rangeframe = FALSE, minor_ticks = FALSE, cap = "both") {
 #'
 #' @examples
 #' \dontrun{
-#' kk_fullcorplot(mtcars)
+#' labs <- data.frame(
+#'   age = rnorm(80, 60, 10), bmi = rnorm(80, 27, 4),
+#'   sbp = rnorm(80, 135, 15), chol = rnorm(80, 5, 1)
+#' )
+#' kk_fullcorplot(labs)
 #' }
 kk_fullcorplot <- function(data, method = "kendall", adjust = "none", font_size = 12) {
               # 1. Automatic numeric conversion
@@ -520,8 +525,12 @@ kk_fullcorplot <- function(data, method = "kendall", adjust = "none", font_size 
 #' @param force_100 Whether to force the x-axis to 100% (default: FALSE)
 #'
 #' @examples
-#' univariate_cat_plot(mtcars, "am")
-#' univariate_cat_plot(mtcars, "am", group = "cyl")
+#' patients <- data.frame(
+#'   smoker = sample(c("No", "Yes"), 100, replace = TRUE),
+#'   arm = sample(c("Control", "Treatment"), 100, replace = TRUE)
+#' )
+#' univariate_cat_plot(patients, "smoker")
+#' univariate_cat_plot(patients, "smoker", group = "arm")
 #'
 #' @export
 univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, force_100 = FALSE) {
@@ -658,8 +667,12 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
 #' @param label_size Size for text labels (default: 3.5)
 #'
 #' @examples
-#' univariate_cont_plot(mtcars, "mpg")
-#' univariate_cont_plot(mtcars, "mpg", group = "cyl")
+#' patients <- data.frame(
+#'   sbp = rnorm(100, 135, 15),
+#'   arm = sample(c("Control", "Treatment"), 100, replace = TRUE)
+#' )
+#' univariate_cont_plot(patients, "sbp")
+#' univariate_cont_plot(patients, "sbp", group = "arm")
 #'
 #' @export
 univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5, stats = "mean") {
@@ -863,9 +876,14 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5,
 #' @param force_100 Whether to force categorical x-axis to 100% (default: TRUE)
 #'
 #' @examples
-#' univariate_plot(mtcars, "mpg")
-#' univariate_plot(mtcars, "am")
-#' univariate_plot(mtcars, "mpg", group = "cyl")
+#' patients <- data.frame(
+#'   sbp = rnorm(100, 135, 15),
+#'   smoker = sample(c("No", "Yes"), 100, replace = TRUE),
+#'   arm = sample(c("Control", "Treatment"), 100, replace = TRUE)
+#' )
+#' univariate_plot(patients, "sbp")
+#' univariate_plot(patients, "smoker")
+#' univariate_plot(patients, "sbp", group = "arm")
 #'
 #' @export
 univariate_plot <- function(data, ..., group = NULL, categorical = NULL, ordered = NULL, continuous = NULL, label_size = NULL, ncol = NULL, nrow = NULL, force_100 = TRUE, stats = "mean") {

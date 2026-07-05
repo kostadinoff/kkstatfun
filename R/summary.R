@@ -17,8 +17,9 @@
 #' @return Tibble with summary statistics
 #'
 #' @examples
-#' kk_summary(mtcars, mpg)
-#' kk_summary(mtcars, mpg, verbose = "basic")
+#' patients <- data.frame(sbp = rnorm(100, 135, 15))
+#' kk_summary(patients, sbp)
+#' kk_summary(patients, sbp, verbose = "basic")
 #'
 #' @export
 kk_summary <- function(data, col, var_name = NULL,

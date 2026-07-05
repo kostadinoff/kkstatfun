@@ -142,15 +142,16 @@ Computes incidence rates per unit of person-time with **exact (Poisson) confiden
 
 *   **Epidemiological Example**: Comparing the incidence rate of myocardial infarction per 1000 person-years between a high-exposure and a reference cohort.
 ```{r ex-08}
+# `arm` is a factor whose FIRST level is the reference (here: unexposed)
 df_ir <- data.frame(
-  arm = c("exposed", "unexposed"),
-  cases = c(40, 15),
-  pyears = c(1000, 1200)
+  arm = factor(c("unexposed", "exposed"), levels = c("unexposed", "exposed")),
+  cases = c(15, 40),
+  pyears = c(1200, 1000)
 )
 df_ir %>% kk_incidence_rate(cases, pyears, by = arm)
 ```
 
-> **Interpretation.** The exposed cohort had 40 events per 1000 person-years (exact 95% CI 28.6–54.5) versus 12.5 (7.0–20.6) in the unexposed. The rate ratio is computed against the first row (exposed = reference), so the unexposed value of 0.31 means the exposed had ~3.2× the event rate. The non-overlapping exact Poisson CIs indicate a real rate difference.
+> **Interpretation.** The unexposed (reference) cohort had 12.5 events per 1000 person-years (exact 95% CI 7.0–20.6) versus 40 (28.6–54.5) in the exposed. The rate ratio is computed against the reference level (the first factor level, `unexposed`), so the exposed **rate ratio of 3.2** (95% CI 1.8–5.8) means the exposed had ~3.2× the event rate — an *increased* rate. The reference itself is fixed at 1. Note the direction depends on which level is the reference: had `exposed` been the reference, the unexposed would instead show 1/3.2 ≈ **0.31, a reduced rate**. Set the reference deliberately via the factor levels. The non-overlapping exact Poisson CIs indicate a real rate difference.
 
 #### `kk_rr_reg(data, outcome, predictors)`
 
@@ -475,42 +476,62 @@ kk_chisq_test(df_chi, species, biting)
 
 ### 3. Non-Parametric Tests & Baseline Group Comparisons
 
+Several examples below share a small **synthetic clinical cohort** — a randomised trial dataset with a treatment arm, baseline covariates, a follow-up blood-pressure outcome, and a binary cardiovascular event. It is defined once here and reused throughout.
+
+```{r ex-cohort}
+set.seed(42)
+n <- 300
+age    <- round(rnorm(n, 62, 11))
+bmi    <- round(rnorm(n, 27, 4.5), 1)
+arm    <- factor(sample(c("Control", "Treatment"), n, replace = TRUE))
+sex    <- factor(sample(c("Female", "Male"), n, replace = TRUE))
+smoker <- factor(sample(c("No", "Yes"), n, replace = TRUE, prob = c(0.7, 0.3)))
+# Follow-up systolic BP: rises with age & BMI, ~8 mmHg lower on active treatment
+sbp  <- round(100 + 0.45 * age + 0.4 * bmi - 8 * (arm == "Treatment") + rnorm(n, 0, 10))
+chol <- round(3.5 + 0.02 * age + 0.05 * bmi + rnorm(n, 0, 0.7), 1)
+# Binary cardiovascular event: driven by age, smoking, and (protective) treatment
+lp    <- -6 + 0.05 * age + 0.9 * (smoker == "Yes") - 0.4 * (arm == "Treatment")
+event <- factor(rbinom(n, 1, plogis(lp)), labels = c("No", "Yes"))
+cohort <- data.frame(arm, sex, smoker, age, bmi, sbp, chol, event)
+head(cohort)
+```
+
 #### `kk_table1(data, by, variables)` / `kk_compare_groups_table()`
 
 Builds a standard, publication-ready "Table 1" summarizing baseline demographics and clinical variables across groups, automatically performing parametric or non-parametric tests depending on variable characteristics.
 
-*   **Clinical Example**: Summarizing age, gender, blood pressure, and smoking status at baseline stratified by placebo vs. active treatment arm.
+*   **Clinical Example**: Summarizing age, BMI, sex, and smoking status at baseline stratified by placebo vs. active treatment arm.
 
 ```{r ex-31}
-kk_table1(mtcars, by = "am", variables = c("mpg", "hp", "wt"))
+kk_table1(cohort, by = "arm", variables = c("age", "bmi", "sex", "smoker"))
 ```
 
-> **Interpretation.** Each cell is median (IQR) by group, with an automatically chosen test in the p-value column. Automatic-transmission cars (am = 1) have higher mpg (22.8 vs 17.3, p = 0.001) and lower weight (2.32 vs 3.52, p < 0.001). This is the standard baseline-characteristics "Table 1" for a manuscript.
+> **Interpretation.** Each cell is median (IQR) or n (%) by arm, with an automatically chosen test in the p-value column. Age, BMI, sex, and smoking are all statistically comparable between the Control and Treatment arms (every p > 0.05) — exactly what you want to see in a randomised trial's baseline table: the arms are **well balanced**, so any later outcome difference is unlikely to be confounded by these covariates.
 
 #### `kk_compare_groups_table(data, group, variables)` / `compare_groups_table()`
 
 Produces a **detailed two-group comparison table** with per-group summaries, mean/proportion differences, confidence intervals, effect sizes, and p-values. Fully tidyselect- and `group_by()`-aware for stratified analyses.
 
-*   **Clinical Example**: Comparing continuous outcomes between two treatment arms, optionally stratified by a third variable.
+*   **Clinical Example**: Comparing the follow-up blood-pressure outcome between the two treatment arms, optionally stratified by a third variable.
 ```{r ex-32}
-# Direct comparison
-kk_compare_groups_table(mtcars, am, c(mpg, hp))
+# Direct comparison of the SBP outcome by arm
+kk_compare_groups_table(cohort, arm, c(sbp))
 
-# Stratified by a third variable
+# Stratified by a third variable (sex)
 library(dplyr)
-mtcars |>
-  group_by(vs) |>
-  kk_compare_groups_table(am, c(mpg, hp))
+cohort |>
+  group_by(sex) |>
+  kk_compare_groups_table(arm, c(sbp))
 ```
 
-> **Interpretation.** Unlike Table 1, this reports the actual between-group *difference* with its CI and effect size. Manual cars average 7.24 mpg higher (p = 0.001), while the horsepower difference (−33) is not significant (p = 0.22). The stratified call repeats the comparison within each `vs` level — useful for checking effect modification.
+> **Interpretation.** Unlike Table 1, this reports the actual between-group *difference* with its CI and effect size. The active treatment lowers systolic BP by about **9.4 mmHg** (≈130 vs 139, p < 0.001) — the intended treatment effect. The stratified call repeats the comparison within each `sex` level, so you can check whether the effect is modified by sex (here it is present in both strata).
 
 #### `table1_summary(data, by, variables)`
 
 A `gtsummary`-backed "Table 1" builder returning a publication-styled summary object (an alternative rendering to `kk_table1`).
 
 ```{r ex-33}
-table1_summary(mtcars, by = "am", variables = c("mpg", "hp", "wt"))
+table1_summary(cohort, by = "arm", variables = c("age", "bmi", "sbp"))
 ```
 
 #### `kk_median_test(data, x, group)`
@@ -591,12 +612,12 @@ kk_mssd_test(bp_ticks)
 #### `kk_reg(data, outcome, predictors)` / `regression_analysis()` / `krk_reg()`
 A unified modeling wrapper that automatically detects binomial outcomes (triggering Logistic Regression with odds ratios and ROC curve diagnostics) or continuous outcomes (triggering Linear Regression with check plots).
 
-*   **Epidemiological Example**: Modeling the risk of hypertension based on age, BMI, and family history.
+*   **Epidemiological Example**: Modeling the odds of a cardiovascular event from age, smoking status, and treatment arm.
 ```{r ex-39}
-regression_analysis(mtcars, outcome = "am", predictors = c("mpg", "wt"))
+regression_analysis(cohort, outcome = "event", predictors = c("age", "smoker", "arm"))
 ```
 
-> **Interpretation.** The wrapper returns both univariate and multivariable models in one tidy frame (`model_type` column). Univariately both mpg and wt predict transmission, but in the multivariable model mpg loses significance (p = 0.99) while wt remains (coef −0.36, p = 0.015) — evidence that mpg and weight are collinear and weight carries the signal. For a binary outcome the estimates would be odds ratios with ROC diagnostics attached.
+> **Interpretation.** Because `event` is a two-level factor, the wrapper automatically fits **logistic regression** (`outcome_type = binary`), so the `estimate` column holds **odds ratios**. It returns both univariate and multivariable models in one tidy frame (`model_type` column). Adjusting for each other, each additional year of age raises the odds of an event by ~6% (OR 1.06 per year, 95% CI 1.02–1.10) and current smoking more than doubles them (OR ≈ 2.4, CI 1.1–5.3); the treatment arm is protective but not significant here (OR ≈ 0.7, CI 0.3–1.6). For a continuous outcome the wrapper would instead fit linear regression with model-check diagnostics.
 
 #### `compare_proportions(data)` / `compare_proportions_by()`
 
@@ -780,15 +801,15 @@ extract_egn_info(egn_sample)
 
 Computes an extensive numeric summary for a variable — central tendency, dispersion, robust estimators (Huber M), skewness/kurtosis, and normality tests — with full `group_by()` support.
 
-*   **Clinical Example**: Describing the distribution of a biomarker overall and by treatment arm before modelling.
+*   **Clinical Example**: Describing the distribution of systolic blood pressure overall and by treatment arm before modelling.
 ```{r ex-54}
-kk_summary(mtcars, mpg)
+kk_summary(cohort, sbp)
 
 # Grouped and abbreviated
 library(dplyr)
-mtcars |>
-  group_by(am) |>
-  kk_summary(mpg, verbose = "basic")
+cohort |>
+  group_by(arm) |>
+  kk_summary(sbp, verbose = "basic")
 ```
 
 ---
@@ -799,13 +820,51 @@ mtcars |>
 
 Analyzes a time series end-to-end: decomposition, stationarity tests (ADF/KPSS), autocorrelation, and automatic ARIMA modelling, with optional grouping.
 
-*   **Epidemiological Example**: Characterising a monthly surveillance count series and fitting a forecasting model.
+*   **Epidemiological Example**: Characterising a monthly surveillance count series and fitting a forecasting model. The series is a 24-month random walk with upward drift (a slowly rising case count). `print(n = Inf)` shows all 48 indicators.
 ```{r ex-55}
+set.seed(42)
 date <- seq(as.Date("2020-01-01"), by = "month", length.out = 24)
 value <- 100 + cumsum(rnorm(24, 2, 5))
 df_ts <- data.frame(date = date, value = value)
-kk_time_series(df_ts)
+kk_time_series(df_ts) |> print(n = Inf)
 ```
+
+> **Interpretation of each indicator.** With all rows shown the `Value` column prints in scientific notation because it spans from ~450 (variance) down to 4e-10 (a p-value). Reading them by block:
+>
+> | Indicator | Value | What it tells you |
+> |---|---|---|
+> | Length of Series | 24 | Number of observations (24 months). |
+> | Mean / Median | 146 / 153 | Centre of the series; median > mean hints at mild left skew. |
+> | Standard Deviation / Variance | 21.3 / 452 | Absolute spread of the level over the whole window. |
+> | Min / Max / Range | 108 / 172 / 64 | The series moved across a 64-unit band. |
+> | Q1 / Q3 | 130 / 163 | Interquartile bounds of the level. |
+> | Skewness | −0.60 | Mild left skew (a few lower months pull the tail). |
+> | Kurtosis | 1.94 | Below 3 → flatter-than-normal, no heavy tails. |
+> | CV (SD/Mean) | 0.145 | SD is ~15% of the mean — modest relative variability. |
+> | Missing Count / Outlier Count | 0 / 0 | Complete series, no IQR outliers. |
+> | Mean Abs Increase (Chain) | 2.31 | Average month-on-month change (the drift): ~+2.3 units/month. |
+> | Mean Growth Rate (Chain, Coeff) | 1.02 | Average chained growth factor — ~+2% per month. |
+> | Mean Rate of Increase (Chain, %) | 1.83 | Same drift expressed as ~+1.8%/month. |
+> | Mean Abs Increase (Fixed) | 37.4 | Average change vs the fixed first month (base period). |
+> | Mean Growth Rate / Rate (Fixed) | 1.34 / 34.4% | Cumulative growth relative to the base month. |
+> | SD Abs Increase / Growth / Rate (Chain) | 6.42 / 0.043 / 4.29 | Volatility of the month-on-month changes — steady drift, moderate noise. |
+> | SD … (Fixed) | 21.3 / 0.195 / 19.5 | Variability of change measured against the base month. |
+> | Geometric Mean Growth Rate (Coeff / %) | 1.02 / 1.74% | Compounding-consistent average growth (~+1.7%/month). |
+> | Mean Rate of Increase (T̅′, Coeff / %) | 0.017 / 1.74% | Average per-period rate from the mean-of-ratios chain. |
+> | Mean / SD Rate of Change (%) | 1.83 / 4.29 | Average and volatility of period-to-period % change. |
+> | Min / Max ROC (%) | −6.56 / 9.05 | Largest single-month drop and rise. |
+> | Trend Slope | 0.080 | Positive linear slope per step — an upward trend. |
+> | Trend Strength | 0.653 | ~65% of the variance is explained by trend — a strong trend. |
+> | ADF p-value / statistic | 0.95 / −0.81 | Augmented Dickey–Fuller **fails to reject** a unit root → **non-stationary**. |
+> | KPSS p-value / statistic | 0.016 / 0.68 | KPSS **rejects** stationarity (p < 0.05) → confirms non-stationary. |
+> | ACF Lag 1 / PACF Lag 1 | 0.87 / 0.87 | Very strong first-order autocorrelation — consecutive months are highly dependent. |
+> | Ljung-Box p-value | 4e-10 | Strongly rejects "white noise" — there is real serial structure to model. |
+> | Hurst Exponent | 0.73 | > 0.5 → persistent, trending behaviour (not mean-reverting). |
+> | GARCH Volatility | NA | Not estimated (needs n ≥ 30 and the `rugarch` package). |
+> | Shannon Entropy | 1.33 | Moderate signal complexity/unpredictability. |
+> | Dominant Frequency | 0.042 | Strongest spectral component ≈ 1 cycle per 24 months — i.e. the trend, not a seasonal cycle. |
+>
+> **Overall:** a non-stationary, strongly-autocorrelated series with a persistent upward drift of ~+2 cases/month and no seasonality — so a forecasting model should difference the series (e.g. ARIMA with d = 1) before fitting.
 
 #### `kk_time_metrics(data, value_col, date_col)`
 
@@ -828,18 +887,18 @@ The Tufte options are named arguments that come *after* `...`, so always pass th
 library(ggplot2)
 
 # Default — capped axes, works with any data / aes() (recommended default)
-kkplot(mtcars, aes(x = mpg, y = wt)) + geom_point()
+kkplot(cohort, aes(x = age, y = sbp)) + geom_point()
 
 # Optional: true Tufte range frame (axis lines span exactly the data range).
 # Best for plots with continuous x AND y; pass the option BY NAME.
-kkplot(mtcars, aes(x = mpg, y = wt), rangeframe = TRUE) + geom_point()
+kkplot(cohort, aes(x = age, y = sbp), rangeframe = TRUE) + geom_point()
 
 # Optional: subtle minor ticks for precise value reading
-kkplot(mtcars, aes(x = mpg, y = wt), minor_ticks = TRUE) + geom_point()
+kkplot(cohort, aes(x = age, y = sbp), minor_ticks = TRUE) + geom_point()
 
 # Combine, or change the cap style
-kkplot(mtcars, aes(x = mpg, y = wt), rangeframe = TRUE, minor_ticks = TRUE) + geom_point()
-kkplot(mtcars, aes(x = mpg, y = wt), cap = "none") + geom_point()
+kkplot(cohort, aes(x = age, y = sbp), rangeframe = TRUE, minor_ticks = TRUE) + geom_point()
+kkplot(cohort, aes(x = age, y = sbp), cap = "none") + geom_point()
 ```
 
 | Argument | Default | Effect |
@@ -854,17 +913,17 @@ Pairs with the Tufte theme applied by `set_plot_font()`.
 
 Automatically renders the appropriate univariate figure — bar chart for categorical variables, density/histogram for continuous — with optional grouping. The `_cat_` and `_cont_` variants (also aliased as `univariate_categorical_plot()` and `univariate_continuous_plot()`) force a specific type.
 ```{r ex-58}
-univariate_plot(mtcars, "mpg")          # continuous -> density
-univariate_plot(mtcars, "am")           # categorical -> bar
-univariate_cont_plot(mtcars, "mpg", group = "cyl")
-univariate_cat_plot(mtcars, "am", group = "cyl")
+univariate_plot(cohort, "sbp")             # continuous -> density
+univariate_plot(cohort, "smoker")          # categorical -> bar
+univariate_cont_plot(cohort, "sbp", group = "arm")
+univariate_cat_plot(cohort, "smoker", group = "arm")
 ```
 
 #### `kk_fullcorplot(data, method)`
 
 Produces a full **correlation matrix plot** with significance annotations (Pearson, Spearman, or Kendall), with optional multiple-comparison adjustment.
 ```{r ex-59}
-kk_fullcorplot(mtcars, method = "kendall")
+kk_fullcorplot(cohort[c("age", "bmi", "sbp", "chol")], method = "kendall")
 ```
 
 #### `set_plot_font(font, size)`

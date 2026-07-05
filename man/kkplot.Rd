@@ -32,10 +32,11 @@ data range) and subtle \strong{minor ticks} (for precise value reading) can be
 enabled.
 }
 \examples{
-kkplot(mtcars, aes(x = mpg, y = wt)) + geom_point()
+patients <- data.frame(age = round(rnorm(50, 60, 10)), sbp = round(rnorm(50, 135, 15)))
+kkplot(patients, aes(x = age, y = sbp)) + geom_point()
 
 # True Tufte range frame with minor ticks
-kkplot(mtcars, aes(x = mpg, y = wt), rangeframe = TRUE, minor_ticks = TRUE) +
+kkplot(patients, aes(x = age, y = sbp), rangeframe = TRUE, minor_ticks = TRUE) +
   geom_point()
 
 }

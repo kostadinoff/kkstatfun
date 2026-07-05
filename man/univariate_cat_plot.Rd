@@ -36,7 +36,11 @@ univariate_categorical_plot(
 Univariate Categorical Plot
 }
 \examples{
-univariate_cat_plot(mtcars, "am")
-univariate_cat_plot(mtcars, "am", group = "cyl")
+patients <- data.frame(
+  smoker = sample(c("No", "Yes"), 100, replace = TRUE),
+  arm = sample(c("Control", "Treatment"), 100, replace = TRUE)
+)
+univariate_cat_plot(patients, "smoker")
+univariate_cat_plot(patients, "smoker", group = "arm")
 
 }

@@ -21,22 +21,31 @@
 #' @return A tibble with comparison results, including counts, means/proportions, differences, CIs, p-values, and effect sizes.
 #'
 #' @examples
+#' # A small clinical trial cohort: treatment arm, baseline covariates
+#' set.seed(1)
+#' trial <- data.frame(
+#'   arm = factor(sample(c("Control", "Treatment"), 100, replace = TRUE)),
+#'   sex = factor(sample(c("Female", "Male"), 100, replace = TRUE)),
+#'   age = round(rnorm(100, 60, 10)),
+#'   sbp = round(rnorm(100, 135, 15))
+#' )
+#'
 #' # Basic usage with tidy evaluation
-#' kk_compare_groups_table(mtcars, am, c(mpg, hp))
+#' kk_compare_groups_table(trial, arm, c(age, sbp))
 #'
 #' # Automatic variable selection
-#' mtcars |>
-#'               dplyr::select(am, mpg, hp, cyl) |>
-#'               kk_compare_groups_table(am)
+#' trial |>
+#'               dplyr::select(arm, age, sbp, sex) |>
+#'               kk_compare_groups_table(arm)
 #'
 #' # Stratified analysis using group_by
-#' mtcars |>
-#'               dplyr::group_by(vs) |>
-#'               kk_compare_groups_table(am, c(mpg, hp))
+#' trial |>
+#'               dplyr::group_by(sex) |>
+#'               kk_compare_groups_table(arm, c(age, sbp))
 #'
 #' # Automatic group detection from grouped data
-#' mtcars |>
-#'               dplyr::group_by(am) |>
+#' trial |>
+#'               dplyr::group_by(arm) |>
 #'               kk_compare_groups_table()
 #'
 #' @export

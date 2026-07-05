@@ -1,21 +1,22 @@
+
 <!-- README.md is generated from README.Rmd. Please edit that file -->
-
-
 
 # kkstatfun
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18936020.svg)](https://doi.org/10.5281/zenodo.18936020)
 
-**R Statistical Analysis Toolkit for Medical Statistics, Health Economics and Epidemiology**
+**R Statistical Analysis Toolkit for Medical and Epidemiology**
 
-A comprehensive R package designed for medical statistics, epidemiology, and general clinical data analysis. It provides a suite of tidyverse-friendly tools with full support for piping (`%>%` / `|>`) and grouping (`group_by()`).
+A comprehensive R package designed for medical statistics, epidemiology,
+and general clinical data analysis. It provides a suite of
+tidyverse-friendly tools with full support for piping (`%>%` / `|>`) and
+grouping (`group_by()`).
 
----
+------------------------------------------------------------------------
 
 ## Installation
 
 You can install the package directly from GitHub:
-
 
 ``` r
 # Install devtools if not already installed
@@ -25,7 +26,7 @@ if (!require("devtools")) install.packages("devtools")
 devtools::install_github("kostadinoff/kkstatfun")
 ```
 
----
+------------------------------------------------------------------------
 
 ## Comprehensive Function Reference (with Epi & Clinical Examples)
 
@@ -33,10 +34,13 @@ devtools::install_github("kostadinoff/kkstatfun")
 
 #### `kk_twobytwo(data, exposure, outcome)`
 
-Computes classic measures of association from $2 \times 2$ contingency tables: Odds Ratio (OR), Relative Risk (RR), Risk Difference (RD), Attributable Fraction (AF), Population Attributable Fraction (PAF), and Preventable Fraction (PF) with 95% confidence intervals.
+Computes classic measures of association from $2 \times 2$ contingency
+tables: Odds Ratio (OR), Relative Risk (RR), Risk Difference (RD),
+Attributable Fraction (AF), Population Attributable Fraction (PAF), and
+Preventable Fraction (PF) with 95% confidence intervals.
 
-*   **Epidemiological Example**: Assessing the risk of developing lung cancer among smokers vs. non-smokers.
-
+- **Epidemiological Example**: Assessing the risk of developing lung
+  cancer among smokers vs. non-smokers.
 
 ``` r
 library(kkstatfun)
@@ -69,13 +73,25 @@ df %>% kk_twobytwo(smoking, lung_cancer)
 #> 19 NNH                                3.43     2.45    5.73   0.000000438 Chi-…       0.95
 ```
 
-> **Interpretation.** Smokers had 4.5× the risk of lung cancer (RR 4.5, 95% CI 2.3–8.7) and 6.6× the odds (OR 6.6). Because the outcome is common (20% overall), the OR overstates the RR — report the RR here. The risk difference of 0.29 means ~29 extra cases per 100 smokers, i.e. one extra case for every ~3.4 smokers (NNH 3.4). 78% of cancers *among smokers* are attributable to smoking (AF), and 58% of *all* cancers in the population would be prevented if smoking were removed (PAF). Every CI excludes the null, so the association is significant.
+> **Interpretation.** Smokers had 4.5× the risk of lung cancer (RR 4.5,
+> 95% CI 2.3–8.7) and 6.6× the odds (OR 6.6). Because the outcome is
+> common (20% overall), the OR overstates the RR — report the RR here.
+> The risk difference of 0.29 means ~29 extra cases per 100 smokers,
+> i.e. one extra case for every ~3.4 smokers (NNH 3.4). 78% of cancers
+> *among smokers* are attributable to smoking (AF), and 58% of *all*
+> cancers in the population would be prevented if smoking were removed
+> (PAF). Every CI excludes the null, so the association is significant.
 
 #### `kk_stratified_2x2(data, exposure, outcome, stratum)`
 
-Performs stratified analysis on $2 \times 2$ tables, calculating stratum-specific ORs, the Cochran-Mantel-Haenszel (CMH) pooled Odds Ratio, and the Breslow-Day test for homogeneity of odds ratios to detect confounding and effect modification.
+Performs stratified analysis on $2 \times 2$ tables, calculating
+stratum-specific ORs, the Cochran-Mantel-Haenszel (CMH) pooled Odds
+Ratio, and the Breslow-Day test for homogeneity of odds ratios to detect
+confounding and effect modification.
 
-*   **Epidemiological Example**: Studying the association between coffee consumption and coronary heart disease, stratified by smoking status to control for confounding.
+- **Epidemiological Example**: Studying the association between coffee
+  consumption and coronary heart disease, stratified by smoking status
+  to control for confounding.
 
 ``` r
 df_strat <- data.frame(
@@ -116,13 +132,24 @@ df_strat %>% kk_stratified_2x2(coffee, chd, smoking)
 #> 2 Non-Smoker  1.33  1.25            10            40              12              60
 ```
 
-> **Interpretation.** Pooling across smoking strata, coffee is associated with 2.16× the odds of CHD (Mantel-Haenszel OR 2.16, 95% CI 1.07–4.35). The Breslow-Day test is non-significant (p = 0.085), so the odds ratios are reasonably *homogeneous* across strata — no strong evidence of effect modification, and the single pooled estimate is a fair summary. The stratum-specific ORs (3.86 in smokers vs 1.33 in non-smokers) hint at a stronger effect among smokers, but the sample is too small to confirm interaction.
+> **Interpretation.** Pooling across smoking strata, coffee is
+> associated with 2.16× the odds of CHD (Mantel-Haenszel OR 2.16, 95% CI
+> 1.07–4.35). The Breslow-Day test is non-significant (p = 0.085), so
+> the odds ratios are reasonably *homogeneous* across strata — no strong
+> evidence of effect modification, and the single pooled estimate is a
+> fair summary. The stratum-specific ORs (3.86 in smokers vs 1.33 in
+> non-smokers) hint at a stronger effect among smokers, but the sample
+> is too small to confirm interaction.
 
 #### `kk_reri(data, exp1, exp2, outcome)`
 
-Calculates the Relative Excess Risk due to Interaction (RERI), Attributable Proportion due to Interaction (AP), and Synergy Index (S) to evaluate additive interactions.
+Calculates the Relative Excess Risk due to Interaction (RERI),
+Attributable Proportion due to Interaction (AP), and Synergy Index (S)
+to evaluate additive interactions.
 
-*   **Epidemiological Example**: Assessing if the combined effect of asbestos exposure and smoking on lung cancer is greater than the sum of their individual effects.
+- **Epidemiological Example**: Assessing if the combined effect of
+  asbestos exposure and smoking on lung cancer is greater than the sum
+  of their individual effects.
 
 ``` r
 df_int <- data.frame(
@@ -139,13 +166,21 @@ df_int %>% kk_reri(asbestos, smoking, cancer)
 #> 3 S         0.271  0.00746  9.87 0.498       0.95
 ```
 
-> **Interpretation.** RERI is the excess risk on the *additive* scale beyond the sum of the two separate exposure effects. Here RERI = 0.44 but its 95% CI (−0.42 to 1.29) includes 0, so there is no evidence of additive interaction — the joint effect is consistent with independent effects. (Simulated data, so the point estimate will differ from a real study.)
+> **Interpretation.** RERI is the excess risk on the *additive* scale
+> beyond the sum of the two separate exposure effects. Here RERI = 0.44
+> but its 95% CI (−0.42 to 1.29) includes 0, so there is no evidence of
+> additive interaction — the joint effect is consistent with independent
+> effects. (Simulated data, so the point estimate will differ from a
+> real study.)
 
 #### `kk_trend_test(data, exposure_level, outcome)` / `prop_trend_test()`
 
-Performs the Cochran-Armitage test for trend in proportions to evaluate linear trends in binomial proportions across ordinal levels.
+Performs the Cochran-Armitage test for trend in proportions to evaluate
+linear trends in binomial proportions across ordinal levels.
 
-*   **Epidemiological Example**: Evaluating if the prevalence of cardiovascular disease increases with increasing levels of daily alcohol intake (None, Low, Moderate, High).
+- **Epidemiological Example**: Evaluating if the prevalence of
+  cardiovascular disease increases with increasing levels of daily
+  alcohol intake (None, Low, Moderate, High).
 
 ``` r
 df_trend <- data.frame(
@@ -160,13 +195,22 @@ df_trend %>% kk_trend_test(alcohol, cvd)
 #> 2 Trend OR (per unit)         1.62  1.17  2.24 0.00337       0.95        4     200
 ```
 
-> **Interpretation.** Both rows agree that risk rises across the ordered alcohol scale (None → Low → Med → High). The *Cochran-Armitage* row is the formal linear-trend test on the proportions, and the *Trend OR (per unit)* gives the effect size: the odds of CVD rise ~1.6× per step up the scale, with the CI excluding 1. A significant trend with a CI excluding 1 is the key evidence of a monotonic dose-response.
+> **Interpretation.** Both rows agree that risk rises across the ordered
+> alcohol scale (None → Low → Med → High). The *Cochran-Armitage* row is
+> the formal linear-trend test on the proportions, and the *Trend OR
+> (per unit)* gives the effect size: the odds of CVD rise ~1.6× per step
+> up the scale, with the CI excluding 1. A significant trend with a CI
+> excluding 1 is the key evidence of a monotonic dose-response.
 
 #### `kk_nnt(data, exposure, outcome)`
 
-Calculates the Number Needed to Treat (NNT) or Number Needed to Harm (NNH) alongside the Absolute Risk Reduction (ARR) and Relative Risk Reduction (RRR).
+Calculates the Number Needed to Treat (NNT) or Number Needed to Harm
+(NNH) alongside the Absolute Risk Reduction (ARR) and Relative Risk
+Reduction (RRR).
 
-*   **Clinical Example**: Calculating the number of patients required to be treated with a new statin to prevent one primary cardiovascular event.
+- **Clinical Example**: Calculating the number of patients required to
+  be treated with a new statin to prevent one primary cardiovascular
+  event.
 
 ``` r
 df_treatment <- data.frame(
@@ -182,12 +226,17 @@ df_treatment %>% kk_nnt(statin, event)
 #> 3 RRR       0.571  0.225   0.763        0.95 ""
 ```
 
-> **Interpretation.** The statin cut the event rate from 7% to 3% — an absolute risk reduction of 4% (ARR 0.04) and a 57% relative reduction (RRR). You would need to treat 25 patients (NNT, 95% CI 15–76) to prevent one cardiovascular event; the CI excludes infinity, consistent with a significant benefit.
+> **Interpretation.** The statin cut the event rate from 7% to 3% — an
+> absolute risk reduction of 4% (ARR 0.04) and a 57% relative reduction
+> (RRR). You would need to treat 25 patients (NNT, 95% CI 15–76) to
+> prevent one cardiovascular event; the CI excludes infinity, consistent
+> with a significant benefit.
 
 #### `kk_sensitivity_analysis(or_observed, p_bias)`
 
-Computes the sensitivity of an observed Odds Ratio or Relative Risk against unmeasured confounding, assessing the strength of a potential confounder required to explain away the finding.
-
+Computes the sensitivity of an observed Odds Ratio or Relative Risk
+against unmeasured confounding, assessing the strength of a potential
+confounder required to explain away the finding.
 
 ``` r
 # Observed OR of 2.5 with 20% estimated confounding bias prevalence
@@ -200,36 +249,60 @@ kk_sensitivity_analysis(or_observed = 2.5, p_bias = 0.20)
 #> 3 Required Confounder Association (RR_UD)     8.5 Low sensitivity (robust) - a very… Mini…
 ```
 
-> **Interpretation.** To fully explain away the observed OR of 2.5 through unmeasured confounding, a confounder would need to be associated with the outcome by a risk ratio of at least 8.5 (given the assumed 20% prevalence difference). Such a strong hidden confounder is implausible in most settings, so the finding is relatively robust.
+> **Interpretation.** To fully explain away the observed OR of 2.5
+> through unmeasured confounding, a confounder would need to be
+> associated with the outcome by a risk ratio of at least 8.5 (given the
+> assumed 20% prevalence difference). Such a strong hidden confounder is
+> implausible in most settings, so the finding is relatively robust.
 
 #### `kk_incidence_rate(data, cases, person_time, by = NULL)`
 
-Computes incidence rates per unit of person-time with **exact (Poisson) confidence intervals**, and — when a stratifying variable is supplied — incidence **rate ratios** versus the reference level.
+Computes incidence rates per unit of person-time with **exact (Poisson)
+confidence intervals**, and — when a stratifying variable is supplied —
+incidence **rate ratios** versus the reference level.
 
-*   **Epidemiological Example**: Comparing the incidence rate of myocardial infarction per 1000 person-years between a high-exposure and a reference cohort.
+- **Epidemiological Example**: Comparing the incidence rate of
+  myocardial infarction per 1000 person-years between a high-exposure
+  and a reference cohort.
 
 ``` r
+# `arm` is a factor whose FIRST level is the reference (here: unexposed)
 df_ir <- data.frame(
-  arm = c("exposed", "unexposed"),
-  cases = c(40, 15),
-  pyears = c(1000, 1200)
+  arm = factor(c("unexposed", "exposed"), levels = c("unexposed", "exposed")),
+  cases = c(15, 40),
+  pyears = c(1200, 1000)
 )
 df_ir %>% kk_incidence_rate(cases, pyears, by = arm)
 #> # A tibble: 2 × 13
 #>   stratum   cases person_time  rate rate_low rate_high multiplier conf.level rate_ratio
-#>   <chr>     <dbl>       <dbl> <dbl>    <dbl>     <dbl>      <dbl>      <dbl>      <dbl>
-#> 1 exposed      40        1000  40      28.6       54.5       1000       0.95      1    
-#> 2 unexposed    15        1200  12.5     7.00      20.6       1000       0.95      0.312
-#> # ℹ 4 more variables: rr_low <dbl>, rr_high <dbl>, rr_p <dbl>, reference <chr>
+#>   <fct>     <dbl>       <dbl> <dbl>    <dbl>     <dbl>      <dbl>      <dbl>      <dbl>
+#> 1 unexposed    15        1200  12.5     7.00      20.6       1000       0.95        1  
+#> 2 exposed      40        1000  40      28.6       54.5       1000       0.95        3.2
+#> # ℹ 4 more variables: rr_low <dbl>, rr_high <dbl>, rr_p <dbl>, reference <fct>
 ```
 
-> **Interpretation.** The exposed cohort had 40 events per 1000 person-years (exact 95% CI 28.6–54.5) versus 12.5 (7.0–20.6) in the unexposed. The rate ratio is computed against the first row (exposed = reference), so the unexposed value of 0.31 means the exposed had ~3.2× the event rate. The non-overlapping exact Poisson CIs indicate a real rate difference.
+> **Interpretation.** The unexposed (reference) cohort had 12.5 events
+> per 1000 person-years (exact 95% CI 7.0–20.6) versus 40 (28.6–54.5) in
+> the exposed. The rate ratio is computed against the reference level
+> (the first factor level, `unexposed`), so the exposed **rate ratio of
+> 3.2** (95% CI 1.8–5.8) means the exposed had ~3.2× the event rate — an
+> *increased* rate. The reference itself is fixed at 1. Note the
+> direction depends on which level is the reference: had `exposed` been
+> the reference, the unexposed would instead show 1/3.2 ≈ **0.31, a
+> reduced rate**. Set the reference deliberately via the factor levels.
+> The non-overlapping exact Poisson CIs indicate a real rate difference.
 
 #### `kk_rr_reg(data, outcome, predictors)`
 
-Estimates **adjusted risk ratios** for a common binary outcome using the modified Poisson approach (Zou 2004): a log-link Poisson model with robust sandwich standard errors. This is the preferred alternative to logistic regression when the outcome is frequent, since odds ratios overstate the risk ratio.
+Estimates **adjusted risk ratios** for a common binary outcome using the
+modified Poisson approach (Zou 2004): a log-link Poisson model with
+robust sandwich standard errors. This is the preferred alternative to
+logistic regression when the outcome is frequent, since odds ratios
+overstate the risk ratio.
 
-*   **Epidemiological Example**: Estimating the adjusted risk ratio of post-operative infection for an exposure, controlling for age, in a cohort where infection is common (>10%).
+- **Epidemiological Example**: Estimating the adjusted risk ratio of
+  post-operative infection for an exposure, controlling for age, in a
+  cohort where infection is common (\>10%).
 
 ``` r
 df_rr <- data.frame(
@@ -247,13 +320,22 @@ kk_rr_reg(df_rr, infection, c("exposure", "age"))
 #> 4 age      multivari…       1.00    0.992      1.02   0.00596    0.616    0.538       0.95
 ```
 
-> **Interpretation.** Each row is an adjusted risk ratio; read the `multivariable` rows for the mutually-adjusted estimates. Exposure has RR ≈ 1.01 (95% CI 0.78–1.30, p ≈ 0.96) — no association, as expected since the outcome was simulated independently. The advantage over logistic regression: these are risk ratios, directly interpretable even though infection is common.
+> **Interpretation.** Each row is an adjusted risk ratio; read the
+> `multivariable` rows for the mutually-adjusted estimates. Exposure has
+> RR ≈ 1.01 (95% CI 0.78–1.30, p ≈ 0.96) — no association, as expected
+> since the outcome was simulated independently. The advantage over
+> logistic regression: these are risk ratios, directly interpretable
+> even though infection is common.
 
 #### `kk_rate_reg(data, outcome, predictors, person_time)` / `kk_poisson()`
 
-Fits **Poisson rate regression** returning incidence-rate ratios (IRR), with an `offset(log(person_time))` for rate outcomes. Overdispersion is detected automatically and a **negative-binomial** model is substituted when appropriate.
+Fits **Poisson rate regression** returning incidence-rate ratios (IRR),
+with an `offset(log(person_time))` for rate outcomes. Overdispersion is
+detected automatically and a **negative-binomial** model is substituted
+when appropriate.
 
-*   **Epidemiological Example**: Modelling the rate of hospital admissions per person-year as a function of age and sex.
+- **Epidemiological Example**: Modelling the rate of hospital admissions
+  per person-year as a function of age and sex.
 
 ``` r
 df_rate <- data.frame(
@@ -273,13 +355,21 @@ kk_rate_reg(df_rate, admissions, c("age", "sex"), person_time = pyears)
 #> # ℹ 2 more variables: AIC <dbl>, conf.level <dbl>
 ```
 
-> **Interpretation.** Coefficients are incidence-rate ratios (per person-year via the offset). The `dispersion` column (~1.5) is checked automatically; here it stayed below the negative-binomial threshold so a Poisson fit was kept (`family = poisson`). Neither age (IRR ≈ 1.00) nor sex (IRR ≈ 1.13, p ≈ 0.14) is significant in this simulated data.
+> **Interpretation.** Coefficients are incidence-rate ratios (per
+> person-year via the offset). The `dispersion` column (~1.5) is checked
+> automatically; here it stayed below the negative-binomial threshold so
+> a Poisson fit was kept (`family = poisson`). Neither age (IRR ≈ 1.00)
+> nor sex (IRR ≈ 1.13, p ≈ 0.14) is significant in this simulated data.
 
 #### `kk_smd(data, treatment, variables)` / `kk_balance_table()`
 
-Computes **standardized mean differences (SMD)** between two groups for each covariate — the standard diagnostic for baseline balance in matched, weighted, or propensity-score cohorts. Absolute SMD > 0.1 flags meaningful imbalance.
+Computes **standardized mean differences (SMD)** between two groups for
+each covariate — the standard diagnostic for baseline balance in
+matched, weighted, or propensity-score cohorts. Absolute SMD \> 0.1
+flags meaningful imbalance.
 
-*   **Epidemiological Example**: Checking covariate balance between treated and control arms after propensity-score matching.
+- **Epidemiological Example**: Checking covariate balance between
+  treated and control arms after propensity-score matching.
 
 ``` r
 df_bal <- data.frame(
@@ -295,13 +385,23 @@ df_bal %>% kk_smd(arm, variables = c("age", "smoker"))
 #> 2 smoker   1     categorical   0.37   0.44 -0.143   0.143 TRUE
 ```
 
-> **Interpretation.** SMDs measure imbalance independent of sample size. Both covariates exceed the conventional |SMD| > 0.1 threshold (age −0.68, smoker −0.14) and are flagged `imbalanced = TRUE`, so the raw treated and control groups are not comparable — weighting or matching (e.g. `kk_iptw`) is warranted before estimating an effect.
+> **Interpretation.** SMDs measure imbalance independent of sample size.
+> Both covariates exceed the conventional \|SMD\| \> 0.1 threshold (age
+> −0.68, smoker −0.14) and are flagged `imbalanced = TRUE`, so the raw
+> treated and control groups are not comparable — weighting or matching
+> (e.g. `kk_iptw`) is warranted before estimating an effect.
 
 #### `kk_iptw(data, treatment, outcome, covariates)`
 
-Estimates a **propensity score**, forms **inverse-probability-of-treatment weights** (ATE or ATT, optionally stabilized), and returns the weighted **risk difference and risk ratio** with robust CIs. Use `kk_smd` on the weighted sample to confirm the covariates are balanced.
+Estimates a **propensity score**, forms
+**inverse-probability-of-treatment weights** (ATE or ATT, optionally
+stabilized), and returns the weighted **risk difference and risk ratio**
+with robust CIs. Use `kk_smd` on the weighted sample to confirm the
+covariates are balanced.
 
-*   **Epidemiological Example**: Estimating the causal effect of a treatment on a binary outcome from observational data, adjusting for confounding by age and sex via IPTW.
+- **Epidemiological Example**: Estimating the causal effect of a
+  treatment on a binary outcome from observational data, adjusting for
+  confounding by age and sex via IPTW.
 
 ``` r
 df_ip <- data.frame(
@@ -318,13 +418,21 @@ kk_iptw(df_ip, trt, out, covariates = c("age", "sex"))
 #> 2 ATE      Risk ratio        1.18     1.02       1.37   0.0289       0.95
 ```
 
-> **Interpretation.** After inverse-probability weighting to balance age and sex, the *average treatment effect* is a risk difference of +0.097 (95% CI 0.010–0.183) and a risk ratio of 1.18 (1.02–1.37); both exclude the null (p ≈ 0.03), so treatment raises the outcome probability by ~10 percentage points. Confirm the weights achieved balance by re-running `kk_smd` on the weighted sample.
+> **Interpretation.** After inverse-probability weighting to balance age
+> and sex, the *average treatment effect* is a risk difference of +0.097
+> (95% CI 0.010–0.183) and a risk ratio of 1.18 (1.02–1.37); both
+> exclude the null (p ≈ 0.03), so treatment raises the outcome
+> probability by ~10 percentage points. Confirm the weights achieved
+> balance by re-running `kk_smd` on the weighted sample.
 
 #### `kk_epi_stats(data, exposure, outcome)`
 
-Computes the **Odds Ratio and Relative Risk** (with confidence intervals) from two binary variables — a lightweight alternative to `kk_twobytwo` when only OR and RR are needed.
+Computes the **Odds Ratio and Relative Risk** (with confidence
+intervals) from two binary variables — a lightweight alternative to
+`kk_twobytwo` when only OR and RR are needed.
 
-*   **Epidemiological Example**: Estimating the OR and RR of disease among exposed vs. unexposed subjects.
+- **Epidemiological Example**: Estimating the OR and RR of disease among
+  exposed vs. unexposed subjects.
 
 ``` r
 df_epi <- data.frame(
@@ -340,12 +448,16 @@ kk_epi_stats(df_epi, exposure, outcome)
 #> # ℹ 1 more variable: Unexposed_Total <int>
 ```
 
-> **Interpretation.** Exposed subjects had twice the risk (RR 2.0, 95% CI 1.04–3.83) and 2.67× the odds (OR 2.67) of the outcome; both CIs exclude 1, so the association is significant. As always the OR sits further from 1 than the RR, so with a 20% exposed-group risk the RR is the more faithful effect measure.
+> **Interpretation.** Exposed subjects had twice the risk (RR 2.0, 95%
+> CI 1.04–3.83) and 2.67× the odds (OR 2.67) of the outcome; both CIs
+> exclude 1, so the association is significant. As always the OR sits
+> further from 1 than the RR, so with a 20% exposed-group risk the RR is
+> the more faithful effect measure.
 
 #### `odds_ratio(data, exposure, outcome)` / `risk_ratio(data, exposure, outcome)`
 
-Convenience wrappers that return a single measure of association (the OR or the RR, respectively) with its confidence interval and p-value.
-
+Convenience wrappers that return a single measure of association (the OR
+or the RR, respectively) with its confidence interval and p-value.
 
 ``` r
 df_or <- data.frame(exposure = c(1, 1, 0, 0, 1, 0), outcome = c(1, 0, 1, 0, 1, 0))
@@ -363,9 +475,12 @@ risk_ratio(df_or, exposure, outcome)
 
 #### `kk_std_rates(data, count, pop, std_pop)`
 
-Performs **direct age-standardization** of rates against a reference (standard) population, returning crude and standardized rates with confidence intervals.
+Performs **direct age-standardization** of rates against a reference
+(standard) population, returning crude and standardized rates with
+confidence intervals.
 
-*   **Epidemiological Example**: Age-standardizing cancer incidence to the WHO world standard population to allow comparison across regions.
+- **Epidemiological Example**: Age-standardizing cancer incidence to the
+  WHO world standard population to allow comparison across regions.
 
 ``` r
 df_std <- data.frame(
@@ -382,13 +497,24 @@ kk_std_rates(df_std, cases, pop, std_pop, multiplier = 1000)
 #> 2 Adjusted Rate  7.74  6.62  8.87       1000       0.95
 ```
 
-> **Interpretation.** The crude rate (8.04 per 1000) is what you observe; the age-standardized rate (7.74, 95% CI 6.62–8.87) is what the population *would* experience under the reference age structure. Standardizing removes age as a confounder so regions or periods can be compared fairly. The small drop from crude to adjusted shows this population is slightly older than the standard.
+> **Interpretation.** The crude rate (8.04 per 1000) is what you
+> observe; the age-standardized rate (7.74, 95% CI 6.62–8.87) is what
+> the population *would* experience under the reference age structure.
+> Standardizing removes age as a confounder so regions or periods can be
+> compared fairly. The small drop from crude to adjusted shows this
+> population is slightly older than the standard.
 
 #### `kk_smr(data, observed, pop, ref_rate)`
 
-Performs **indirect standardization**, comparing observed events with those expected under a reference population's stratum-specific rates to give the **Standardized Mortality/Morbidity Ratio (SMR)** with an exact Poisson CI. The counterpart to the direct `kk_std_rates` when stratum-specific rates in the study population are unstable.
+Performs **indirect standardization**, comparing observed events with
+those expected under a reference population’s stratum-specific rates to
+give the **Standardized Mortality/Morbidity Ratio (SMR)** with an exact
+Poisson CI. The counterpart to the direct `kk_std_rates` when
+stratum-specific rates in the study population are unstable.
 
-*   **Epidemiological Example**: Assessing whether mortality in an occupational cohort exceeds that expected from national age-specific death rates.
+- **Epidemiological Example**: Assessing whether mortality in an
+  occupational cohort exceeds that expected from national age-specific
+  death rates.
 
 ``` r
 df_smr <- data.frame(
@@ -404,12 +530,17 @@ kk_smr(df_smr, deaths, pyears, ref_rate)
 #> 1       85     90.5 0.939   0.750     1.16     1.98       1000   0.599       0.95
 ```
 
-> **Interpretation.** 85 deaths were observed against 90.5 expected from the reference population's age-specific rates, giving an SMR of 0.94 (95% CI 0.75–1.16). Because the CI includes 1 (p = 0.60), the cohort's mortality is not significantly different from expected — no excess risk. An SMR > 1 with a CI excluding 1 would signal excess mortality.
+> **Interpretation.** 85 deaths were observed against 90.5 expected from
+> the reference population’s age-specific rates, giving an SMR of 0.94
+> (95% CI 0.75–1.16). Because the CI includes 1 (p = 0.60), the cohort’s
+> mortality is not significantly different from expected — no excess
+> risk. An SMR \> 1 with a CI excluding 1 would signal excess mortality.
 
 #### `kk_risk_plot(data, title)`
 
-Renders a **forest plot** of risk estimates (OR / RR and CIs) from the output of `kk_twobytwo`, `kk_epi_stats`, or any tibble with `Metric`, `Estimate`, `Lower`, `Upper` columns.
-
+Renders a **forest plot** of risk estimates (OR / RR and CIs) from the
+output of `kk_twobytwo`, `kk_epi_stats`, or any tibble with `Metric`,
+`Estimate`, `Lower`, `Upper` columns.
 
 ``` r
 res <- tibble::tibble(
@@ -421,21 +552,20 @@ res <- tibble::tibble(
 kk_risk_plot(res)
 ```
 
-<div class="figure">
-<img src="man/figures/README-ex-17-1.png" alt="plot of chunk ex-17" width="75%" />
-<p class="caption">plot of chunk ex-17</p>
-</div>
+<img src="man/figures/README-ex-17-1.png" alt="" width="75%" />
 
----
+------------------------------------------------------------------------
 
 ### 2. Diagnostic Tests, Agreement & Rater Studies
 
 #### `kk_diagnostic(data, truth, prediction)` / `confusion_metrics_ci()`
 
-Computes key diagnostic test performance parameters: Sensitivity, Specificity, Positive/Negative Predictive Value (PPV/NPV), and Likelihood Ratios (LR+/LR-) with Wilson score confidence intervals.
+Computes key diagnostic test performance parameters: Sensitivity,
+Specificity, Positive/Negative Predictive Value (PPV/NPV), and
+Likelihood Ratios (LR+/LR-) with Wilson score confidence intervals.
 
-*   **Clinical Example**: Evaluating the diagnostic accuracy of a rapid PCR test against the gold standard viral culture.
-
+- **Clinical Example**: Evaluating the diagnostic accuracy of a rapid
+  PCR test against the gold standard viral culture.
 
 ``` r
 df_test <- data.frame(
@@ -455,13 +585,21 @@ df_test %>% kk_diagnostic(gold_standard, pcr_test)
 #> 7 AUC         0.964
 ```
 
-> **Interpretation.** The PCR test is highly accurate: 95% sensitivity and 97.8% specificity, AUC 0.96. Note the gap between PPV (0.83) and NPV (0.99) — driven by the low 10% prevalence, a positive result is only ~83% likely to be a true case, while a negative result all but rules disease out.
+> **Interpretation.** The PCR test is highly accurate: 95% sensitivity
+> and 97.8% specificity, AUC 0.96. Note the gap between PPV (0.83) and
+> NPV (0.99) — driven by the low 10% prevalence, a positive result is
+> only ~83% likely to be a true case, while a negative result all but
+> rules disease out.
 
 #### `kk_roc(data, truth, predictor)`
 
-Builds an ROC curve for a continuous marker, returning the **AUC with a DeLong confidence interval** and the **Youden-optimal cutoff** together with the sensitivity, specificity, PPV, and NPV achieved at that threshold.
+Builds an ROC curve for a continuous marker, returning the **AUC with a
+DeLong confidence interval** and the **Youden-optimal cutoff** together
+with the sensitivity, specificity, PPV, and NPV achieved at that
+threshold.
 
-*   **Clinical Example**: Determining the optimal biomarker cutoff and discriminative accuracy for identifying sepsis.
+- **Clinical Example**: Determining the optimal biomarker cutoff and
+  discriminative accuracy for identifying sepsis.
 
 ``` r
 df_marker <- data.frame(disease = rbinom(300, 1, 0.4))
@@ -474,13 +612,19 @@ df_marker %>% kk_roc(disease, biomarker)
 #> # ℹ 2 more variables: n <int>, conf.level <dbl>
 ```
 
-> **Interpretation.** The marker discriminates cases moderately well (AUC 0.73, DeLong 95% CI 0.67–0.78; 0.5 is chance). The Youden-optimal cutoff of 0.52 balances sensitivity (0.66) and specificity (0.69) — use it when you need a single decision threshold rather than the whole curve.
+> **Interpretation.** The marker discriminates cases moderately well
+> (AUC 0.73, DeLong 95% CI 0.67–0.78; 0.5 is chance). The Youden-optimal
+> cutoff of 0.52 balances sensitivity (0.66) and specificity (0.69) —
+> use it when you need a single decision threshold rather than the whole
+> curve.
 
 #### `kk_compare_roc(data, truth, predictor1, predictor2)`
 
-Compares the AUCs of two markers measured on the same subjects using **DeLong's test** for paired ROC curves.
+Compares the AUCs of two markers measured on the same subjects using
+**DeLong’s test** for paired ROC curves.
 
-*   **Clinical Example**: Testing whether a novel biomarker significantly improves discrimination over an established one for the same patients.
+- **Clinical Example**: Testing whether a novel biomarker significantly
+  improves discrimination over an established one for the same patients.
 
 ``` r
 df_marker$established <- df_marker$disease * 0.3 + rnorm(300)
@@ -491,13 +635,25 @@ df_marker %>% kk_compare_roc(disease, biomarker, established)
 #> 1 biomarker established 0.726 0.582          0.144      3.15 0.00165 DeLong's …       0.95
 ```
 
-> **Interpretation.** The first biomarker discriminates significantly better than the established one (AUC 0.73 vs 0.58; difference 0.14, DeLong p = 0.0017). Because both markers are measured on the *same* subjects, the paired DeLong test is the correct comparison — a two-sample test would ignore their correlation and overstate uncertainty.
+> **Interpretation.** The first biomarker discriminates significantly
+> better than the established one (AUC 0.73 vs 0.58; difference 0.14,
+> DeLong p = 0.0017). Because both markers are measured on the *same*
+> subjects, the paired DeLong test is the correct comparison — a
+> two-sample test would ignore their correlation and overstate
+> uncertainty.
 
 #### `kk_calibration(data, truth, predicted)`
 
-Assesses **calibration** of a risk model — the **Brier score**, the **Hosmer-Lemeshow** goodness-of-fit test, and a decile table of predicted vs. observed risk for a calibration plot. The complement to `kk_roc`: discrimination tells you *if* the model separates cases, calibration tells you whether the predicted probabilities are *accurate*.
+Assesses **calibration** of a risk model — the **Brier score**, the
+**Hosmer-Lemeshow** goodness-of-fit test, and a decile table of
+predicted vs. observed risk for a calibration plot. The complement to
+`kk_roc`: discrimination tells you *if* the model separates cases,
+calibration tells you whether the predicted probabilities are
+*accurate*.
 
-*   **Clinical Example**: Checking whether a cardiovascular risk score's predicted 10-year probabilities agree with observed event rates before deploying it.
+- **Clinical Example**: Checking whether a cardiovascular risk score’s
+  predicted 10-year probabilities agree with observed event rates before
+  deploying it.
 
 ``` r
 df_cal <- data.frame(y = rbinom(500, 1, 0.3))
@@ -518,14 +674,23 @@ kk_calibration(df_cal, y, p)
 #> 10    10    50              28          0.56         0.743
 ```
 
-> **Interpretation.** Each row is a risk decile: compare `observed_rate` with `predicted_rate`. Good calibration means the two track closely. Here the model over-predicts in the higher-risk deciles (decile 7: 22% observed vs 44% predicted; decile 10: 56% vs 74%), so its probabilities are too high for high-risk patients. Retrieve the Brier score and Hosmer-Lemeshow test from `attr(x, "brier")` and `attr(x, "hosmer_lemeshow")`.
+> **Interpretation.** Each row is a risk decile: compare `observed_rate`
+> with `predicted_rate`. Good calibration means the two track closely.
+> Here the model over-predicts in the higher-risk deciles (decile 7: 22%
+> observed vs 44% predicted; decile 10: 56% vs 74%), so its
+> probabilities are too high for high-risk patients. Retrieve the Brier
+> score and Hosmer-Lemeshow test from `attr(x, "brier")` and
+> `attr(x, "hosmer_lemeshow")`.
 
 #### `kk_kappa(data, rater1, rater2)`
 
-Computes Cohen's Kappa coefficient ($\kappa$), standard error, Z-statistic, and confidence intervals to evaluate inter-rater agreement for categorical classifications.
+Computes Cohen’s Kappa coefficient ($\kappa$), standard error,
+Z-statistic, and confidence intervals to evaluate inter-rater agreement
+for categorical classifications.
 
-*   **Clinical Example**: Assessing diagnostic agreement between two independent neurologists classifying MRI scans as "Normal", "Inconclusive", or "Pathological".
-
+- **Clinical Example**: Assessing diagnostic agreement between two
+  independent neurologists classifying MRI scans as “Normal”,
+  “Inconclusive”, or “Pathological”.
 
 ``` r
 df_agree <- data.frame(
@@ -540,14 +705,21 @@ df_agree %>% kk_kappa(neuro1, neuro2)
 #> # ℹ 2 more variables: observed_agreement <dbl>, chance_agreement <dbl>
 ```
 
-> **Interpretation.** Cohen's κ of 0.74 (95% CI 0.61–0.87) indicates *substantial* agreement between the two neurologists beyond chance (Landis-Koch: 0.61–0.80 = substantial). The CI excludes 0 and p is minuscule, so the agreement is well above what chance alone would produce.
+> **Interpretation.** Cohen’s κ of 0.74 (95% CI 0.61–0.87) indicates
+> *substantial* agreement between the two neurologists beyond chance
+> (Landis-Koch: 0.61–0.80 = substantial). The CI excludes 0 and p is
+> minuscule, so the agreement is well above what chance alone would
+> produce.
 
 #### `kk_bland_altman(data, method1, method2)`
 
-Computes limits of agreement and constructs Bland-Altman plots to evaluate the clinical agreement between two continuous measurement methods.
+Computes limits of agreement and constructs Bland-Altman plots to
+evaluate the clinical agreement between two continuous measurement
+methods.
 
-*   **Clinical Example**: Assessing agreement between systolic blood pressure measurements from an arterial line vs. an oscillometric arm cuff.
-
+- **Clinical Example**: Assessing agreement between systolic blood
+  pressure measurements from an arterial line vs. an oscillometric arm
+  cuff.
 
 ``` r
 df_bp <- data.frame(
@@ -557,16 +729,15 @@ df_bp <- data.frame(
 df_bp %>% kk_bland_altman(arterial, cuff)
 ```
 
-<div class="figure">
-<img src="man/figures/README-ex-23-1.png" alt="plot of chunk ex-23" width="75%" />
-<p class="caption">plot of chunk ex-23</p>
-</div>
+<img src="man/figures/README-ex-23-1.png" alt="" width="75%" />
 
 #### `kk_mcnemar(data, test1, test2)`
-Performs McNemar's test for paired categorical data (e.g. matched case-control designs or two diagnostic tests on the same subjects).
 
-*   **Epidemiological Example**: Comparing the screening outcomes of Mammography and Ultrasound performed on the same cohort of patients.
+Performs McNemar’s test for paired categorical data (e.g. matched
+case-control designs or two diagnostic tests on the same subjects).
 
+- **Epidemiological Example**: Comparing the screening outcomes of
+  Mammography and Ultrasound performed on the same cohort of patients.
 
 ``` r
 df_paired <- data.frame(
@@ -581,13 +752,23 @@ df_paired %>% kk_mcnemar(mammography, ultrasound)
 #> 2 McNemar's Test     NA    NA     NA      0.500 Exac…           15           20       0.95
 ```
 
-> **Interpretation.** McNemar's test uses only the *discordant* pairs (15 vs 20 here). The conditional OR is 1.33 with p = 0.50, so there is no significant difference in the positivity rates of the two paired tests — mammography and ultrasound detect at similar rates in this cohort.
+> **Interpretation.** McNemar’s test uses only the *discordant* pairs
+> (15 vs 20 here). The conditional OR is 1.33 with p = 0.50, so there is
+> no significant difference in the positivity rates of the two paired
+> tests — mammography and ultrasound detect at similar rates in this
+> cohort.
 
 #### `kk_confusion_matrix(x, ...)`
 
-Computes a **full panel of classifier metrics** with confidence intervals (sensitivity, specificity, PPV, NPV, accuracy, F1, MCC, likelihood ratios, and more) directly from TP/FP/FN/TN counts. Optional bootstrap CIs via `boot = TRUE`. Supersedes the deprecated `confusion_metrics_ci()`.
+Computes a **full panel of classifier metrics** with confidence
+intervals (sensitivity, specificity, PPV, NPV, accuracy, F1, MCC,
+likelihood ratios, and more) directly from TP/FP/FN/TN counts. Optional
+bootstrap CIs via `boot = TRUE`. Supersedes the deprecated
+`confusion_metrics_ci()`.
 
-*   **Clinical Example**: Full performance characterization of a screening test with 85 true positives, 10 false positives, 15 false negatives, and 890 true negatives.
+- **Clinical Example**: Full performance characterization of a screening
+  test with 85 true positives, 10 false positives, 15 false negatives,
+  and 890 true negatives.
 
 ``` r
 kk_confusion_matrix(c(tp = 85, fp = 10, fn = 15, tn = 890))
@@ -605,12 +786,17 @@ kk_confusion_matrix(c(tp = 85, fp = 10, fn = 15, tn = 890))
 #> # ℹ 13 more rows
 ```
 
-> **Interpretation.** From the four cell counts the function derives 21 metrics with exact CIs. Sensitivity is 0.85 and specificity 0.99; despite the high specificity, the 10% prevalence still shapes the predictive values (PPV 0.90, NPV 0.98). Scroll the full tibble for likelihood ratios and MCC, which summarise performance in a single prevalence-independent number.
+> **Interpretation.** From the four cell counts the function derives 21
+> metrics with exact CIs. Sensitivity is 0.85 and specificity 0.99;
+> despite the high specificity, the 10% prevalence still shapes the
+> predictive values (PPV 0.90, NPV 0.98). Scroll the full tibble for
+> likelihood ratios and MCC, which summarise performance in a single
+> prevalence-independent number.
 
 #### `diagnostic_summary(data, truth, test)`
 
-Produces a tidy summary of diagnostic metrics from **raw patient-level data**, applying a cutoff to numeric test results automatically.
-
+Produces a tidy summary of diagnostic metrics from **raw patient-level
+data**, applying a cutoff to numeric test results automatically.
 
 ``` r
 df_diag <- data.frame(truth = c(1, 0, 1, 0, 1, 0), test = c(1, 0, 0, 1, 1, 0))
@@ -631,9 +817,13 @@ diagnostic_summary(df_diag, truth, test)
 
 #### `kk_agreement(data, rater1, rater2, weights)`
 
-Computes **weighted Cohen's Kappa** (unweighted, linear, or quadratic weights) for ordinal rater agreement, with standard error and confidence interval.
+Computes **weighted Cohen’s Kappa** (unweighted, linear, or quadratic
+weights) for ordinal rater agreement, with standard error and confidence
+interval.
 
-*   **Clinical Example**: Quantifying agreement between two raters scoring tumour grade on an ordinal scale, giving partial credit for near-misses via quadratic weights.
+- **Clinical Example**: Quantifying agreement between two raters scoring
+  tumour grade on an ordinal scale, giving partial credit for
+  near-misses via quadratic weights.
 
 ``` r
 df_rate <- data.frame(rater1 = c(1, 0, 1, 0, 1), rater2 = c(1, 1, 0, 0, 1))
@@ -647,13 +837,22 @@ kk_agreement(df_rate, rater1, rater2, weights = "quadratic")
 #> 4 Percent Agreement   60     NA     NA    NA           0.95     5            2
 ```
 
-> **Interpretation.** With a binary rating the *weighted* κ is undefined (weights need ≥3 ordered categories), so read the unweighted κ (0.17) and PABAK (0.20). Both are low, but the tiny sample (n = 5) makes them unstable (CI −0.73 to 1.06). Quadratic weights pay off only when the scale is genuinely ordinal with 3+ levels, giving partial credit for near-misses.
+> **Interpretation.** With a binary rating the *weighted* κ is undefined
+> (weights need ≥3 ordered categories), so read the unweighted κ (0.17)
+> and PABAK (0.20). Both are low, but the tiny sample (n = 5) makes them
+> unstable (CI −0.73 to 1.06). Quadratic weights pay off only when the
+> scale is genuinely ordinal with 3+ levels, giving partial credit for
+> near-misses.
 
 #### `kk_icc(data, raters)`
 
-Computes the **Intraclass Correlation Coefficient** in all six Shrout-Fleiss forms (single and average rater) with F-tests and CIs, for the agreement of continuous measurements — the continuous-scale counterpart to `kk_kappa`.
+Computes the **Intraclass Correlation Coefficient** in all six
+Shrout-Fleiss forms (single and average rater) with F-tests and CIs, for
+the agreement of continuous measurements — the continuous-scale
+counterpart to `kk_kappa`.
 
-*   **Clinical Example**: Quantifying the reliability of a tumour-size measurement made by three radiologists on the same set of scans.
+- **Clinical Example**: Quantifying the reliability of a tumour-size
+  measurement made by three radiologists on the same set of scans.
 
 ``` r
 ratings <- data.frame(
@@ -673,13 +872,21 @@ kk_icc(ratings)
 #> 6 ICC3k 0.943    0.834     0.985   17.7     9    18 0.000000335       0.95
 ```
 
-> **Interpretation.** Read `ICC2` for the reliability of a *single* rater (0.85) and `ICC2k` for the *average* of the three raters (0.94) under a two-way random model. Values above 0.75 indicate excellent reliability, so these raters are highly consistent. Pick the row matching your design: ICC1 (one-way), ICC2 (two-way random), ICC3 (two-way fixed).
+> **Interpretation.** Read `ICC2` for the reliability of a *single*
+> rater (0.85) and `ICC2k` for the *average* of the three raters (0.94)
+> under a two-way random model. Values above 0.75 indicate excellent
+> reliability, so these raters are highly consistent. Pick the row
+> matching your design: ICC1 (one-way), ICC2 (two-way random), ICC3
+> (two-way fixed).
 
 #### `kk_reliability(data, items)`
 
-Computes **Cronbach's alpha** (raw and standardized) with per-item statistics including alpha-if-item-dropped, for validating multi-item scales and questionnaires.
+Computes **Cronbach’s alpha** (raw and standardized) with per-item
+statistics including alpha-if-item-dropped, for validating multi-item
+scales and questionnaires.
 
-*   **Clinical Example**: Assessing the internal consistency of a four-item patient-reported quality-of-life scale.
+- **Clinical Example**: Assessing the internal consistency of a
+  four-item patient-reported quality-of-life scale.
 
 ``` r
 items <- data.frame(
@@ -698,13 +905,21 @@ kk_reliability(items)
 #> 4 q4        8 0.973 0.972 0.814  0.949  4    1.07             0.858
 ```
 
-> **Interpretation.** The per-item table shows each item's correlation with the scale total and the alpha the scale would have if that item were dropped. No `alpha_if_dropped` value exceeds the overall α (retrieve it via `attr(x, "alpha")` — here raw α ≈ 0.92), so every item contributes and none should be removed. α ≥ 0.7 is the usual bar for acceptable internal consistency.
+> **Interpretation.** The per-item table shows each item’s correlation
+> with the scale total and the alpha the scale would have if that item
+> were dropped. No `alpha_if_dropped` value exceeds the overall α
+> (retrieve it via `attr(x, "alpha")` — here raw α ≈ 0.92), so every
+> item contributes and none should be removed. α ≥ 0.7 is the usual bar
+> for acceptable internal consistency.
 
 #### `kk_chisq_test(data, r, c)`
 
-Chi-square test of independence for **r × c contingency tables** (data frame or matrix input) with expected counts, residuals, and effect sizes (Cramér's V).
+Chi-square test of independence for **r × c contingency tables** (data
+frame or matrix input) with expected counts, residuals, and effect sizes
+(Cramér’s V).
 
-*   **Epidemiological Example**: Testing association between species and biting frequency across multiple categories.
+- **Epidemiological Example**: Testing association between species and
+  biting frequency across multiple categories.
 
 ``` r
 species <- c(rep("Mice", 60), rep("Gerbils", 50))
@@ -717,82 +932,136 @@ kk_chisq_test(df_chi, species, biting)
 #> 1 Chi-Square Test of Independe…         0     1       1 Gerbils… Gerbils… <chr [1]>
 ```
 
----
+------------------------------------------------------------------------
 
 ### 3. Non-Parametric Tests & Baseline Group Comparisons
 
-#### `kk_table1(data, by, variables)` / `kk_compare_groups_table()`
-
-Builds a standard, publication-ready "Table 1" summarizing baseline demographics and clinical variables across groups, automatically performing parametric or non-parametric tests depending on variable characteristics.
-
-*   **Clinical Example**: Summarizing age, gender, blood pressure, and smoking status at baseline stratified by placebo vs. active treatment arm.
-
+Several examples below share a small **synthetic clinical cohort** — a
+randomised trial dataset with a treatment arm, baseline covariates, a
+follow-up blood-pressure outcome, and a binary cardiovascular event. It
+is defined once here and reused throughout.
 
 ``` r
-kk_table1(mtcars, by = "am", variables = c("mpg", "hp", "wt"))
-#> # A tibble: 3 × 5
-#>   Characteristic N     `0   N = 19`            `1   N = 13`           `p-value`
-#>   <chr>          <chr> <chr>                   <chr>                  <chr>    
-#> 1 __mpg__        32    17.30 (14.70, 19.20)    22.80 (21.00, 30.40)   0.001    
-#> 2 __hp__         32    175.00 (110.00, 205.00) 109.00 (66.00, 113.00) 0.044    
-#> 3 __wt__         32    3.52 (3.44, 3.85)       2.32 (1.94, 2.78)      <0.001
+set.seed(42)
+n <- 300
+age    <- round(rnorm(n, 62, 11))
+bmi    <- round(rnorm(n, 27, 4.5), 1)
+arm    <- factor(sample(c("Control", "Treatment"), n, replace = TRUE))
+sex    <- factor(sample(c("Female", "Male"), n, replace = TRUE))
+smoker <- factor(sample(c("No", "Yes"), n, replace = TRUE, prob = c(0.7, 0.3)))
+# Follow-up systolic BP: rises with age & BMI, ~8 mmHg lower on active treatment
+sbp  <- round(100 + 0.45 * age + 0.4 * bmi - 8 * (arm == "Treatment") + rnorm(n, 0, 10))
+chol <- round(3.5 + 0.02 * age + 0.05 * bmi + rnorm(n, 0, 0.7), 1)
+# Binary cardiovascular event: driven by age, smoking, and (protective) treatment
+lp    <- -6 + 0.05 * age + 0.9 * (smoker == "Yes") - 0.4 * (arm == "Treatment")
+event <- factor(rbinom(n, 1, plogis(lp)), labels = c("No", "Yes"))
+cohort <- data.frame(arm, sex, smoker, age, bmi, sbp, chol, event)
+head(cohort)
+#>         arm  sex smoker age  bmi sbp chol event
+#> 1 Treatment Male    Yes  77 27.0 140  6.1    No
+#> 2 Treatment Male     No  56 30.4 134  6.0    No
+#> 3 Treatment Male     No  66 27.2 133  6.7    No
+#> 4 Treatment Male    Yes  69 30.3 141  6.1    No
+#> 5 Treatment Male     No  66 26.3 137  6.5    No
+#> 6   Control Male     No  61 26.7 144  6.5    No
 ```
 
-> **Interpretation.** Each cell is median (IQR) by group, with an automatically chosen test in the p-value column. Automatic-transmission cars (am = 1) have higher mpg (22.8 vs 17.3, p = 0.001) and lower weight (2.32 vs 3.52, p < 0.001). This is the standard baseline-characteristics "Table 1" for a manuscript.
+#### `kk_table1(data, by, variables)` / `kk_compare_groups_table()`
+
+Builds a standard, publication-ready “Table 1” summarizing baseline
+demographics and clinical variables across groups, automatically
+performing parametric or non-parametric tests depending on variable
+characteristics.
+
+- **Clinical Example**: Summarizing age, BMI, sex, and smoking status at
+  baseline stratified by placebo vs. active treatment arm.
+
+``` r
+kk_table1(cohort, by = "arm", variables = c("age", "bmi", "sex", "smoker"))
+#> # A tibble: 6 × 5
+#>   Characteristic N     `Control   N = 155`  `Treatment   N = 145` `p-value`
+#>   <chr>          <chr> <chr>                <chr>                 <chr>    
+#> 1 __age__        300   62.00 (54.00, 69.00) 61.00 (56.00, 69.00)  0.8      
+#> 2 __bmi__        300   26.90 (24.00, 30.10) 26.30 (24.20, 29.90)  0.6      
+#> 3 __sex__        300   <NA>                 <NA>                  0.4      
+#> 4 Female         <NA>  73 (47%)             75 (52%)              <NA>     
+#> 5 Male           <NA>  82 (53%)             70 (48%)              <NA>     
+#> 6 __smoker__     300   61 (39%)             42 (29%)              0.058
+```
+
+> **Interpretation.** Each cell is median (IQR) or n (%) by arm, with an
+> automatically chosen test in the p-value column. Age, BMI, sex, and
+> smoking are all statistically comparable between the Control and
+> Treatment arms (every p \> 0.05) — exactly what you want to see in a
+> randomised trial’s baseline table: the arms are **well balanced**, so
+> any later outcome difference is unlikely to be confounded by these
+> covariates.
 
 #### `kk_compare_groups_table(data, group, variables)` / `compare_groups_table()`
 
-Produces a **detailed two-group comparison table** with per-group summaries, mean/proportion differences, confidence intervals, effect sizes, and p-values. Fully tidyselect- and `group_by()`-aware for stratified analyses.
+Produces a **detailed two-group comparison table** with per-group
+summaries, mean/proportion differences, confidence intervals, effect
+sizes, and p-values. Fully tidyselect- and `group_by()`-aware for
+stratified analyses.
 
-*   **Clinical Example**: Comparing continuous outcomes between two treatment arms, optionally stratified by a third variable.
+- **Clinical Example**: Comparing the follow-up blood-pressure outcome
+  between the two treatment arms, optionally stratified by a third
+  variable.
 
 ``` r
-# Direct comparison
-kk_compare_groups_table(mtcars, am, c(mpg, hp))
-#> # A tibble: 2 × 14
-#>   Characteristic n_Total Total      n_1   `1`   n_0   `0`   Difference ci_95 p_value Test 
-#>   <chr>          <chr>   <chr>      <chr> <chr> <chr> <chr> <chr>      <chr> <chr>   <chr>
-#> 1 mpg            32      20.09 (6.… 13    24.3… 19    17.1… 7.24       3.21… 0.001   t-te…
-#> 2 hp             32      146.69 (6… 13    126.… 19    160.… -33.42     -88.… 0.221   t-te…
-#> # ℹ 3 more variables: Statistic <chr>, df <chr>, effect_size <chr>
+# Direct comparison of the SBP outcome by arm
+kk_compare_groups_table(cohort, arm, c(sbp))
+#> # A tibble: 1 × 14
+#>   Characteristic n_Total Total    n_Treatment Treatment n_Control Control Difference ci_95
+#>   <chr>          <chr>   <chr>    <chr>       <chr>     <chr>     <chr>   <chr>      <chr>
+#> 1 sbp            300     134.69 … 145         129.83 (… 155       139.24… -9.40      -11.…
+#> # ℹ 5 more variables: p_value <chr>, Test <chr>, Statistic <chr>, df <chr>,
+#> #   effect_size <chr>
 
-# Stratified by a third variable
+# Stratified by a third variable (sex)
 library(dplyr)
-mtcars |>
-  group_by(vs) |>
-  kk_compare_groups_table(am, c(mpg, hp))
-#> # A tibble: 4 × 15
-#>      vs Characteristic n_Total Total      n_1   `1`   n_0   `0`   Difference ci_95 p_value
-#>   <dbl> <chr>          <chr>   <chr>      <chr> <chr> <chr> <chr> <chr>      <chr> <chr>  
-#> 1     0 mpg            18      16.62 (3.… 6     19.7… 12    15.0… 4.70       0.45… 0.034  
-#> 2     0 hp             18      189.72 (6… 6     180.… 12    194.… -13.33     -116… 0.760  
-#> 3     1 mpg            14      24.56 (5.… 7     28.3… 7     20.7… 7.63       3.05… 0.004  
-#> 4     1 hp             14      91.36 (24… 7     80.5… 7     102.… -21.57     -47.… 0.100  
-#> # ℹ 4 more variables: Test <chr>, Statistic <chr>, df <chr>, effect_size <chr>
+cohort |>
+  group_by(sex) |>
+  kk_compare_groups_table(arm, c(sbp))
+#> # A tibble: 2 × 15
+#>   sex    Characteristic n_Total Total   n_Control Control n_Treatment Treatment Difference
+#>   <fct>  <chr>          <chr>   <chr>   <chr>     <chr>   <chr>       <chr>     <chr>     
+#> 1 Female sbp            148     135.68… 73        139.86… 75          131.60 (… 8.26      
+#> 2 Male   sbp            152     133.74… 82        138.68… 70          127.94 (… -10.74    
+#> # ℹ 6 more variables: ci_95 <chr>, p_value <chr>, Test <chr>, Statistic <chr>, df <chr>,
+#> #   effect_size <chr>
 ```
 
-> **Interpretation.** Unlike Table 1, this reports the actual between-group *difference* with its CI and effect size. Manual cars average 7.24 mpg higher (p = 0.001), while the horsepower difference (−33) is not significant (p = 0.22). The stratified call repeats the comparison within each `vs` level — useful for checking effect modification.
+> **Interpretation.** Unlike Table 1, this reports the actual
+> between-group *difference* with its CI and effect size. The active
+> treatment lowers systolic BP by about **9.4 mmHg** (≈130 vs 139, p \<
+> 0.001) — the intended treatment effect. The stratified call repeats
+> the comparison within each `sex` level, so you can check whether the
+> effect is modified by sex (here it is present in both strata).
 
 #### `table1_summary(data, by, variables)`
 
-A `gtsummary`-backed "Table 1" builder returning a publication-styled summary object (an alternative rendering to `kk_table1`).
-
+A `gtsummary`-backed “Table 1” builder returning a publication-styled
+summary object (an alternative rendering to `kk_table1`).
 
 ``` r
-table1_summary(mtcars, by = "am", variables = c("mpg", "hp", "wt"))
+table1_summary(cohort, by = "arm", variables = c("age", "bmi", "sbp"))
 #> # A tibble: 3 × 5
-#>   Characteristic N     `0   N = 19`      `1   N = 13`      `p-value`
-#>   <chr>          <chr> <chr>             <chr>             <chr>    
-#> 1 __mpg__        32    17.3 (14.7, 19.2) 22.8 (21.0, 30.4) 0.001    
-#> 2 __hp__         32    175 (110, 205)    109 (66, 113)     0.044    
-#> 3 __wt__         32    3.52 (3.44, 3.85) 2.32 (1.94, 2.78) <0.001
+#>   Characteristic N     `Control   N = 155` `Treatment   N = 145` `p-value`
+#>   <chr>          <chr> <chr>               <chr>                 <chr>    
+#> 1 __age__        300   62 (54, 69)         61 (56, 69)           0.8      
+#> 2 __bmi__        300   26.9 (24.0, 30.1)   26.3 (24.2, 29.9)     0.6      
+#> 3 __sbp__        300   140 (132, 146)      131 (123, 138)        <0.001
 ```
 
 #### `kk_median_test(data, x, group)`
 
-Performs the Median Test for $k$ Independent Samples, comparing proportions above vs. below/equal to the composite median.
+Performs the Median Test for $k$ Independent Samples, comparing
+proportions above vs. below/equal to the composite median.
 
-*   **Clinical Example**: Comparing the median hospital stay duration (continuous days) across three different surgical wards when stay durations are highly non-normally distributed.
+- **Clinical Example**: Comparing the median hospital stay duration
+  (continuous days) across three different surgical wards when stay
+  durations are highly non-normally distributed.
 
 ``` r
 df_stay <- data.frame(
@@ -806,14 +1075,21 @@ df_stay %>% kk_median_test(days, ward)
 #> 1 Media… two.sided   Chi-Square         0.536     2   0.765                5 Ward A: Abov…
 ```
 
-> **Interpretation.** The median test dichotomises each observation at the pooled (composite) median of 5 days and compares the above/below split across wards. χ² = 0.54 on 2 df, p = 0.77 — no evidence that median stay differs by ward. It trades power for robustness, so it is most useful with heavily skewed data.
+> **Interpretation.** The median test dichotomises each observation at
+> the pooled (composite) median of 5 days and compares the above/below
+> split across wards. χ² = 0.54 on 2 df, p = 0.77 — no evidence that
+> median stay differs by ward. It trades power for robustness, so it is
+> most useful with heavily skewed data.
 
 #### `kk_vdw_test(data, x, group)`
 
-Performs the van der Waerden Normal-Scores Test as a highly powerful non-parametric alternative to ANOVA, converting ranks to normal distribution quantiles.
+Performs the van der Waerden Normal-Scores Test as a highly powerful
+non-parametric alternative to ANOVA, converting ranks to normal
+distribution quantiles.
 
-*   **Clinical Example**: Evaluating clinical cognitive scores under three independent noise environments when data shape assumptions are violated.
-
+- **Clinical Example**: Evaluating clinical cognitive scores under three
+  independent noise environments when data shape assumptions are
+  violated.
 
 ``` r
 df_noise <- data.frame(
@@ -827,17 +1103,24 @@ df_noise %>% kk_vdw_test(score, noise)
 #> 1 van der…      8.51     2  0.0142                  0.709 Classical: n=5… <tibble [3 × 5]>
 ```
 
-> **Interpretation.** The van der Waerden normal-scores test is a rank-based, more powerful alternative to Kruskal-Wallis/ANOVA. Here the statistic is 8.51 on 2 df, p = 0.014, so cognitive scores differ significantly across the three noise environments; the `pairwise_results` list column localises which environments differ.
+> **Interpretation.** The van der Waerden normal-scores test is a
+> rank-based, more powerful alternative to Kruskal-Wallis/ANOVA. Here
+> the statistic is 8.51 on 2 df, p = 0.014, so cognitive scores differ
+> significantly across the three noise environments; the
+> `pairwise_results` list column localises which environments differ.
 
----
+------------------------------------------------------------------------
 
 ### 4. Sequence Randomness & Serial Independence
 
 #### `kk_runs_test(data, x, method)` / `kk_random_seq()`
-Wald-Wolfowitz runs test for categorical variables, or Wallis-Moore up-down runs test for quantitative serial randomness.
 
-*   **Epidemiological Example**: Evaluating if successive healthcare-associated infection outbreaks in an ICU follow a random temporal sequence.
+Wald-Wolfowitz runs test for categorical variables, or Wallis-Moore
+up-down runs test for quantitative serial randomness.
 
+- **Epidemiological Example**: Evaluating if successive
+  healthcare-associated infection outbreaks in an ICU follow a random
+  temporal sequence.
 
 ``` r
 infection_seq <- c("N", "N", "Y", "N", "Y", "Y", "N", "N", "Y", "N")
@@ -848,13 +1131,19 @@ kk_runs_test(infection_seq)
 #> 1 Single-… two.sided      10             7           5.8          1.92       0.506   0.613
 ```
 
-> **Interpretation.** The Wald-Wolfowitz runs test checks whether a binary sequence is randomly ordered. Observed runs (7) are close to the number expected under randomness (5.8), giving z = 0.51, p = 0.61 — no evidence of clustering or alternation, so the outbreak sequence is consistent with random timing.
+> **Interpretation.** The Wald-Wolfowitz runs test checks whether a
+> binary sequence is randomly ordered. Observed runs (7) are close to
+> the number expected under randomness (5.8), giving z = 0.51, p = 0.61
+> — no evidence of clustering or alternation, so the outbreak sequence
+> is consistent with random timing.
 
 #### `kk_frequency_test(data, x)`
 
-Chi-Square Goodness-of-Fit or Binomial test checking if categories occur with equal probability.
+Chi-Square Goodness-of-Fit or Binomial test checking if categories occur
+with equal probability.
 
-*   **Epidemiological Example**: Verifying if congenital abnormality admissions occur uniformly across days of the week.
+- **Epidemiological Example**: Verifying if congenital abnormality
+  admissions occur uniformly across days of the week.
 
 ``` r
 admission_days <- c(1, 3, 2, 7, 5, 2, 4, 3, 1, 6, 7, 2, 5, 3)
@@ -865,13 +1154,19 @@ kk_frequency_test(admission_days)
 #> 1 Chi-Square Goodnes… two.sided   Chi-Square             2     6   0.920 1=2, 2=… 1=2, 2=…
 ```
 
-> **Interpretation.** A goodness-of-fit test for whether categories occur equally often. χ² = 2 on 6 df, p = 0.92 — admissions are spread evenly across the days of the week, with no evidence of a "busy day" pattern.
+> **Interpretation.** A goodness-of-fit test for whether categories
+> occur equally often. χ² = 2 on 6 df, p = 0.92 — admissions are spread
+> evenly across the days of the week, with no evidence of a “busy day”
+> pattern.
 
 #### `kk_mssd_test(data, x)`
 
-Von Neumann Mean Square Successive Difference (MSSD) test for serial correlation on continuous quantitative data.
+Von Neumann Mean Square Successive Difference (MSSD) test for serial
+correlation on continuous quantitative data.
 
-*   **Clinical Example**: Checking if continuous blood pressure readings over time represent independent random fluctuations or exhibit serial correlation.
+- **Clinical Example**: Checking if continuous blood pressure readings
+  over time represent independent random fluctuations or exhibit serial
+  correlation.
 
 ``` r
 bp_ticks <- c(120, 122, 121, 125, 124, 122, 120, 118, 119, 122)
@@ -882,41 +1177,62 @@ kk_mssd_test(bp_ticks)
 #> 1 Mean Squar… two.sided      10       0.477       4.68            2.44        1.68  0.0930
 ```
 
-> **Interpretation.** The von Neumann MSSD test detects serial correlation in a continuous sequence. z = 1.68, p = 0.093 — borderline but not significant at 5%, so these blood-pressure readings are (just) consistent with independent fluctuations rather than a drifting/autocorrelated trend.
+> **Interpretation.** The von Neumann MSSD test detects serial
+> correlation in a continuous sequence. z = 1.68, p = 0.093 — borderline
+> but not significant at 5%, so these blood-pressure readings are (just)
+> consistent with independent fluctuations rather than a
+> drifting/autocorrelated trend.
 
----
+------------------------------------------------------------------------
 
 ### 5. Regression Modeling & Proportions Comparisons
 
 #### `kk_reg(data, outcome, predictors)` / `regression_analysis()` / `krk_reg()`
-A unified modeling wrapper that automatically detects binomial outcomes (triggering Logistic Regression with odds ratios and ROC curve diagnostics) or continuous outcomes (triggering Linear Regression with check plots).
 
-*   **Epidemiological Example**: Modeling the risk of hypertension based on age, BMI, and family history.
+A unified modeling wrapper that automatically detects binomial outcomes
+(triggering Logistic Regression with odds ratios and ROC curve
+diagnostics) or continuous outcomes (triggering Linear Regression with
+check plots).
+
+- **Epidemiological Example**: Modeling the odds of a cardiovascular
+  event from age, smoking status, and treatment arm.
 
 ``` r
-regression_analysis(mtcars, outcome = "am", predictors = c("mpg", "wt"))
-#> # A tibble: 7 × 21
-#>   term     estimate std.error statistic p.value conf.low conf.high model_type outcome_type
-#>   <chr>       <dbl>     <dbl>     <dbl>   <dbl>    <dbl>     <dbl> <chr>      <chr>       
-#> 1 (Interc… -5.91e-1    0.253    -2.33   2.64e-2  -1.11     -0.0741 univariate continuous  
-#> 2 mpg       4.97e-2    0.0121    4.11   2.85e-4   0.0250    0.0744 univariate continuous  
-#> 3 (Interc…  1.54e+0    0.226     6.84   1.38e-7   1.08      2.00   univariate continuous  
-#> 4 wt       -3.53e-1    0.0672   -5.26   1.13e-5  -0.490    -0.216  univariate continuous  
-#> 5 (Interc…  1.56e+0    0.863     1.80   8.19e-2  -0.210     3.32   multivari… continuous  
-#> 6 mpg      -3.41e-4    0.0223   -0.0153 9.88e-1  -0.0460    0.0453 multivari… continuous  
-#> 7 wt       -3.55e-1    0.137    -2.58   1.51e-2  -0.636    -0.0739 multivari… continuous  
+regression_analysis(cohort, outcome = "event", predictors = c("age", "smoker", "arm"))
+#> # A tibble: 10 × 21
+#>    term   estimate std.error statistic  p.value conf.low conf.high model_type outcome_type
+#>    <chr>     <dbl>     <dbl>     <dbl>    <dbl>    <dbl>     <dbl> <chr>      <chr>       
+#>  1 (Inte…  0.00345    1.27      -4.45  8.44e- 6 0.000251    0.0377 univariate binary      
+#>  2 age     1.06       0.0189     2.86  4.25e- 3 1.02        1.10   univariate binary      
+#>  3 (Inte…  0.0765     0.277     -9.27  1.87e-20 0.0424      0.127  univariate binary      
+#>  4 smoke…  2.40       0.388      2.26  2.39e- 2 1.12        5.21   univariate binary      
+#>  5 (Inte…  0.131      0.251     -8.10  5.70e-16 0.0777      0.209  univariate binary      
+#>  6 armTr…  0.687      0.392     -0.959 3.38e- 1 0.311       1.47   univariate binary      
+#>  7 (Inte…  0.00274    1.30      -4.55  5.45e- 6 0.000188    0.0312 multivari… binary      
+#>  8 age     1.06       0.0189     2.87  4.14e- 3 1.02        1.10   multivari… binary      
+#>  9 smoke…  2.38       0.399      2.17  2.98e- 2 1.09        5.26   multivari… binary      
+#> 10 armTr…  0.741      0.405     -0.741 4.59e- 1 0.328       1.63   multivari… binary      
 #> # ℹ 12 more variables: AIC <dbl>, BIC <dbl>, estimate_label <chr>, coef.type <chr>,
 #> #   percent_change <dbl>, percent_change_low <dbl>, percent_change_high <dbl>,
-#> #   r_squared <dbl>, adj_r_squared <dbl>, residual_std_error <dbl>, model_p_value <dbl>,
-#> #   predictor <chr>
+#> #   pseudo_r_squared <dbl>, nagelkerke_r_squared <dbl>, model_p_value <dbl>,
+#> #   auc_roc <dbl>, predictor <chr>
 ```
 
-> **Interpretation.** The wrapper returns both univariate and multivariable models in one tidy frame (`model_type` column). Univariately both mpg and wt predict transmission, but in the multivariable model mpg loses significance (p = 0.99) while wt remains (coef −0.36, p = 0.015) — evidence that mpg and weight are collinear and weight carries the signal. For a binary outcome the estimates would be odds ratios with ROC diagnostics attached.
+> **Interpretation.** Because `event` is a two-level factor, the wrapper
+> automatically fits **logistic regression** (`outcome_type = binary`),
+> so the `estimate` column holds **odds ratios**. It returns both
+> univariate and multivariable models in one tidy frame (`model_type`
+> column). Adjusting for each other, each additional year of age raises
+> the odds of an event by ~6% (OR 1.06 per year, 95% CI 1.02–1.10) and
+> current smoking more than doubles them (OR ≈ 2.4, CI 1.1–5.3); the
+> treatment arm is protective but not significant here (OR ≈ 0.7, CI
+> 0.3–1.6). For a continuous outcome the wrapper would instead fit
+> linear regression with model-check diagnostics.
 
 #### `compare_proportions(data)` / `compare_proportions_by()`
 
-Pairwise comparison of proportions utilizing normal approximations with multiple comparison adjustments (e.g. Holm/Bonferroni).
-
+Pairwise comparison of proportions utilizing normal approximations with
+multiple comparison adjustments (e.g. Holm/Bonferroni).
 
 ``` r
 df_prop <- data.frame(
@@ -933,12 +1249,17 @@ compare_proportions(df_prop)
 #> 3 B          C               0.25   3.87  0.000108   0.123    0.377     0.000323
 ```
 
-> **Interpretation.** All pairwise differences in proportion with unpooled (Wald) z-tests and Holm-adjusted p-values. Clinic B differs significantly from both A and C (adjusted p = 0.004 and 0.0003), while A vs C does not (adjusted p = 0.44). Read `adj_p_value` — not the raw `p_value` — when drawing conclusions across multiple comparisons.
+> **Interpretation.** All pairwise differences in proportion with
+> unpooled (Wald) z-tests and Holm-adjusted p-values. Clinic B differs
+> significantly from both A and C (adjusted p = 0.004 and 0.0003), while
+> A vs C does not (adjusted p = 0.44). Read `adj_p_value` — not the raw
+> `p_value` — when drawing conclusions across multiple comparisons.
 
 #### `pcit(data, conf.level)`
 
-Computes **binomial confidence intervals for proportions** from a data frame of successes and trials (the first two numeric columns), returning the proportion and its CI per row.
-
+Computes **binomial confidence intervals for proportions** from a data
+frame of successes and trials (the first two numeric columns), returning
+the proportion and its CI per row.
 
 ``` r
 df_ci <- data.frame(successes = c(10, 20), trials = c(100, 100), group = c("A", "B"))
@@ -952,9 +1273,13 @@ pcit(df_ci)
 
 #### `compare_proportions_kk_glm(data, group, x, n)`
 
-Compares proportions between groups using **logistic regression with robust (sandwich) standard errors**, supporting covariate adjustment and stratification — more flexible than the normal-approximation `compare_proportions`.
+Compares proportions between groups using **logistic regression with
+robust (sandwich) standard errors**, supporting covariate adjustment and
+stratification — more flexible than the normal-approximation
+`compare_proportions`.
 
-*   **Epidemiological Example**: Comparing event rates across treatment arms while adjusting for a confounder.
+- **Epidemiological Example**: Comparing event rates across treatment
+  arms while adjusting for a confounder.
 
 ``` r
 df_glm <- data.frame(group = c("A", "B"), x = c(15, 25), n = c(50, 50))
@@ -965,13 +1290,18 @@ compare_proportions_kk_glm(df_glm, group, x, n)
 #> 1 A      B          -0.2  0.0371 holm         0.95
 ```
 
-> **Interpretation.** The estimate is the difference in proportion (A − B = −0.20) from a logistic model with robust SEs; p = 0.037, so group B's event rate is significantly higher. Unlike `compare_proportions`, this route accepts covariates and strata for adjusted contrasts.
+> **Interpretation.** The estimate is the difference in proportion (A −
+> B = −0.20) from a logistic model with robust SEs; p = 0.037, so group
+> B’s event rate is significantly higher. Unlike `compare_proportions`,
+> this route accepts covariates and strata for adjusted contrasts.
 
 #### `power_proportions(n, p1, p2, power, sig.level)`
 
-Power / sample-size calculation for **two-sample proportion tests**; supply all but one parameter to solve for the missing one.
+Power / sample-size calculation for **two-sample proportion tests**;
+supply all but one parameter to solve for the missing one.
 
-*   **Clinical Example**: Finding the power to detect a difference between a 50% and 60% response rate with 100 patients per arm.
+- **Clinical Example**: Finding the power to detect a difference between
+  a 50% and 60% response rate with 100 patients per arm.
 
 ``` r
 power_proportions(n = 100, p1 = 0.5, p2 = 0.6)
@@ -988,29 +1318,33 @@ power_proportions(n = 100, p1 = 0.5, p2 = 0.6)
 #> NOTE: n is number in *each* group
 ```
 
-> **Interpretation.** With 100 patients per arm, a study comparing a 50% vs 60% response rate has only **29% power** — far below the conventional 80% target. In other words this design would miss a true 10-point difference most of the time; you would need a substantially larger sample. Leave `power` out and supply `n` to solve for power, or leave `n` out to solve for the required sample size.
+> **Interpretation.** With 100 patients per arm, a study comparing a 50%
+> vs 60% response rate has only **29% power** — far below the
+> conventional 80% target. In other words this design would miss a true
+> 10-point difference most of the time; you would need a substantially
+> larger sample. Leave `power` out and supply `n` to solve for power, or
+> leave `n` out to solve for the required sample size.
 
 #### `plot_proportion_comparisons(results)`
 
-Renders a **forest plot** of the pairwise differences produced by `compare_proportions` or `compare_proportions_kk_glm`.
-
+Renders a **forest plot** of the pairwise differences produced by
+`compare_proportions` or `compare_proportions_kk_glm`.
 
 ``` r
 res <- compare_proportions(df_prop)
 plot_proportion_comparisons(res)
 ```
 
-<div class="figure">
-<img src="man/figures/README-ex-44-1.png" alt="plot of chunk ex-44" width="75%" />
-<p class="caption">plot of chunk ex-44</p>
-</div>
+<img src="man/figures/README-ex-44-1.png" alt="" width="75%" />
 
 #### `kk_compare_independent_correlations(r, n)`
 
-Fisher Z-transformation tests evaluating differences between correlation coefficients obtained from independent samples.
+Fisher Z-transformation tests evaluating differences between correlation
+coefficients obtained from independent samples.
 
-*   **Epidemiological Example**: Comparing the correlation of daily dietary sodium intake and systolic blood pressure in males vs. females.
-
+- **Epidemiological Example**: Comparing the correlation of daily
+  dietary sodium intake and systolic blood pressure in males
+  vs. females.
 
 ``` r
 # Male: r = 0.65 (n=50), Female: r = 0.40 (n=60)
@@ -1021,14 +1355,20 @@ kk_compare_independent_correlations(c(0.65, 0.40), c(50, 60))
 #> 1 Comparison … two.sided   Z                   1.78    NA  0.0743    0.525 1: r=0.650 (n=…
 ```
 
-> **Interpretation.** A Fisher z-test for whether two correlations from *independent* samples differ. z = 1.78, p = 0.074 — the male (r = 0.65) and female (r = 0.40) correlations are not significantly different at 5%, despite the apparent gap, because the samples are modest. `common_r` (0.53) is the pooled estimate under the null.
+> **Interpretation.** A Fisher z-test for whether two correlations from
+> *independent* samples differ. z = 1.78, p = 0.074 — the male (r =
+> 0.65) and female (r = 0.40) correlations are not significantly
+> different at 5%, despite the apparent gap, because the samples are
+> modest. `common_r` (0.53) is the pooled estimate under the null.
 
 #### `kk_compare_dependent_correlations(rxz, ryz, rxy, n)`
 
-Steiger's t-test comparing two dependent correlations sharing a common criterion variable within the same sample.
+Steiger’s t-test comparing two dependent correlations sharing a common
+criterion variable within the same sample.
 
-*   **Epidemiological Example**: Evaluating if daily sugar intake ($X$) is a significantly stronger predictor of dental cavities ($Z$) than daily sodium intake ($Y$) in the same cohort.
-
+- **Epidemiological Example**: Evaluating if daily sugar intake ($X$) is
+  a significantly stronger predictor of dental cavities ($Z$) than daily
+  sodium intake ($Y$) in the same cohort.
 
 ``` r
 # BP vs Sugar (rxz) = 0.72, BP vs Salt (ryz) = 0.35, Sugar vs Salt (rxy) = 0.28, n = 50
@@ -1039,13 +1379,23 @@ kk_compare_dependent_correlations(0.72, 0.35, 0.28, 50)
 #> 1 Comparison o… two.sided   t                  -2.95    47 0.00494  0.72  0.35  0.28    50
 ```
 
-> **Interpretation.** Steiger's test compares two correlations that share a variable *within the same sample*. Sugar correlates with cavities more strongly (0.72) than salt does (0.35), and the difference is significant (t = −2.95, df = 47, p = 0.005) — sugar is the stronger predictor even after accounting for the sugar–salt correlation (0.28).
+> **Interpretation.** Steiger’s test compares two correlations that
+> share a variable *within the same sample*. Sugar correlates with
+> cavities more strongly (0.72) than salt does (0.35), and the
+> difference is significant (t = −2.95, df = 47, p = 0.005) — sugar is
+> the stronger predictor even after accounting for the sugar–salt
+> correlation (0.28).
 
 #### `kk_firth(data, outcome, predictors)`
 
-Fits **Firth-penalized logistic regression**, which yields finite, bias-reduced odds ratios under complete or quasi-complete **separation** (rare events or a zero cell) where ordinary logistic regression breaks down. Separation is detected and reported.
+Fits **Firth-penalized logistic regression**, which yields finite,
+bias-reduced odds ratios under complete or quasi-complete **separation**
+(rare events or a zero cell) where ordinary logistic regression breaks
+down. Separation is detected and reported.
 
-*   **Epidemiological Example**: Estimating an odds ratio for a rare adverse event where one exposure category has zero events, so standard logistic regression returns an infinite estimate.
+- **Epidemiological Example**: Estimating an odds ratio for a rare
+  adverse event where one exposure category has zero events, so standard
+  logistic regression returns an infinite estimate.
 
 ``` r
 df_sep <- data.frame(
@@ -1057,35 +1407,44 @@ kk_firth(df_sep, y, c("x", "z"))
 #> # A tibble: 2 × 8
 #>   term  odds_ratio conf.low conf.high std.error statistic p.value conf.level
 #>   <chr>      <dbl>    <dbl>     <dbl>     <dbl>     <dbl>   <dbl>      <dbl>
-#> 1 x           2.34   0.779       7.01     0.561     1.51    0.130       0.95
-#> 2 z           1.22   0.0585     25.6      1.55      0.130   0.897       0.95
+#> 1 x           2.51    0.840      7.52     0.559     1.65   0.0995       0.95
+#> 2 z           3.58    0.111    115.       1.77      0.720  0.472        0.95
 ```
 
-> **Interpretation.** Here `x` perfectly separates the outcome, so ordinary logistic regression would return an infinite coefficient. Firth's penalty shrinks it to a finite, usable OR of 2.34 (95% CI 0.78–7.01). The `attr(x, "separation")` flag is `TRUE`, confirming separation was detected — the reason to use this instead of `glm()`.
+> **Interpretation.** Here `x` perfectly separates the outcome, so
+> ordinary logistic regression would return an infinite coefficient.
+> Firth’s penalty shrinks it to a finite, usable OR of 2.34 (95% CI
+> 0.78–7.01). The `attr(x, "separation")` flag is `TRUE`, confirming
+> separation was detected — the reason to use this instead of `glm()`.
 
----
+------------------------------------------------------------------------
 
 ### 6. Survival Analysis & Time-to-Event
 
 #### `kk_survival_plot(data, time, status, group)` / `survival_plot()`
-Kaplan-Meier survival curves with publication-quality formatting, confidence bands, and risk tables.
-*   **Clinical Example**: Plotting time-to-death of advanced-stage lung cancer patients stratified by chemotherapy regimen.
+
+Kaplan-Meier survival curves with publication-quality formatting,
+confidence bands, and risk tables. \* **Clinical Example**: Plotting
+time-to-death of advanced-stage lung cancer patients stratified by
+chemotherapy regimen.
 
 ``` r
 library(survival)
 kk_survival_plot(lung, time, status, sex)
 ```
 
-<div class="figure">
-<img src="man/figures/README-ex-48-1.png" alt="plot of chunk ex-48" width="75%" />
-<p class="caption">plot of chunk ex-48</p>
-</div>
+<img src="man/figures/README-ex-48-1.png" alt="" width="75%" />
 
 #### `kk_coxph(data, time, status, predictors)`
 
-Fits univariate and multivariable **Cox proportional hazards models**, returning a tidy hazard-ratio table alongside the **Schoenfeld residual test** of the proportional-hazards assumption (per-term and global) plus concordance and AIC.
+Fits univariate and multivariable **Cox proportional hazards models**,
+returning a tidy hazard-ratio table alongside the **Schoenfeld residual
+test** of the proportional-hazards assumption (per-term and global) plus
+concordance and AIC.
 
-*   **Clinical Example**: Modelling time-to-death by age, sex, and ECOG performance status, while checking whether the proportional-hazards assumption holds.
+- **Clinical Example**: Modelling time-to-death by age, sex, and ECOG
+  performance status, while checking whether the proportional-hazards
+  assumption holds.
 
 ``` r
 library(survival)
@@ -1103,13 +1462,22 @@ kk_coxph(lung, time, status, predictors = c("age", "sex", "ph.ecog"))
 #> #   AIC <dbl>, conf.level <dbl>
 ```
 
-> **Interpretation.** Read the `multivariable` rows for mutually-adjusted hazard ratios: female sex (sex = 2) roughly halves the hazard of death (HR 0.58, 95% CI 0.41–0.80) and worse ECOG performance raises it (HR 1.59 per level), while age is not independently significant. Crucially, every `ph_p` (Schoenfeld test) is > 0.05, so the proportional-hazards assumption holds and the HRs are valid; had `ph_p` been small, you would switch to `kk_rmst`.
+> **Interpretation.** Read the `multivariable` rows for
+> mutually-adjusted hazard ratios: female sex (sex = 2) roughly halves
+> the hazard of death (HR 0.58, 95% CI 0.41–0.80) and worse ECOG
+> performance raises it (HR 1.59 per level), while age is not
+> independently significant. Crucially, every `ph_p` (Schoenfeld test)
+> is \> 0.05, so the proportional-hazards assumption holds and the HRs
+> are valid; had `ph_p` been small, you would switch to `kk_rmst`.
 
 #### `kk_logrank(data, time, status, group)`
 
-Compares survival across groups with the **log-rank test** (`rho = 0`) or the Peto-Peto / Gehan-Wilcoxon weighting (`rho = 1`), returning per-group observed/expected counts and the overall statistic.
+Compares survival across groups with the **log-rank test** (`rho = 0`)
+or the Peto-Peto / Gehan-Wilcoxon weighting (`rho = 1`), returning
+per-group observed/expected counts and the overall statistic.
 
-*   **Clinical Example**: Testing whether survival differs between two chemotherapy regimens.
+- **Clinical Example**: Testing whether survival differs between two
+  chemotherapy regimens.
 
 ``` r
 library(survival)
@@ -1121,13 +1489,23 @@ kk_logrank(lung, time, status, sex)
 #> 2 2        90       53     73.4    0.722  10.3     1 0.00131 Log-rank
 ```
 
-> **Interpretation.** Group 1 (male) had more deaths than expected (observed 112 vs expected 91.6; O/E 1.22) and group 2 (female) fewer (53 vs 73.4; O/E 0.72). The log-rank test is significant (χ² = 10.3, df = 1, p = 0.0013), so survival differs by sex — consistent with the protective HR seen in `kk_coxph`.
+> **Interpretation.** Group 1 (male) had more deaths than expected
+> (observed 112 vs expected 91.6; O/E 1.22) and group 2 (female) fewer
+> (53 vs 73.4; O/E 0.72). The log-rank test is significant (χ² = 10.3,
+> df = 1, p = 0.0013), so survival differs by sex — consistent with the
+> protective HR seen in `kk_coxph`.
 
 #### `kk_rmst(data, time, status, group, tau)`
 
-Computes the **Restricted Mean Survival Time** (area under the KM curve up to a horizon `tau`) for each group, plus the between-group **difference and ratio** with confidence intervals — an assumption-light effect measure to reach for when `kk_coxph` flags a proportional-hazards violation.
+Computes the **Restricted Mean Survival Time** (area under the KM curve
+up to a horizon `tau`) for each group, plus the between-group
+**difference and ratio** with confidence intervals — an assumption-light
+effect measure to reach for when `kk_coxph` flags a proportional-hazards
+violation.
 
-*   **Clinical Example**: Reporting the mean survival time gained (in days, within the first year) for women vs. men with lung cancer, without assuming proportional hazards.
+- **Clinical Example**: Reporting the mean survival time gained (in
+  days, within the first year) for women vs. men with lung cancer,
+  without assuming proportional hazards.
 
 ``` r
 library(survival)
@@ -1141,13 +1519,22 @@ kk_rmst(lung, time, status, sex, tau = 365)
 #> 4 RMST ratio (2 / 1)        365   1.23  NA       1.10      1.38  0.000207       0.95
 ```
 
-> **Interpretation.** Within the first year, women lived on average 297 days versus 241 for men — a **56-day gain** (95% CI 26.7–85.3, p < 0.001), equivalently an RMST ratio of 1.23. Unlike the hazard ratio, this is a direct, clinically meaningful contrast in mean survival time that needs no proportional-hazards assumption, which is why it is the fallback when `kk_coxph`'s Schoenfeld test fails.
+> **Interpretation.** Within the first year, women lived on average 297
+> days versus 241 for men — a **56-day gain** (95% CI 26.7–85.3, p \<
+> 0.001), equivalently an RMST ratio of 1.23. Unlike the hazard ratio,
+> this is a direct, clinically meaningful contrast in mean survival time
+> that needs no proportional-hazards assumption, which is why it is the
+> fallback when `kk_coxph`’s Schoenfeld test fails.
 
 #### `kk_cuminc(data, time, status, group, cause)`
 
-Estimates the **competing-risks cumulative incidence** (Aalen-Johansen) for an event of interest in the presence of competing events, with **Gray's test** across groups (when the `cmprsk` package is installed).
+Estimates the **competing-risks cumulative incidence** (Aalen-Johansen)
+for an event of interest in the presence of competing events, with
+**Gray’s test** across groups (when the `cmprsk` package is installed).
 
-*   **Epidemiological Example**: Estimating the cumulative incidence of relapse when death without relapse is a competing risk, compared across two treatment arms.
+- **Epidemiological Example**: Estimating the cumulative incidence of
+  relapse when death without relapse is a competing risk, compared
+  across two treatment arms.
 
 ``` r
 df_cr <- data.frame(
@@ -1159,44 +1546,57 @@ df_cr %>% kk_cuminc(time, status, arm, cause = 1)
 #> # A tibble: 2 × 5
 #>   group  time   cif     se cause
 #>   <chr> <dbl> <dbl>  <dbl> <chr>
-#> 1 A      42.6 0.523 0.0612 1    
-#> 2 B      61.1 0.435 0.0626 1
+#> 1 A      45.2 0.569 0.0737 1    
+#> 2 B      43.6 0.564 0.0686 1
 ```
 
-> **Interpretation.** The cumulative incidence of relapse (cause 1), accounting for death as a competing risk, reaches ~0.52 in arm A and ~0.44 in arm B by the reported times. Using the Aalen-Johansen estimator (not naïve 1 − KM) avoids over-stating incidence when competing events remove people from risk. Gray's test — available via `attr(x, "gray_test")` when `cmprsk` is installed — formally compares the two curves.
+> **Interpretation.** The cumulative incidence of relapse (cause 1),
+> accounting for death as a competing risk, reaches ~0.52 in arm A and
+> ~0.44 in arm B by the reported times. Using the Aalen-Johansen
+> estimator (not naïve 1 − KM) avoids over-stating incidence when
+> competing events remove people from risk. Gray’s test — available via
+> `attr(x, "gray_test")` when `cmprsk` is installed — formally compares
+> the two curves.
 
----
+------------------------------------------------------------------------
 
 ### 7. Demographics & EGN Utilities (Bulgarian Registry)
 
 #### `extract_egn_info(egn_vector)` / `extract_age_from_egn()`
-Parses, validates, and extracts demographic profiles (Date of Birth, Gender, Age, and Birth Region) from Bulgarian Personal Identification Numbers (EGN).
-*   **Epidemiological Example**: Cleaning and automatically extracting birth dates, gender, and geographic cohorts from Bulgarian electronic medical records.
+
+Parses, validates, and extracts demographic profiles (Date of Birth,
+Gender, Age, and Birth Region) from Bulgarian Personal Identification
+Numbers (EGN). \* **Epidemiological Example**: Cleaning and
+automatically extracting birth dates, gender, and geographic cohorts
+from Bulgarian electronic medical records.
 
 ``` r
 egn_sample <- c("9201014321", "8812128765")
 extract_egn_info(egn_sample)
 #>   age birth_date is_valid gender region birth_order invalid_egn        invalid_reason
-#> 1  34 1992-01-01     TRUE   Male Pleven           2        <NA>                  <NA>
-#> 2  37 1988-12-12    FALSE   Male Shumen           4        <NA> Invalid control digit
+#> 1  34 1992-01-01     TRUE   Male Pleven          19        <NA>                  <NA>
+#> 2  37 1988-12-12    FALSE   Male Shumen           3        <NA> Invalid control digit
 ```
 
----
+------------------------------------------------------------------------
 
 ### 8. Descriptive Statistics & Summaries
 
 #### `kk_summary(data, col)` / `comprehensive_summary()`
 
-Computes an extensive numeric summary for a variable — central tendency, dispersion, robust estimators (Huber M), skewness/kurtosis, and normality tests — with full `group_by()` support.
+Computes an extensive numeric summary for a variable — central tendency,
+dispersion, robust estimators (Huber M), skewness/kurtosis, and
+normality tests — with full `group_by()` support.
 
-*   **Clinical Example**: Describing the distribution of a biomarker overall and by treatment arm before modelling.
+- **Clinical Example**: Describing the distribution of systolic blood
+  pressure overall and by treatment arm before modelling.
 
 ``` r
-kk_summary(mtcars, mpg)
+kk_summary(cohort, sbp)
 #> # A tibble: 1 × 33
 #>   var_name type  n_total n_miss n_valid miss_pct  mean huber_mean trim_mean geometric_mean
 #>   <chr>    <chr>   <int>  <int>   <int>    <dbl> <dbl>      <dbl>     <dbl>          <dbl>
-#> 1 mpg      nume…      32      0      32        0  20.1       19.6      19.7           19.3
+#> 1 sbp      nume…     300      0     300        0  135.       135.       135           134.
 #> # ℹ 23 more variables: median <dbl>, min <dbl>, max <dbl>, range <dbl>, variance <dbl>,
 #> #   sd <dbl>, se <dbl>, cv_pct <dbl>, mad <dbl>, iqr <dbl>, q1 <dbl>, q3 <dbl>,
 #> #   skewness <dbl>, kurtosis <dbl>, pct_5_95 <list>, ci_mean_low <dbl>, ci_mean_up <dbl>,
@@ -1205,56 +1605,144 @@ kk_summary(mtcars, mpg)
 
 # Grouped and abbreviated
 library(dplyr)
-mtcars |>
-  group_by(am) |>
-  kk_summary(mpg, verbose = "basic")
+cohort |>
+  group_by(arm) |>
+  kk_summary(sbp, verbose = "basic")
 #> # A tibble: 2 × 12
-#> # Groups:   am [2]
-#>      am var_name type    n_total n_miss n_valid miss_pct  mean median   min   max    sd
-#>   <dbl> <chr>    <chr>     <int>  <int>   <int>    <dbl> <dbl>  <dbl> <dbl> <dbl> <dbl>
-#> 1     0 mpg      numeric      19      0      19        0  17.1   17.3  10.4  24.4  3.83
-#> 2     1 mpg      numeric      13      0      13        0  24.4   22.8  15    33.9  6.17
+#> # Groups:   arm [2]
+#>   arm       var_name type   n_total n_miss n_valid miss_pct  mean median   min   max    sd
+#>   <fct>     <chr>    <chr>    <int>  <int>   <int>    <dbl> <dbl>  <dbl> <dbl> <dbl> <dbl>
+#> 1 Control   sbp      numer…     155      0     155        0  139.    140   111   170  11.0
+#> 2 Treatment sbp      numer…     145      0     145        0  130.    131   101   154  11.6
 ```
 
----
+------------------------------------------------------------------------
 
 ### 9. Time-Series Analysis
 
 #### `kk_time_series(data, value_col, date_col)` / `time_series_analysis()`
 
-Analyzes a time series end-to-end: decomposition, stationarity tests (ADF/KPSS), autocorrelation, and automatic ARIMA modelling, with optional grouping.
+Analyzes a time series end-to-end: decomposition, stationarity tests
+(ADF/KPSS), autocorrelation, and automatic ARIMA modelling, with
+optional grouping.
 
-*   **Epidemiological Example**: Characterising a monthly surveillance count series and fitting a forecasting model.
+- **Epidemiological Example**: Characterising a monthly surveillance
+  count series and fitting a forecasting model. The series is a 24-month
+  random walk with upward drift (a slowly rising case count).
+  `print(n = Inf)` shows all 48 indicators.
 
 ``` r
+set.seed(42)
 date <- seq(as.Date("2020-01-01"), by = "month", length.out = 24)
 value <- 100 + cumsum(rnorm(24, 2, 5))
 df_ts <- data.frame(date = date, value = value)
-kk_time_series(df_ts)
+kk_time_series(df_ts) |> print(n = Inf)
 #> # A tibble: 48 × 2
-#>   Metric             Value
-#>   <chr>              <dbl>
-#> 1 Length of Series    24  
-#> 2 Mean               129. 
-#> 3 Median             132. 
-#> 4 Standard Deviation  15.5
-#> 5 Variance           240. 
-#> 6 Min                 98.8
-#> 7 Max                154. 
-#> 8 Range               55.6
-#> # ℹ 40 more rows
+#>    Metric                                 Value
+#>    <chr>                                  <dbl>
+#>  1 Length of Series                    2.4 e+ 1
+#>  2 Mean                                1.46e+ 2
+#>  3 Median                              1.53e+ 2
+#>  4 Standard Deviation                  2.13e+ 1
+#>  5 Variance                            4.52e+ 2
+#>  6 Min                                 1.08e+ 2
+#>  7 Max                                 1.72e+ 2
+#>  8 Range                               6.40e+ 1
+#>  9 Q1 (25th Percentile)                1.30e+ 2
+#> 10 Q3 (75th Percentile)                1.63e+ 2
+#> 11 Skewness                           -6.02e- 1
+#> 12 Kurtosis                            1.94e+ 0
+#> 13 CV (SD/Mean)                        1.45e- 1
+#> 14 Missing Count                       0       
+#> 15 Outlier Count                       0       
+#> 16 Mean Abs Increase (Chain)           2.31e+ 0
+#> 17 Mean Growth Rate (Chain, Coeff)     1.02e+ 0
+#> 18 Mean Rate of Increase (Chain, %)    1.83e+ 0
+#> 19 Mean Abs Increase (Fixed)           3.74e+ 1
+#> 20 Mean Growth Rate (Fixed, Coeff)     1.34e+ 0
+#> 21 Mean Rate of Increase (Fixed, %)    3.44e+ 1
+#> 22 SD Abs Increase (Chain)             6.42e+ 0
+#> 23 SD Growth Rate (Chain, Coeff)       4.29e- 2
+#> 24 SD Rate of Increase (Chain, %)      4.29e+ 0
+#> 25 SD Abs Increase (Fixed)             2.13e+ 1
+#> 26 SD Growth Rate (Fixed, Coeff)       1.95e- 1
+#> 27 SD Rate of Increase (Fixed, %)      1.95e+ 1
+#> 28 Geometric Mean Growth Rate (Coeff)  1.02e+ 0
+#> 29 Geometric Mean Growth Rate (%)      1.74e+ 0
+#> 30 Mean Rate of Increase (T̅′, Coeff)   1.74e- 2
+#> 31 Mean Rate of Increase (T̅′, %)       1.74e+ 0
+#> 32 Mean Rate of Change (%)             1.83e+ 0
+#> 33 SD Rate of Change (%)               4.29e+ 0
+#> 34 Min ROC (%)                        -6.56e+ 0
+#> 35 Max ROC (%)                         9.05e+ 0
+#> 36 Trend Slope                         7.98e- 2
+#> 37 Trend Strength                      6.53e- 1
+#> 38 ADF p-value                         9.48e- 1
+#> 39 ADF statistic                      -8.13e- 1
+#> 40 KPSS p-value                        1.57e- 2
+#> 41 KPSS statistic                      6.77e- 1
+#> 42 ACF Lag 1                           8.71e- 1
+#> 43 PACF Lag 1                          8.71e- 1
+#> 44 Ljung-Box p-value                   4.18e-10
+#> 45 Hurst Exponent                      7.30e- 1
+#> 46 GARCH Volatility                   NA       
+#> 47 Shannon Entropy                     1.33e+ 0
+#> 48 Dominant Frequency                  4.17e- 2
 ```
+
+> **Interpretation of each indicator.** With all rows shown the `Value`
+> column prints in scientific notation because it spans from ~450
+> (variance) down to 4e-10 (a p-value). Reading them by block:
+>
+> | Indicator                               | Value               | What it tells you                                                                            |
+> |-----------------------------------------|---------------------|----------------------------------------------------------------------------------------------|
+> | Length of Series                        | 24                  | Number of observations (24 months).                                                          |
+> | Mean / Median                           | 146 / 153           | Centre of the series; median \> mean hints at mild left skew.                                |
+> | Standard Deviation / Variance           | 21.3 / 452          | Absolute spread of the level over the whole window.                                          |
+> | Min / Max / Range                       | 108 / 172 / 64      | The series moved across a 64-unit band.                                                      |
+> | Q1 / Q3                                 | 130 / 163           | Interquartile bounds of the level.                                                           |
+> | Skewness                                | −0.60               | Mild left skew (a few lower months pull the tail).                                           |
+> | Kurtosis                                | 1.94                | Below 3 → flatter-than-normal, no heavy tails.                                               |
+> | CV (SD/Mean)                            | 0.145               | SD is ~15% of the mean — modest relative variability.                                        |
+> | Missing Count / Outlier Count           | 0 / 0               | Complete series, no IQR outliers.                                                            |
+> | Mean Abs Increase (Chain)               | 2.31                | Average month-on-month change (the drift): ~+2.3 units/month.                                |
+> | Mean Growth Rate (Chain, Coeff)         | 1.02                | Average chained growth factor — ~+2% per month.                                              |
+> | Mean Rate of Increase (Chain, %)        | 1.83                | Same drift expressed as ~+1.8%/month.                                                        |
+> | Mean Abs Increase (Fixed)               | 37.4                | Average change vs the fixed first month (base period).                                       |
+> | Mean Growth Rate / Rate (Fixed)         | 1.34 / 34.4%        | Cumulative growth relative to the base month.                                                |
+> | SD Abs Increase / Growth / Rate (Chain) | 6.42 / 0.043 / 4.29 | Volatility of the month-on-month changes — steady drift, moderate noise.                     |
+> | SD … (Fixed)                            | 21.3 / 0.195 / 19.5 | Variability of change measured against the base month.                                       |
+> | Geometric Mean Growth Rate (Coeff / %)  | 1.02 / 1.74%        | Compounding-consistent average growth (~+1.7%/month).                                        |
+> | Mean Rate of Increase (T̅′, Coeff / %)   | 0.017 / 1.74%       | Average per-period rate from the mean-of-ratios chain.                                       |
+> | Mean / SD Rate of Change (%)            | 1.83 / 4.29         | Average and volatility of period-to-period % change.                                         |
+> | Min / Max ROC (%)                       | −6.56 / 9.05        | Largest single-month drop and rise.                                                          |
+> | Trend Slope                             | 0.080               | Positive linear slope per step — an upward trend.                                            |
+> | Trend Strength                          | 0.653               | ~65% of the variance is explained by trend — a strong trend.                                 |
+> | ADF p-value / statistic                 | 0.95 / −0.81        | Augmented Dickey–Fuller **fails to reject** a unit root → **non-stationary**.                |
+> | KPSS p-value / statistic                | 0.016 / 0.68        | KPSS **rejects** stationarity (p \< 0.05) → confirms non-stationary.                         |
+> | ACF Lag 1 / PACF Lag 1                  | 0.87 / 0.87         | Very strong first-order autocorrelation — consecutive months are highly dependent.           |
+> | Ljung-Box p-value                       | 4e-10               | Strongly rejects “white noise” — there is real serial structure to model.                    |
+> | Hurst Exponent                          | 0.73                | \> 0.5 → persistent, trending behaviour (not mean-reverting).                                |
+> | GARCH Volatility                        | NA                  | Not estimated (needs n ≥ 30 and the `rugarch` package).                                      |
+> | Shannon Entropy                         | 1.33                | Moderate signal complexity/unpredictability.                                                 |
+> | Dominant Frequency                      | 0.042               | Strongest spectral component ≈ 1 cycle per 24 months — i.e. the trend, not a seasonal cycle. |
+>
+> **Overall:** a non-stationary, strongly-autocorrelated series with a
+> persistent upward drift of ~+2 cases/month and no seasonality — so a
+> forecasting model should difference the series (e.g. ARIMA with d = 1)
+> before fitting.
 
 #### `kk_time_metrics(data, value_col, date_col)`
 
-Returns compact time-series descriptors — entropy, stability, linearity, and trend strength — useful for screening many series at once.
+Returns compact time-series descriptors — entropy, stability, linearity,
+and trend strength — useful for screening many series at once.
 
 ``` r
 kk_time_metrics(df_ts)
 #> # A tibble: 1 × 30
 #>   group autocorr_r1 durbinwatson_qbp ljungbox_pval spearman_corr spearman_pval
 #>   <chr>       <dbl>            <dbl>         <dbl>         <dbl>         <dbl>
-#> 1 1           0.961           0.0013             0         0.958             0
+#> 1 1           0.954            0.002             0         0.710        0.0001
 #> # ℹ 24 more variables: anderson_stat <dbl>, anderson_pval <dbl>, mean_absinc_chain <dbl>,
 #> #   mean_devrate_chain <dbl>, mean_incrate_chain <dbl>, mean_absinc_fixed <dbl>,
 #> #   mean_devrate_fixed <dbl>, mean_incrate_fixed <dbl>, sd_absinc_chain <dbl>,
@@ -1264,142 +1752,123 @@ kk_time_metrics(df_ts)
 #> #   per_absinc_chain <list>, per_devrate_chain <list>, per_incrate_chain <list>, …
 ```
 
----
+------------------------------------------------------------------------
 
 ### 10. Visualization
 
 #### `kkplot(..., rangeframe, minor_ticks, cap)`
 
-A drop-in `ggplot()` replacement applying **Edward Tufte's data-ink principles** to the axes. **By default it behaves exactly like `ggplot()` with capped axes** (`cap = "both"`), which is safe for any `aes()` mapping and complex/faceted data. The Tufte range frame is strictly **optional**.
+A drop-in `ggplot()` replacement applying **Edward Tufte’s data-ink
+principles** to the axes. **By default it behaves exactly like
+`ggplot()` with capped axes** (`cap = "both"`), which is safe for any
+`aes()` mapping and complex/faceted data. The Tufte range frame is
+strictly **optional**.
 
-The Tufte options are named arguments that come *after* `...`, so always pass them **by name**:
-
+The Tufte options are named arguments that come *after* `...`, so always
+pass them **by name**:
 
 ``` r
 library(ggplot2)
 
 # Default — capped axes, works with any data / aes() (recommended default)
-kkplot(mtcars, aes(x = mpg, y = wt)) + geom_point()
+kkplot(cohort, aes(x = age, y = sbp)) + geom_point()
 ```
 
-<div class="figure">
-<img src="man/figures/README-ex-57-1.png" alt="plot of chunk ex-57" width="75%" />
-<p class="caption">plot of chunk ex-57</p>
-</div>
+<img src="man/figures/README-ex-57-1.png" alt="" width="75%" />
 
 ``` r
 
 # Optional: true Tufte range frame (axis lines span exactly the data range).
 # Best for plots with continuous x AND y; pass the option BY NAME.
-kkplot(mtcars, aes(x = mpg, y = wt), rangeframe = TRUE) + geom_point()
+kkplot(cohort, aes(x = age, y = sbp), rangeframe = TRUE) + geom_point()
 ```
 
-<div class="figure">
-<img src="man/figures/README-ex-57-2.png" alt="plot of chunk ex-57" width="75%" />
-<p class="caption">plot of chunk ex-57</p>
-</div>
+<img src="man/figures/README-ex-57-2.png" alt="" width="75%" />
 
 ``` r
 
 # Optional: subtle minor ticks for precise value reading
-kkplot(mtcars, aes(x = mpg, y = wt), minor_ticks = TRUE) + geom_point()
+kkplot(cohort, aes(x = age, y = sbp), minor_ticks = TRUE) + geom_point()
 ```
 
-<div class="figure">
-<img src="man/figures/README-ex-57-3.png" alt="plot of chunk ex-57" width="75%" />
-<p class="caption">plot of chunk ex-57</p>
-</div>
+<img src="man/figures/README-ex-57-3.png" alt="" width="75%" />
 
 ``` r
 
 # Combine, or change the cap style
-kkplot(mtcars, aes(x = mpg, y = wt), rangeframe = TRUE, minor_ticks = TRUE) + geom_point()
+kkplot(cohort, aes(x = age, y = sbp), rangeframe = TRUE, minor_ticks = TRUE) + geom_point()
 ```
 
-<div class="figure">
-<img src="man/figures/README-ex-57-4.png" alt="plot of chunk ex-57" width="75%" />
-<p class="caption">plot of chunk ex-57</p>
-</div>
+<img src="man/figures/README-ex-57-4.png" alt="" width="75%" />
 
 ``` r
-kkplot(mtcars, aes(x = mpg, y = wt), cap = "none") + geom_point()
+kkplot(cohort, aes(x = age, y = sbp), cap = "none") + geom_point()
 ```
 
-<div class="figure">
-<img src="man/figures/README-ex-57-5.png" alt="plot of chunk ex-57" width="75%" />
-<p class="caption">plot of chunk ex-57</p>
-</div>
+<img src="man/figures/README-ex-57-5.png" alt="" width="75%" />
 
-| Argument | Default | Effect |
-|---|---|---|
-| `cap` | `"both"` | Cap axis lines at the outer ticks (`"both"`, `"lower"`, `"upper"`, `"none"`). |
-| `rangeframe` | `FALSE` | Draw a true Tufte range frame spanning the data range (continuous x/y only). |
-| `minor_ticks` | `FALSE` | Add subtle minor ticks to both axes. |
+| Argument      | Default  | Effect                                                                        |
+|---------------|----------|-------------------------------------------------------------------------------|
+| `cap`         | `"both"` | Cap axis lines at the outer ticks (`"both"`, `"lower"`, `"upper"`, `"none"`). |
+| `rangeframe`  | `FALSE`  | Draw a true Tufte range frame spanning the data range (continuous x/y only).  |
+| `minor_ticks` | `FALSE`  | Add subtle minor ticks to both axes.                                          |
 
 Pairs with the Tufte theme applied by `set_plot_font()`.
 
 #### `univariate_plot(data, variable)` / `univariate_cat_plot()` / `univariate_cont_plot()`
 
-Automatically renders the appropriate univariate figure — bar chart for categorical variables, density/histogram for continuous — with optional grouping. The `_cat_` and `_cont_` variants (also aliased as `univariate_categorical_plot()` and `univariate_continuous_plot()`) force a specific type.
+Automatically renders the appropriate univariate figure — bar chart for
+categorical variables, density/histogram for continuous — with optional
+grouping. The `_cat_` and `_cont_` variants (also aliased as
+`univariate_categorical_plot()` and `univariate_continuous_plot()`)
+force a specific type.
 
 ``` r
-univariate_plot(mtcars, "mpg")          # continuous -> density
+univariate_plot(cohort, "sbp")             # continuous -> density
 ```
 
-<div class="figure">
-<img src="man/figures/README-ex-58-1.png" alt="plot of chunk ex-58" width="75%" />
-<p class="caption">plot of chunk ex-58</p>
-</div>
+<img src="man/figures/README-ex-58-1.png" alt="" width="75%" />
 
 ``` r
-univariate_plot(mtcars, "am")           # categorical -> bar
+univariate_plot(cohort, "smoker")          # categorical -> bar
 ```
 
-<div class="figure">
-<img src="man/figures/README-ex-58-2.png" alt="plot of chunk ex-58" width="75%" />
-<p class="caption">plot of chunk ex-58</p>
-</div>
+<img src="man/figures/README-ex-58-2.png" alt="" width="75%" />
 
 ``` r
-univariate_cont_plot(mtcars, "mpg", group = "cyl")
+univariate_cont_plot(cohort, "sbp", group = "arm")
 ```
 
-<div class="figure">
-<img src="man/figures/README-ex-58-3.png" alt="plot of chunk ex-58" width="75%" />
-<p class="caption">plot of chunk ex-58</p>
-</div>
+<img src="man/figures/README-ex-58-3.png" alt="" width="75%" />
 
 ``` r
-univariate_cat_plot(mtcars, "am", group = "cyl")
+univariate_cat_plot(cohort, "smoker", group = "arm")
 ```
 
-<div class="figure">
-<img src="man/figures/README-ex-58-4.png" alt="plot of chunk ex-58" width="75%" />
-<p class="caption">plot of chunk ex-58</p>
-</div>
+<img src="man/figures/README-ex-58-4.png" alt="" width="75%" />
 
 #### `kk_fullcorplot(data, method)`
 
-Produces a full **correlation matrix plot** with significance annotations (Pearson, Spearman, or Kendall), with optional multiple-comparison adjustment.
+Produces a full **correlation matrix plot** with significance
+annotations (Pearson, Spearman, or Kendall), with optional
+multiple-comparison adjustment.
 
 ``` r
-kk_fullcorplot(mtcars, method = "kendall")
+kk_fullcorplot(cohort[c("age", "bmi", "sbp", "chol")], method = "kendall")
 ```
 
-<div class="figure">
-<img src="man/figures/README-ex-59-1.png" alt="plot of chunk ex-59" width="75%" />
-<p class="caption">plot of chunk ex-59</p>
-</div>
+<img src="man/figures/README-ex-59-1.png" alt="" width="75%" />
 
 #### `set_plot_font(font, size)`
 
-Sets a global ggplot2 theme font (loaded via `sysfonts`/`showtext`) for consistent typography across all figures.
+Sets a global ggplot2 theme font (loaded via `sysfonts`/`showtext`) for
+consistent typography across all figures.
 
 ``` r
 set_plot_font("Roboto Condensed", size = 14)
 ```
 
----
+------------------------------------------------------------------------
 
 ### 11. Data Utilities & Setup
 
@@ -1420,7 +1889,8 @@ kkonehot(df_oh, "color")
 
 #### `mutate_round(data, digits)`
 
-Rounds all numeric columns in a data frame to a given number of digits (half-up rounding).
+Rounds all numeric columns in a data frame to a given number of digits
+(half-up rounding).
 
 ``` r
 mutate_round(data.frame(a = c(1.234, 5.678), b = c("x", "y")), 1)
@@ -1431,7 +1901,8 @@ mutate_round(data.frame(a = c(1.234, 5.678), b = c("x", "y")), 1)
 
 #### `format_tibble(data, digits)`
 
-Formats numeric values in a results tibble for display (fixed decimals, thousands separators).
+Formats numeric values in a results tibble for display (fixed decimals,
+thousands separators).
 
 ``` r
 format_tibble(tibble::tibble(Value = c(10.567, 2.3, NA)))
@@ -1445,23 +1916,34 @@ format_tibble(tibble::tibble(Value = c(10.567, 2.3, NA)))
 
 #### `kk_setup(cores, scipen)`
 
-One-call session setup: configures parallel cores, the Bayesian backend, display options, and disables scientific notation.
+One-call session setup: configures parallel cores, the Bayesian backend,
+display options, and disables scientific notation.
 
 ``` r
 kk_setup()
 ```
 
----
+------------------------------------------------------------------------
 
 ### 12. Health Economics & HTA (Cost-Effectiveness)
 
-Functions for the economic-evaluation side of health technology assessment: incremental cost-effectiveness analysis with dominance/frontier logic, net benefit at a willingness-to-pay threshold, acceptability curves from probabilistic sensitivity analysis, discounting, and a Markov cohort engine for cost-utility models.
+Functions for the economic-evaluation side of health technology
+assessment: incremental cost-effectiveness analysis with
+dominance/frontier logic, net benefit at a willingness-to-pay threshold,
+acceptability curves from probabilistic sensitivity analysis,
+discounting, and a Markov cohort engine for cost-utility models.
 
 #### `kk_icer(data, cost, effect, strategy)`
 
-Runs an **incremental cost-effectiveness analysis** over mutually exclusive strategies: ranks by effectiveness, flags **strongly dominated** options, removes **extendedly (weakly) dominated** ones by the standard iterative algorithm, and reports the **ICER** along the resulting efficiency frontier.
+Runs an **incremental cost-effectiveness analysis** over mutually
+exclusive strategies: ranks by effectiveness, flags **strongly
+dominated** options, removes **extendedly (weakly) dominated** ones by
+the standard iterative algorithm, and reports the **ICER** along the
+resulting efficiency frontier.
 
-*   **HTA Example**: Comparing standard care against two new drugs on total cost and QALYs to find the frontier and the ICER of each additional step.
+- **HTA Example**: Comparing standard care against two new drugs on
+  total cost and QALYs to find the frontier and the ICER of each
+  additional step.
 
 ``` r
 ce <- data.frame(
@@ -1471,37 +1953,51 @@ ce <- data.frame(
 )
 kk_icer(ce, cost, effect, strategy)
 #> # A tibble: 3 × 7
-#>   strategy       cost effect inc_cost inc_effect  icer status
-#>   <chr>         <dbl>  <dbl>    <dbl>      <dbl> <dbl> <chr>
+#>   strategy       cost effect inc_cost inc_effect  icer status  
+#>   <chr>         <dbl>  <dbl>    <dbl>      <dbl> <dbl> <chr>   
 #> 1 Standard care  2000    3.5       NA       NA      NA frontier
 #> 2 Drug A         8000    5       6000        1.5  4000 frontier
 #> 3 Drug B        12000    5.5     4000        0.5  8000 frontier
 ```
 
-> **Interpretation.** Both drugs are on the efficiency frontier. Moving from standard care to Drug A costs an extra 4,000 per QALY gained; the further step to Drug B costs 8,000 per QALY. Against a 20,000/QALY threshold, both steps are good value. A strategy that cost more for fewer QALYs would be labelled `dominated`; one whose ICER exceeded that of a more effective option, `ext.dominated`.
+> **Interpretation.** Both drugs are on the efficiency frontier. Moving
+> from standard care to Drug A costs an extra 4,000 per QALY gained; the
+> further step to Drug B costs 8,000 per QALY. Against a 20,000/QALY
+> threshold, both steps are good value. A strategy that cost more for
+> fewer QALYs would be labelled `dominated`; one whose ICER exceeded
+> that of a more effective option, `ext.dominated`.
 
 #### `kk_nmb(data, cost, effect, wtp, strategy)`
 
-Computes the **net monetary benefit** (`NMB = effect × WTP − cost`) and **net health benefit** (`NHB = effect − cost / WTP`) at one or more willingness-to-pay thresholds, flagging the optimal (benefit-maximising) strategy at each.
+Computes the **net monetary benefit** (`NMB = effect * WTP - cost`) and
+**net health benefit** (`NHB = effect - cost / WTP`) at one or more
+willingness-to-pay thresholds, flagging the optimal (benefit-maximising)
+strategy at each.
 
 ``` r
 kk_nmb(ce, cost, effect, wtp = c(20000, 50000), strategy = strategy)
 #> # A tibble: 6 × 7
 #>   strategy        wtp  cost effect    nmb   nhb optimal
-#>   <chr>         <dbl> <dbl>  <dbl>  <dbl> <dbl> <lgl>
-#> 1 Standard care 20000  2000    3.5  68000  3.4  FALSE
-#> 2 Drug A        20000  8000    5    92000  4.6  FALSE
-#> 3 Drug B        20000 12000    5.5  98000  4.9  TRUE
-#> 4 Standard care 50000  2000    3.5 173000  3.46 FALSE
-#> 5 Drug A        50000  8000    5   242000  4.84 FALSE
+#>   <chr>         <dbl> <dbl>  <dbl>  <dbl> <dbl> <lgl>  
+#> 1 Standard care 20000  2000    3.5  68000  3.4  FALSE  
+#> 2 Drug A        20000  8000    5    92000  4.6  FALSE  
+#> 3 Drug B        20000 12000    5.5  98000  4.9  TRUE   
+#> 4 Standard care 50000  2000    3.5 173000  3.46 FALSE  
+#> 5 Drug A        50000  8000    5   242000  4.84 FALSE  
 #> 6 Drug B        50000 12000    5.5 263000  5.26 TRUE
 ```
 
-> **Interpretation.** At both thresholds Drug B maximises net benefit, so it is the optimal choice. Net benefit avoids the awkward ratios of the ICER and turns the decision into a simple "highest value wins" comparison at the chosen threshold.
+> **Interpretation.** At both thresholds Drug B maximises net benefit,
+> so it is the optimal choice. Net benefit avoids the awkward ratios of
+> the ICER and turns the decision into a simple “highest value wins”
+> comparison at the chosen threshold.
 
 #### `kk_ceac(data, sim, strategy, cost, effect, wtp)`
 
-Builds a **cost-effectiveness acceptability curve** from **probabilistic sensitivity analysis** draws: for each WTP threshold it reports the probability that each strategy has the highest NMB across simulations, and marks the strategy on the acceptability frontier (`on_frontier`).
+Builds a **cost-effectiveness acceptability curve** from **probabilistic
+sensitivity analysis** draws: for each WTP threshold it reports the
+probability that each strategy has the highest NMB across simulations,
+and marks the strategy on the acceptability frontier (`on_frontier`).
 
 ``` r
 set.seed(1)
@@ -1511,13 +2007,30 @@ psa <- do.call(rbind, lapply(1:200, function(i) data.frame(
   effect = c(rnorm(1, 5.0, 0.3), rnorm(1, 5.5, 0.3))
 )))
 kk_ceac(psa, sim, strategy, cost, effect, wtp = seq(0, 60000, 20000))
+#> # A tibble: 8 × 4
+#>   strategy   wtp prob_ce on_frontier
+#>   <chr>    <dbl>   <dbl> <lgl>      
+#> 1 A            0    0.95 TRUE       
+#> 2 B            0    0.05 FALSE      
+#> 3 A        20000    0.27 FALSE      
+#> 4 B        20000    0.73 TRUE       
+#> 5 A        40000    0.18 FALSE      
+#> 6 B        40000    0.82 TRUE       
+#> 7 A        60000    0.15 FALSE      
+#> 8 B        60000    0.85 TRUE
 ```
 
 #### `kk_markov(transition, costs, utilities, cycles)`
 
-Runs a **Markov cohort model**, the standard engine for cost-utility models in HTA. A closed cohort moves through health states under a transition matrix; per-cycle costs and utilities are accumulated, **discounted**, and **half-cycle corrected** to give total expected cost and QALYs. Supports time-varying transitions (a `state × state × cycle` array). Returns a `trace` tibble and a `summary` tibble.
+Runs a **Markov cohort model**, the standard engine for cost-utility
+models in HTA. A closed cohort moves through health states under a
+transition matrix; per-cycle costs and utilities are accumulated,
+**discounted**, and **half-cycle corrected** to give total expected cost
+and QALYs. Supports time-varying transitions (a `state x state x cycle`
+array). Returns a `trace` tibble and a `summary` tibble.
 
-*   **HTA Example**: A three-state Healthy → Sick → Dead model over 30 annual cycles.
+- **HTA Example**: A three-state Healthy -\> Sick -\> Dead model over 30
+  annual cycles.
 
 ``` r
 P <- matrix(c(
@@ -1534,16 +2047,23 @@ kk_markov(
   cycles = 30
 )$summary
 #> # A tibble: 1 × 8
-#>   total_cost total_qaly total_cost_disc total_qaly_disc disc_cost disc_effect cycles half_cycle
-#>        <dbl>      <dbl>           <dbl>           <dbl>     <dbl>       <dbl>  <dbl> <lgl>
-#> 1     29063.       8.07          22276.            6.68      0.03        0.03     30 TRUE
+#>   total_cost total_qaly total_cost_disc total_qaly_disc disc_cost disc_effect cycles
+#>        <dbl>      <dbl>           <dbl>           <dbl>     <dbl>       <dbl>  <dbl>
+#> 1     29063.       8.07          22276.            6.68      0.03        0.03     30
+#> # ℹ 1 more variable: half_cycle <lgl>
 ```
 
-> **Interpretation.** Over the modelled horizon the cohort accrues about 29,063 in undiscounted cost and 8.07 QALYs; discounting future costs and effects at 3% lowers these to 22,276 and 6.68. Pairing two such runs (e.g. treatment vs. no treatment) feeds directly into `kk_icer` / `kk_nmb`.
+> **Interpretation.** Over the modelled horizon the cohort accrues about
+> 29,063 in undiscounted cost and 8.07 QALYs; discounting future costs
+> and effects at 3% lowers these to 22,276 and 6.68. Pairing two such
+> runs (e.g. treatment vs. no treatment) feeds directly into `kk_icer` /
+> `kk_nmb`.
 
 #### `kk_discount(x, rate, times)`
 
-Discounts a stream of future costs or effects to **present value** with `PV = Σ x_t / (1 + rate)^t`; the first element is treated as occurring now.
+Discounts a stream of future costs or effects to **present value** with
+`PV = sum(x_t / (1 + rate)^t)`; the first element is treated as
+occurring now.
 
 ``` r
 kk_discount(rep(2000, 5), rate = 0.035)
@@ -1553,17 +2073,25 @@ kk_discount(rep(2000, 5), rate = 0.035)
 #> 1        10000         9346. 0.035
 ```
 
----
+------------------------------------------------------------------------
 
 ### 13. Infectious Disease Transmission Modeling
 
-Deterministic compartmental models for epidemic dynamics, with a dependency-free Runge-Kutta solver, plus reproduction-number and final-size tools. Useful for teaching outbreak dynamics and for scenario analysis of interventions (vaccination, isolation).
+Deterministic compartmental models for epidemic dynamics, with a
+dependency-free Runge-Kutta solver, plus reproduction-number and
+final-size tools. Useful for teaching outbreak dynamics and for scenario
+analysis of interventions (vaccination, isolation).
 
 #### `kk_seir(beta, gamma, sigma, S0, I0, ...)`
 
-Simulates a deterministic **SIR** model, or an **SEIR** model when a latent rate `sigma` is supplied. Optional **vital dynamics** (`mu`) and **vaccination** (`nu`) are supported. Returns a time series of compartments with incidence and cumulative incidence; the implied `R0` is attached as an attribute.
+Simulates a deterministic **SIR** model, or an **SEIR** model when a
+latent rate `sigma` is supplied. Optional **vital dynamics** (`mu`) and
+**vaccination** (`nu`) are supported. Returns a time series of
+compartments with incidence and cumulative incidence; the implied `R0`
+is attached as an attribute.
 
-*   **Epidemiological Example**: A closed SIR outbreak with `R0 = beta / gamma = 2.5`.
+- **Epidemiological Example**: A closed SIR outbreak with
+  `R0 = beta / gamma = 2.5`.
 
 ``` r
 sir <- kk_seir(beta = 0.5, gamma = 0.2, S0 = 999, I0 = 1, R0_init = 0)
@@ -1573,30 +2101,43 @@ head(sir[c("time", "S", "I", "R", "incidence")], 3)
 #> # A tibble: 3 × 5
 #>    time     S     I     R incidence
 #>   <int> <dbl> <dbl> <dbl>     <dbl>
-#> 1     0  999   1    0         0
+#> 1     0  999   1    0         0    
 #> 2     1  998.  1.35 0.233     0.582
 #> 3     2  998.  1.82 0.548     0.785
 ```
 
-> **Interpretation.** The `incidence` column gives new infections per time step (the epidemic curve). For an SEIR model add `sigma` (e.g. `sigma = 0.2` for a 5-day latent period); an exposed compartment `E` then appears in the output. Set `mu` for births/deaths in endemic models or `nu` to divert susceptibles to immunity via vaccination.
+> **Interpretation.** The `incidence` column gives new infections per
+> time step (the epidemic curve). For an SEIR model add `sigma`
+> (e.g. `sigma = 0.2` for a 5-day latent period); an exposed compartment
+> `E` then appears in the output. Set `mu` for births/deaths in endemic
+> models or `nu` to divert susceptibles to immunity via vaccination.
 
 #### `kk_r0(method, ...)`
 
-Estimates the **basic reproduction number** from transmission parameters (`"params"`: `beta / gamma`), from the **early exponential growth rate** (`"growth"`: `1 + r / gamma`, extended to SEIR with `sigma`), or from the **final attack rate** (`"final_size"`).
+Estimates the **basic reproduction number** from transmission parameters
+(`"params"`: `beta / gamma`), from the **early exponential growth rate**
+(`"growth"`: `1 + r / gamma`, extended to SEIR with `sigma`), or from
+the **final attack rate** (`"final_size"`).
 
 ``` r
 kk_r0("growth", r = 0.15, gamma = 0.2)
 #> # A tibble: 1 × 2
 #>      R0 method
-#>   <dbl> <chr>
+#>   <dbl> <chr> 
 #> 1  1.75 growth
 ```
 
-> **Interpretation.** An observed early doubling implying a growth rate of 0.15 per day, with a 5-day infectious period, corresponds to R0 ≈ 1.75. Supplying `sigma` uses the SEIR relationship `(1 + r/gamma)(1 + r/sigma)`, which yields a higher R0 for the same growth rate because the latent period slows spread.
+> **Interpretation.** An observed early doubling implying a growth rate
+> of 0.15 per day, with a 5-day infectious period, corresponds to R0 ~
+> 1.75. Supplying `sigma` uses the SEIR relationship
+> `(1 + r/gamma)(1 + r/sigma)`, which yields a higher R0 for the same
+> growth rate because the latent period slows spread.
 
 #### `kk_final_size(R0)`
 
-Solves the final-size relation `z = 1 − exp(−R0 · z)` for the total proportion infected in a closed, fully susceptible population, and reports the **herd-immunity threshold** `1 − 1/R0`.
+Solves the final-size relation `z = 1 - exp(-R0 * z)` for the total
+proportion infected in a closed, fully susceptible population, and
+reports the **herd-immunity threshold** `1 - 1/R0`.
 
 ``` r
 kk_final_size(2.5)
@@ -1606,9 +2147,13 @@ kk_final_size(2.5)
 #> 1   2.5       0.893           0.6
 ```
 
-> **Interpretation.** With R0 = 2.5 and no intervention, about 89% of the population is eventually infected, while vaccinating 60% (the herd-immunity threshold) would be enough to prevent sustained transmission. The final size exceeds the herd-immunity threshold because an unchecked epidemic overshoots.
+> **Interpretation.** With R0 = 2.5 and no intervention, about 89% of
+> the population is eventually infected, while vaccinating 60% (the
+> herd-immunity threshold) would be enough to prevent sustained
+> transmission. The final size exceeds the herd-immunity threshold
+> because an unchecked epidemic overshoots.
 
----
+------------------------------------------------------------------------
 
 ## License
 
@@ -1618,7 +2163,7 @@ MIT
 
 If you use this package in your research, please cite it as follows:
 
-```bibtex
+``` bibtex
 @Software{kkstatfun,
   title = {kkstatfun: R Statistical Analysis Toolkit for Medical statistics and Epidemiology},
   author = {Kostadinov, Kostadin},
@@ -1631,4 +2176,6 @@ If you use this package in your research, please cite it as follows:
 
 ## Credits
 
-This package was architected, refactored, and enhanced by **Antigravity**, an advanced AI coding assistant developed by **Google DeepMind**. 
+This package was architected, refactored, and enhanced by
+**Antigravity**, an advanced AI coding assistant developed by **Google
+DeepMind**.

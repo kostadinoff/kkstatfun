@@ -19,6 +19,10 @@ returned as a standard tibble.
 }
 \examples{
 \dontrun{
-kk_table1(mtcars, by = "am", variables = c("mpg", "hp"))
+trial <- data.frame(
+  arm = sample(c("Control", "Treatment"), 100, replace = TRUE),
+  age = rnorm(100, 60, 10), bmi = rnorm(100, 27, 4)
+)
+kk_table1(trial, by = "arm", variables = c("age", "bmi"))
 }
 }

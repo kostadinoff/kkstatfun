@@ -17,7 +17,11 @@
 #' @examples
 #' \dontrun{
 #' library(gtsummary)
-#' table1_summary(mtcars, by = "am", variables = c("mpg", "hp", "wt"))
+#' trial <- data.frame(
+#'   arm = sample(c("Control", "Treatment"), 100, replace = TRUE),
+#'   age = rnorm(100, 60, 10), bmi = rnorm(100, 27, 4), sbp = rnorm(100, 135, 15)
+#' )
+#' table1_summary(trial, by = "arm", variables = c("age", "bmi", "sbp"))
 #' }
 #'
 #' @export
@@ -56,7 +60,11 @@ table1_summary <- function(data, by = NULL, variables = NULL, label_list = NULL)
 #'
 #' @examples
 #' \dontrun{
-#' kk_table1(mtcars, by = "am", variables = c("mpg", "hp"))
+#' trial <- data.frame(
+#'   arm = sample(c("Control", "Treatment"), 100, replace = TRUE),
+#'   age = rnorm(100, 60, 10), bmi = rnorm(100, 27, 4)
+#' )
+#' kk_table1(trial, by = "arm", variables = c("age", "bmi"))
 #' }
 #' @export
 kk_table1 <- function(data, by = NULL, variables = NULL, label_list = NULL,

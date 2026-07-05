@@ -34,7 +34,11 @@ univariate_continuous_plot(
 Univariate Continuous Plot
 }
 \examples{
-univariate_cont_plot(mtcars, "mpg")
-univariate_cont_plot(mtcars, "mpg", group = "cyl")
+patients <- data.frame(
+  sbp = rnorm(100, 135, 15),
+  arm = sample(c("Control", "Treatment"), 100, replace = TRUE)
+)
+univariate_cont_plot(patients, "sbp")
+univariate_cont_plot(patients, "sbp", group = "arm")
 
 }

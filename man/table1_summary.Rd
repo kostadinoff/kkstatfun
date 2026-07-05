@@ -25,7 +25,11 @@ variable, with p-values, returned as a standard tibble.
 \examples{
 \dontrun{
 library(gtsummary)
-table1_summary(mtcars, by = "am", variables = c("mpg", "hp", "wt"))
+trial <- data.frame(
+  arm = sample(c("Control", "Treatment"), 100, replace = TRUE),
+  age = rnorm(100, 60, 10), bmi = rnorm(100, 27, 4), sbp = rnorm(100, 135, 15)
+)
+table1_summary(trial, by = "arm", variables = c("age", "bmi", "sbp"))
 }
 
 }
