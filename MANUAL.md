@@ -375,3 +375,24 @@ Estimates the basic reproduction number from transmission parameters (`beta / ga
 
 ### `kk_final_size(R0)`
 Solves `z = 1 - exp(-R0 * z)` for the final proportion infected in a closed, fully susceptible population, and reports the herd-immunity threshold `1 - 1/R0`. Returns a one-row tibble with `R0`, `attack_rate`, `herd_immunity`.
+
+---
+
+## Advanced Methodological Suite (`R/butler_ks.R`, `R/tmle.R`, `R/simex.R`, `R/gsf.R`, `R/nb_scan.R`)
+
+Computationally intensive methods beyond standard parametric modelling. All are permutation- or simulation-based and take a `seed` argument for reproducibility.
+
+### `kk_butler_ks(x, outcome = NULL, treatment = NULL, strata = NULL, n_sim = 9999, seed = NULL)`
+Butler's symmetry-based Kolmogorov-Smirnov test — a Fisherian randomization test of the sharp null of no treatment effect in matched-pair or stratified randomized experiments. Pass `x` as a numeric vector of within-pair differences (sign-flip null) or as a data frame with `outcome`/`treatment`/`strata` (within-stratum permutation null). Robust to asymmetric and heavy-tailed effect distributions. Returns a one-row tibble with statistic `D`, Monte-Carlo `p.value`, `method`, `n`, `n_sim`; the null distribution is attached as attribute `null_distribution`.
+
+### `kk_tmle(data, outcome, treatment, covariates, g_bounds = c(0.025, 0.975), conf.level = 0.95)`
+Targeted maximum likelihood estimation of the average treatment effect (risk difference for a binary outcome, mean difference for continuous) for a single-time-point binary exposure. Double-robust: consistent if either the outcome (`Q`) model or the propensity (`g`) model is correct, with efficient-influence-curve inference. Returns a one-row tibble with `ate`, `std.error`, CI, `p.value`, and counterfactual means `ey1`, `ey0`; the naive G-computation estimate is attached as attribute `gcomp`. For Super-Learner nuisance models or longitudinal/survival data use the `tmle` / `ltmle` packages.
+
+### `kk_simex(model, variable, error_sd, lambda = c(0.5, 1, 1.5, 2), B = 100, degree = 2, seed = NULL)`
+Simulation extrapolation (SIMEX) correction for classical additive measurement error in a continuous covariate of a fitted `lm`/`glm`. Simulates increasing error, refits, and extrapolates the coefficient trend back to zero error. Returns a tibble with the `naive` and bias-corrected `simex` estimate per coefficient, its SIMEX standard error, and a 95% CI.
+
+### `kk_gsf(model_fn, theta, times, sigma = 1, delta = 1e-4)`
+Generalized sensitivity functions (Thomaseth-Cobelli) for a mechanistic model fit by least squares (e.g. an SEIR model fit to surveillance data). Quantifies how much each estimated parameter depends on the data at each time point, identifying the most informative surveillance windows. `model_fn(theta)` returns the model output at `times`. Returns a tibble with a `time` column and one cumulative-GSF column per parameter (each rising 0→1); the Fisher information matrix is attached as attribute `fisher_information`.
+
+### `kk_nb_scan(data, region, time, count, expected, coords = c("x","y"), type = c("elevated","trend"), max_radius = Inf, max_temporal = Inf, size = NULL, n_sim = 999, seed = NULL)`
+Negative-binomial space-time scan statistic (Tango-Takahashi style) for detecting localized disease clusters under overdispersion. Searches candidate space-time cylinders for a constant excess (`type = "elevated"`) or a gradually rising trend (`type = "trend"`), standardizing by the negative-binomial variance (dispersion `size` estimated via `MASS::glm.nb` if not supplied). Significance is a Monte-Carlo p-value correcting for the multiplicity of overlapping windows. Returns a one-row tibble describing the most likely cluster (score, `p.value`, centre, member regions, temporal window, observed/expected counts); the null maxima are attached as attribute `null_distribution`.
