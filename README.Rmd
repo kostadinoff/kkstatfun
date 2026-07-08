@@ -153,6 +153,25 @@ df_ir %>% kk_incidence_rate(cases, pyears, by = arm)
 
 > **Interpretation.** The unexposed (reference) cohort had 12.5 events per 1000 person-years (exact 95% CI 7.0–20.6) versus 40 (28.6–54.5) in the exposed. The rate ratio is computed against the reference level (the first factor level, `unexposed`), so the exposed **rate ratio of 3.2** (95% CI 1.8–5.8) means the exposed had ~3.2× the event rate — an *increased* rate. The reference itself is fixed at 1. Note the direction depends on which level is the reference: had `exposed` been the reference, the unexposed would instead show 1/3.2 ≈ **0.31, a reduced rate**. Set the reference deliberately via the factor levels. The non-overlapping exact Poisson CIs indicate a real rate difference.
 
+#### `kk_sero_incidence(data, age, positive, year, total)`
+
+Estimates the **incidence (force of infection)** of an infection from **two or more seroprevalence surveys**, using the catalytic (irreversible-seroconversion) model where the seronegative fraction is `S = 1 - seroprevalence`. The default `"cohort"` method follows each **birth cohort** (`cohort = year - age`) across surveys and recovers the FOI it experienced between them, `lambda = -[log S2 - log S1] / (t2 - t1)` — capturing age and cohort effects directly. A cross-sectional `"catalytic"` method (within-survey age gradient) is also available.
+
+*   **Epidemiological Example**: Estimating age-cohort-specific seroconversion rates from two national serosurveys ten years apart.
+```{r ex-sero}
+set.seed(1)
+make_survey <- function(year, foi = 0.05, ages = seq(5, 65, 10), n = 3000) {
+  data.frame(age = ages, year = year,
+             positive = rbinom(length(ages), n, 1 - exp(-foi * ages)), total = n)
+}
+sero <- rbind(make_survey(2000), make_survey(2010))   # true FOI = 0.05 / year
+library(dplyr)
+kk_sero_incidence(sero, age, positive, year, total = total) |>
+  select(cohort, age_start, age_end, seroprev_start, seroprev_end, foi, foi_low, foi_high)
+```
+
+> **Interpretation.** Each row is one birth cohort followed from the first survey to the second: e.g. the 1995 cohort's seroprevalence rose from 22% (age 5, in 2000) to 51% (age 15, in 2010), implying a **force of infection of ~0.047 per year** — the annual rate at which still-susceptible members seroconverted. The estimates are stable across cohorts here (~0.045–0.051), correctly recovering the simulated 0.05, and every CI covers it. Because each estimate is tied to a specific cohort and age span, this is the age- and cohort-resolved incidence, with no reliance on case reporting. The model assumes lifelong seropositivity (no seroreversion) and negligible differential mortality by serostatus.
+
 #### `kk_rr_reg(data, outcome, predictors)`
 
 Estimates **adjusted risk ratios** for a common binary outcome using the modified Poisson approach (Zou 2004): a log-link Poisson model with robust sandwich standard errors. This is the preferred alternative to logistic regression when the outcome is frequent, since odds ratios overstate the risk ratio.

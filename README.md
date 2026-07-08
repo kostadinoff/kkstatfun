@@ -226,6 +226,35 @@ df_ir %>% kk_incidence_rate(cases, pyears, by = arm)
 
 > **Interpretation.** The unexposed (reference) cohort had 12.5 events per 1000 person-years (exact 95% CI 7.0–20.6) versus 40 (28.6–54.5) in the exposed. The rate ratio is computed against the reference level (the first factor level, `unexposed`), so the exposed **rate ratio of 3.2** (95% CI 1.8–5.8) means the exposed had ~3.2× the event rate — an *increased* rate. The reference itself is fixed at 1. Note the direction depends on which level is the reference: had `exposed` been the reference, the unexposed would instead show 1/3.2 ≈ **0.31, a reduced rate**. Set the reference deliberately via the factor levels. The non-overlapping exact Poisson CIs indicate a real rate difference.
 
+#### `kk_sero_incidence(data, age, positive, year, total)`
+
+Estimates the **incidence (force of infection)** of an infection from **two or more seroprevalence surveys**, using the catalytic (irreversible-seroconversion) model where the seronegative fraction is `S = 1 - seroprevalence`. The default `"cohort"` method follows each **birth cohort** (`cohort = year - age`) across surveys and recovers the FOI it experienced between them, `lambda = -[log S2 - log S1] / (t2 - t1)` — capturing age and cohort effects directly. A cross-sectional `"catalytic"` method (within-survey age gradient) is also available.
+
+*   **Epidemiological Example**: Estimating age-cohort-specific seroconversion rates from two national serosurveys ten years apart.
+
+``` r
+set.seed(1)
+make_survey <- function(year, foi = 0.05, ages = seq(5, 65, 10), n = 3000) {
+  data.frame(age = ages, year = year,
+             positive = rbinom(length(ages), n, 1 - exp(-foi * ages)), total = n)
+}
+sero <- rbind(make_survey(2000), make_survey(2010))   # true FOI = 0.05 / year
+library(dplyr)
+kk_sero_incidence(sero, age, positive, year, total = total) |>
+  select(cohort, age_start, age_end, seroprev_start, seroprev_end, foi, foi_low, foi_high)
+#> # A tibble: 6 × 8
+#>   cohort age_start age_end seroprev_start seroprev_end    foi foi_low foi_high
+#>    <dbl>     <dbl>   <dbl>          <dbl>        <dbl>  <dbl>   <dbl>    <dbl>
+#> 1   1945        55      65          0.935        0.960 0.0477  0.0256   0.0698
+#> 2   1955        45      55          0.885        0.931 0.0506  0.0342   0.0670
+#> 3   1965        35      45          0.842        0.899 0.0446  0.0312   0.0581
+#> 4   1975        25      35          0.724        0.826 0.0462  0.0365   0.0559
+#> 5   1985        15      25          0.53         0.700 0.0450  0.0383   0.0517
+#> 6   1995         5      15          0.221        0.511 0.0466  0.0425   0.0508
+```
+
+> **Interpretation.** Each row is one birth cohort followed from the first survey to the second: e.g. the 1995 cohort's seroprevalence rose from 22% (age 5, in 2000) to 51% (age 15, in 2010), implying a **force of infection of ~0.047 per year** — the annual rate at which still-susceptible members seroconverted. The estimates are stable across cohorts here (~0.045–0.051), correctly recovering the simulated 0.05, and every CI covers it. Because each estimate is tied to a specific cohort and age span, this is the age- and cohort-resolved incidence, with no reliance on case reporting. The model assumes lifelong seropositivity (no seroreversion) and negligible differential mortality by serostatus.
+
 #### `kk_rr_reg(data, outcome, predictors)`
 
 Estimates **adjusted risk ratios** for a common binary outcome using the modified Poisson approach (Zou 2004): a log-link Poisson model with robust sandwich standard errors. This is the preferred alternative to logistic regression when the outcome is frequent, since odds ratios overstate the risk ratio.
@@ -242,10 +271,10 @@ kk_rr_reg(df_rr, infection, c("exposure", "age"))
 #> # A tibble: 4 × 9
 #>   term     model_type risk_ratio conf.low conf.high std.error statistic p.value conf.level
 #>   <chr>    <chr>           <dbl>    <dbl>     <dbl>     <dbl>     <dbl>   <dbl>      <dbl>
-#> 1 exposure univariate       1.01    0.780      1.30   0.131      0.0603   0.952       0.95
-#> 2 age      univariate       1.00    0.992      1.02   0.00596    0.618    0.537       0.95
-#> 3 exposure multivari…       1.01    0.779      1.30   0.131      0.0483   0.961       0.95
-#> 4 age      multivari…       1.00    0.992      1.02   0.00596    0.616    0.538       0.95
+#> 1 exposure univariate      0.947    0.722      1.24   0.139      -0.394   0.693       0.95
+#> 2 age      univariate      1.00     0.992      1.02   0.00647     0.660   0.509       0.95
+#> 3 exposure multivari…      0.945    0.721      1.24   0.138      -0.405   0.685       0.95
+#> 4 age      multivari…      1.00     0.992      1.02   0.00648     0.666   0.505       0.95
 ```
 
 > **Interpretation.** Each row is an adjusted risk ratio; read the `multivariable` rows for the mutually-adjusted estimates. Exposure has RR ≈ 1.01 (95% CI 0.78–1.30, p ≈ 0.96) — no association, as expected since the outcome was simulated independently. The advantage over logistic regression: these are risk ratios, directly interpretable even though infection is common.
@@ -267,10 +296,10 @@ kk_rate_reg(df_rate, admissions, c("age", "sex"), person_time = pyears)
 #> # A tibble: 4 × 12
 #>   term  model_type    IRR conf.low conf.high std.error statistic p.value family dispersion
 #>   <chr> <chr>       <dbl>    <dbl>     <dbl>     <dbl>     <dbl>   <dbl> <chr>       <dbl>
-#> 1 age   univariate   1.00    0.992      1.01   0.00428     0.200   0.842 poiss…       1.50
-#> 2 sex   univariate   1.13    0.958      1.33   0.0845      1.44    0.149 poiss…       1.48
-#> 3 age   multivaria…  1.00    0.993      1.01   0.00433     0.344   0.731 poiss…       1.50
-#> 4 sex   multivaria…  1.13    0.960      1.34   0.0849      1.47    0.142 poiss…       1.50
+#> 1 age   univariate  1.00     0.993      1.01   0.00472    0.375    0.707 negbin       1.52
+#> 2 sex   univariate  0.991    0.819      1.20   0.0960    -0.0975   0.922 negbin       1.53
+#> 3 age   multivaria… 1.00     0.992      1.01   0.00473    0.369    0.712 negbin       1.53
+#> 4 sex   multivaria… 0.993    0.821      1.20   0.0963    -0.0706   0.944 negbin       1.53
 #> # ℹ 2 more variables: AIC <dbl>, conf.level <dbl>
 ```
 
@@ -292,8 +321,8 @@ df_bal %>% kk_smd(arm, variables = c("age", "smoker"))
 #> # A tibble: 2 × 8
 #>   variable level type        group1 group2    smd abs_smd imbalanced
 #> * <chr>    <chr> <chr>        <dbl>  <dbl>  <dbl>   <dbl> <lgl>     
-#> 1 age      <NA>  continuous   49.2   54.8  -0.683   0.683 TRUE      
-#> 2 smoker   1     categorical   0.37   0.44 -0.143   0.143 TRUE
+#> 1 age      <NA>  continuous    50.9   53.3 -0.323   0.323 TRUE      
+#> 2 smoker   1     categorical    0.5    0.4  0.202   0.202 TRUE
 ```
 
 > **Interpretation.** SMDs measure imbalance independent of sample size. Both covariates exceed the conventional |SMD| > 0.1 threshold (age −0.68, smoker −0.14) and are flagged `imbalanced = TRUE`, so the raw treated and control groups are not comparable — weighting or matching (e.g. `kk_iptw`) is warranted before estimating an effect.
@@ -315,8 +344,8 @@ kk_iptw(df_ip, trt, out, covariates = c("age", "sex"))
 #> # A tibble: 2 × 7
 #>   estimand metric          estimate conf.low conf.high p.value conf.level
 #>   <chr>    <chr>              <dbl>    <dbl>     <dbl>   <dbl>      <dbl>
-#> 1 ATE      Risk difference   0.0967   0.0104     0.183  0.0281       0.95
-#> 2 ATE      Risk ratio        1.18     1.02       1.37   0.0289       0.95
+#> 1 ATE      Risk difference   0.0327  -0.0550     0.120   0.464       0.95
+#> 2 ATE      Risk ratio        1.06     0.900      1.26    0.465       0.95
 ```
 
 > **Interpretation.** After inverse-probability weighting to balance age and sex, the *average treatment effect* is a risk difference of +0.097 (95% CI 0.010–0.183) and a risk ratio of 1.18 (1.02–1.37); both exclude the null (p ≈ 0.03), so treatment raises the outcome probability by ~10 percentage points. Confirm the weights achieved balance by re-running `kk_smd` on the weighted sample.
@@ -492,7 +521,7 @@ df_marker %>% kk_roc(disease, biomarker)
 #> # A tibble: 1 × 11
 #>     auc auc_low auc_high youden_j optimal_threshold sensitivity specificity   ppv   npv
 #>   <dbl>   <dbl>    <dbl>    <dbl>             <dbl>       <dbl>       <dbl> <dbl> <dbl>
-#> 1 0.726   0.669    0.783    0.350             0.519       0.662       0.688 0.619 0.727
+#> 1 0.737   0.680    0.794    0.349             0.724       0.612       0.737 0.637 0.716
 #> # ℹ 2 more variables: n <int>, conf.level <dbl>
 ```
 
@@ -510,7 +539,7 @@ df_marker %>% kk_compare_roc(disease, biomarker, established)
 #> # A tibble: 1 × 9
 #>   marker1   marker2      auc1  auc2 auc_difference statistic p_value method     conf.level
 #>   <chr>     <chr>       <dbl> <dbl>          <dbl>     <dbl>   <dbl> <chr>           <dbl>
-#> 1 biomarker established 0.726 0.582          0.144      3.15 0.00165 DeLong's …       0.95
+#> 1 biomarker established 0.737 0.601          0.136      3.10 0.00196 DeLong's …       0.95
 ```
 
 > **Interpretation.** The first biomarker discriminates significantly better than the established one (AUC 0.73 vs 0.58; difference 0.14, DeLong p = 0.0017). Because both markers are measured on the *same* subjects, the paired DeLong test is the correct comparison — a two-sample test would ignore their correlation and overstate uncertainty.
@@ -528,16 +557,16 @@ kk_calibration(df_cal, y, p)
 #> # A tibble: 10 × 5
 #>      grp     n observed_events observed_rate predicted_rate
 #>    <int> <int>           <dbl>         <dbl>          <dbl>
-#>  1     1    50               4          0.08         0.0779
-#>  2     2    50               5          0.1          0.152 
-#>  3     3    50              10          0.2          0.213 
-#>  4     4    50              12          0.24         0.263 
-#>  5     5    50              10          0.2          0.324 
-#>  6     6    50              14          0.28         0.379 
-#>  7     7    50              11          0.22         0.438 
-#>  8     8    50              19          0.38         0.507 
-#>  9     9    50              25          0.5          0.595 
-#> 10    10    50              28          0.56         0.743
+#>  1     1    50               5          0.1          0.0842
+#>  2     2    50               9          0.18         0.155 
+#>  3     3    50              12          0.24         0.212 
+#>  4     4    50              11          0.22         0.265 
+#>  5     5    50              10          0.2          0.311 
+#>  6     6    50              15          0.3          0.373 
+#>  7     7    50              12          0.24         0.437 
+#>  8     8    50              18          0.36         0.504 
+#>  9     9    50              26          0.52         0.602 
+#> 10    10    50              30          0.6          0.760
 ```
 
 > **Interpretation.** Each row is a risk decile: compare `observed_rate` with `predicted_rate`. Good calibration means the two track closely. Here the model over-predicts in the higher-risk deciles (decile 7: 22% observed vs 44% predicted; decile 10: 56% vs 74%), so its probabilities are too high for high-risk patients. Retrieve the Brier score and Hosmer-Lemeshow test from `attr(x, "brier")` and `attr(x, "hosmer_lemeshow")`.
@@ -554,14 +583,14 @@ kk_decision_curve(df_cal, y, p, thresholds = seq(0.05, 0.5, by = 0.05))
 #> # A tibble: 30 × 4
 #>   threshold strategy   net_benefit std_net_benefit
 #>       <dbl> <chr>            <dbl>           <dbl>
-#> 1      0.05 Model            0.239           0.865
-#> 2      0.05 Treat all        0.238           0.862
+#> 1      0.05 Model            0.258           0.870
+#> 2      0.05 Treat all        0.259           0.875
 #> 3      0.05 Treat none       0               0    
-#> 4      0.1  Model            0.197           0.715
-#> 5      0.1  Treat all        0.196           0.709
+#> 4      0.1  Model            0.215           0.726
+#> 5      0.1  Treat all        0.218           0.736
 #> 6      0.1  Treat none       0               0    
-#> 7      0.15 Model            0.160           0.579
-#> 8      0.15 Treat all        0.148           0.537
+#> 7      0.15 Model            0.179           0.604
+#> 8      0.15 Treat all        0.172           0.580
 #> # ℹ 22 more rows
 ```
 
