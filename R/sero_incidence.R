@@ -31,11 +31,17 @@
 #' @param age Age or age-group midpoint column (bare name or string); numeric.
 #' @param positive Seropositive count (aggregated) or 0/1 indicator (individual).
 #' @param year Calendar year of the survey (bare name or string); numeric.
+#'   Optional: with a single cross-sectional survey it may be omitted, in which
+#'   case only the `"catalytic"` method is available.
 #' @param total Sample size per age x survey (aggregated input). If omitted,
 #'   `positive` is treated as an individual 0/1 indicator and counts are formed by
 #'   aggregation.
 #' @param method `"cohort"` (default, between-survey) or `"catalytic"`
-#'   (within-survey age gradient).
+#'   (within-survey age gradient). A single survey requires `"catalytic"`.
+#' @param age_breaks Optional numeric vector of cut points used to group ages into
+#'   bands before estimation (e.g. `seq(0, 70, 10)`), so patient-level data with
+#'   exact ages can be binned in one call. Each band is represented by its
+#'   sample-size-weighted mean age.
 #' @param conf.level Confidence level (default 0.95).
 #'
 #' @return Tibble of FOI (annual incidence rate among susceptibles) estimates with
@@ -54,16 +60,27 @@
 #' sero <- rbind(make_survey(2000), make_survey(2010))
 #' kk_sero_incidence(sero, age, positive, year, total = total)
 #'
+#' # Single survey, patient-level data: bin ages and use the catalytic method
+#' set.seed(1)
+#' n <- 2000
+#' ages <- runif(n, 0, 70)
+#' pat <- data.frame(age = ages, seropos = rbinom(n, 1, 1 - exp(-0.05 * ages)))
+#' kk_sero_incidence(pat, age, seropos, method = "catalytic",
+#'                   age_breaks = seq(0, 70, 10))
+#'
 #' @export
-kk_sero_incidence <- function(data, age, positive, year, total = NULL,
+kk_sero_incidence <- function(data, age, positive, year = NULL, total = NULL,
                               method = c("cohort", "catalytic"),
+                              age_breaks = NULL,
                               conf.level = 0.95) {
   validate_data_frame(data)
   method <- match.arg(method)
 
   age_name <- .kk_colname(rlang::enquo(age))
   pos_name <- .kk_colname(rlang::enquo(positive))
-  year_name <- .kk_colname(rlang::enquo(year))
+  year_quo <- rlang::enquo(year)
+  has_year <- !rlang::quo_is_null(year_quo)
+  year_name <- if (has_year) .kk_colname(year_quo) else NULL
   total_quo <- rlang::enquo(total)
   has_total <- !rlang::quo_is_null(total_quo)
   total_name <- if (has_total) .kk_colname(total_quo) else NULL
@@ -72,28 +89,46 @@ kk_sero_incidence <- function(data, age, positive, year, total = NULL,
   if (length(missing_cols) > 0) {
     stop("Column(s) not found in data: ", paste(missing_cols, collapse = ", "))
   }
-  if (!is.numeric(data[[age_name]]) || !is.numeric(data[[year_name]])) {
-    stop("`age` and `year` must be numeric.")
+  if (!is.numeric(data[[age_name]])) stop("`age` must be numeric.")
+  if (has_year && !is.numeric(data[[year_name]])) stop("`year` must be numeric.")
+
+  # A single cross-sectional survey (no `year`) only supports the catalytic method
+  year_vec <- if (has_year) data[[year_name]] else rep(0, nrow(data))
+  if (!has_year && method == "cohort") {
+    stop("The cohort method needs a `year` (>= 2 surveys). ",
+         "For a single survey use method = 'catalytic'.")
   }
 
-  # Aggregate to one row per age x year with pos / n
+  # Build the per-record working frame (pos / n), then optionally bin ages so
+  # patient-level data can be grouped in one call.
   if (has_total) {
-    agg <- stats::aggregate(
-      cbind(pos = data[[pos_name]], n = data[[total_name]]) ~
-        age + year,
-      data = data.frame(age = data[[age_name]], year = data[[year_name]]),
-      FUN = sum
-    )
+    work <- data.frame(age = data[[age_name]], year = year_vec,
+      pos = data[[total_name]] * 0 + data[[pos_name]], n = data[[total_name]])
   } else {
     yv <- data[[pos_name]]
     if (!all(stats::na.omit(yv) %in% c(0, 1))) {
       stop("Without `total`, `positive` must be an individual 0/1 indicator.")
     }
-    agg <- stats::aggregate(
-      cbind(pos = y, n = 1) ~ age + year,
-      data = data.frame(age = data[[age_name]], year = data[[year_name]], y = yv),
-      FUN = sum
+    work <- data.frame(age = data[[age_name]], year = year_vec,
+      pos = as.numeric(yv), n = 1)
+  }
+
+  if (!is.null(age_breaks)) {
+    bin <- cut(work$age, breaks = age_breaks, include.lowest = TRUE, right = FALSE)
+    if (anyNA(bin)) {
+      warning(sum(is.na(bin)), " record(s) fell outside `age_breaks` and were dropped.")
+    }
+    work <- work[!is.na(bin), , drop = FALSE]
+    bin <- bin[!is.na(bin)]
+    grp <- interaction(bin, work$year, drop = TRUE)
+    agg <- data.frame(
+      age = as.numeric(tapply(work$age * work$n, grp, sum) / tapply(work$n, grp, sum)),
+      year = as.numeric(tapply(work$year, grp, function(x) x[1])),
+      pos = as.numeric(tapply(work$pos, grp, sum)),
+      n = as.numeric(tapply(work$n, grp, sum))
     )
+  } else {
+    agg <- stats::aggregate(cbind(pos = pos, n = n) ~ age + year, data = work, FUN = sum)
   }
   agg$p <- agg$pos / agg$n
   z <- stats::qnorm(1 - (1 - conf.level) / 2)

@@ -172,6 +172,19 @@ kk_sero_incidence(sero, age, positive, year, total = total) |>
 
 > **Interpretation.** Each row is one birth cohort followed from the first survey to the second: e.g. the 1995 cohort's seroprevalence rose from 22% (age 5, in 2000) to 51% (age 15, in 2010), implying a **force of infection of ~0.047 per year** — the annual rate at which still-susceptible members seroconverted. The estimates are stable across cohorts here (~0.045–0.051), correctly recovering the simulated 0.05, and every CI covers it. Because each estimate is tied to a specific cohort and age span, this is the age- and cohort-resolved incidence, with no reliance on case reporting. The model assumes lifelong seropositivity (no seroreversion) and negligible differential mortality by serostatus.
 
+With a **single** cross-sectional survey of **patient-level** data, omit `year`, group the exact ages with `age_breaks`, and use the `"catalytic"` method (which reads the FOI from the age gradient, assuming an endemic steady state):
+
+```{r ex-sero1}
+set.seed(1)
+n <- 3000
+pat <- data.frame(age = runif(n, 0, 70))
+pat$seropos <- rbinom(n, 1, 1 - exp(-0.05 * pat$age))   # true FOI = 0.05
+kk_sero_incidence(pat, age, seropos, method = "catalytic", age_breaks = seq(0, 70, 10)) |>
+  select(age_start, age_end, seroprev_start, seroprev_end, foi, foi_low, foi_high)
+```
+
+> **Interpretation.** `age_breaks` bins the raw ages into 10-year bands (each represented by its mean age), and the catalytic method estimates the FOI between consecutive bands from the rise in seroprevalence. The per-band estimates scatter around the true 0.05 (mean ~0.048) and are noisier than the cohort method, since a single survey must assume the FOI has been stable over time — but it needs only one study and no case data.
+
 #### `kk_rr_reg(data, outcome, predictors)`
 
 Estimates **adjusted risk ratios** for a common binary outcome using the modified Poisson approach (Zou 2004): a log-link Poisson model with robust sandwich standard errors. This is the preferred alternative to logistic regression when the outcome is frequent, since odds ratios overstate the risk ratio.

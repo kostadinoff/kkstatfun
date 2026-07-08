@@ -8,9 +8,10 @@ kk_sero_incidence(
   data,
   age,
   positive,
-  year,
+  year = NULL,
   total = NULL,
   method = c("cohort", "catalytic"),
+  age_breaks = NULL,
   conf.level = 0.95
 )
 }
@@ -23,14 +24,21 @@ kk_sero_incidence(
 
 \item{positive}{Seropositive count (aggregated) or 0/1 indicator (individual).}
 
-\item{year}{Calendar year of the survey (bare name or string); numeric.}
+\item{year}{Calendar year of the survey (bare name or string); numeric.
+Optional: with a single cross-sectional survey it may be omitted, in which
+case only the \code{"catalytic"} method is available.}
 
 \item{total}{Sample size per age x survey (aggregated input). If omitted,
 \code{positive} is treated as an individual 0/1 indicator and counts are formed by
 aggregation.}
 
 \item{method}{\code{"cohort"} (default, between-survey) or \code{"catalytic"}
-(within-survey age gradient).}
+(within-survey age gradient). A single survey requires \code{"catalytic"}.}
+
+\item{age_breaks}{Optional numeric vector of cut points used to group ages into
+bands before estimation (e.g. \code{seq(0, 70, 10)}), so patient-level data with
+exact ages can be binned in one call. Each band is represented by its
+sample-size-weighted mean age.}
 
 \item{conf.level}{Confidence level (default 0.95).}
 }
@@ -71,5 +79,13 @@ make_survey <- function(year, foi = 0.05, ages = seq(5, 65, 10), n = 500) {
 }
 sero <- rbind(make_survey(2000), make_survey(2010))
 kk_sero_incidence(sero, age, positive, year, total = total)
+
+# Single survey, patient-level data: bin ages and use the catalytic method
+set.seed(1)
+n <- 2000
+ages <- runif(n, 0, 70)
+pat <- data.frame(age = ages, seropos = rbinom(n, 1, 1 - exp(-0.05 * ages)))
+kk_sero_incidence(pat, age, seropos, method = "catalytic",
+                  age_breaks = seq(0, 70, 10))
 
 }
