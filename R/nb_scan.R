@@ -116,17 +116,14 @@ kk_nb_scan <- function(data, region, time, count, expected,
   }
   Vmat <- Mmat + Mmat^2 / size
 
-  # Pre-enumerate candidate spatial sets (nested circles per centre)
-  spatial_sets <- list()
-  centres <- integer(0)
-  for (c0 in seq_len(R)) {
+  # Distance-ordered region list per centre (nearest first, within max_radius).
+  # Candidate spatial circles are the nested prefixes of each list, which lets
+  # the scan accumulate scores with a cumulative sum rather than re-summing every
+  # circle from scratch.
+  ordered_regions <- lapply(seq_len(R), function(c0) {
     ord <- order(D[c0, ])
-    for (s in seq_along(ord)) {
-      if (D[c0, ord[s]] > max_radius) break
-      spatial_sets[[length(spatial_sets) + 1]] <- ord[seq_len(s)]
-      centres <- c(centres, c0)
-    }
-  }
+    ord[D[c0, ord] <= max_radius]
+  })
   # Candidate temporal windows (contiguous, length <= max_temporal)
   windows <- list()
   for (i in seq_len(T)) {
@@ -136,7 +133,11 @@ kk_nb_scan <- function(data, region, time, count, expected,
     }
   }
 
-  # Score of the single most likely cluster for a given count matrix
+  # Score of the single most likely cluster for a given count matrix. For each
+  # temporal window the per-region weighted residual and variance are formed once
+  # (a matrix-vector product); each centre's nested circles are then scored by a
+  # cumulative sum over its distance-ordered regions, so a region's contribution
+  # is added once rather than re-summed for every enclosing circle.
   best_score <- function(CC) {
     resid <- CC - Mmat
     best <- -Inf
@@ -145,15 +146,18 @@ kk_nb_scan <- function(data, region, time, count, expected,
       tw <- windows[[w]]
       # time-centred weights for trend, unit weights for elevated
       cw <- if (type == "trend") (times[tw] - mean(times[tw])) else rep(1, length(tw))
-      for (si in seq_along(spatial_sets)) {
-        sset <- spatial_sets[[si]]
-        num <- sum(resid[sset, tw, drop = FALSE] * rep(cw, each = length(sset)))
-        den <- sqrt(sum(Vmat[sset, tw, drop = FALSE] * rep(cw^2, each = length(sset))))
-        if (den <= 0) next
-        sc <- num / den
-        if (sc > best) {
-          best <- sc
-          best_meta <- list(center = centres[si], regions = sset, window = tw)
+      rnum <- as.vector(resid[, tw, drop = FALSE] %*% cw)
+      rden <- as.vector(Vmat[, tw, drop = FALSE] %*% (cw^2))
+      for (c0 in seq_len(R)) {
+        ord <- ordered_regions[[c0]]
+        num <- cumsum(rnum[ord])
+        den <- cumsum(rden[ord])
+        sc <- num / sqrt(den)
+        sc[den <= 0] <- -Inf
+        m <- which.max(sc)
+        if (sc[m] > best) {
+          best <- sc[m]
+          best_meta <- list(center = c0, regions = ord[seq_len(m)], window = tw)
         }
       }
     }
