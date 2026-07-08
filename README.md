@@ -458,6 +458,27 @@ df_test %>% kk_diagnostic(gold_standard, pcr_test)
 
 > **Interpretation.** The PCR test is highly accurate: 95% sensitivity and 97.8% specificity, AUC 0.96. Note the gap between PPV (0.83) and NPV (0.99) — driven by the low 10% prevalence, a positive result is only ~83% likely to be a true case, while a negative result all but rules disease out.
 
+#### `kk_diagnostic_lrt(pre_test_prob, sensitivity, specificity)`
+
+Translates sensitivity/specificity into the **bedside Bayesian update**: the positive and negative likelihood ratios and the **post-test probability** of disease after a positive or negative result, given a pre-test probability. Supplying the diseased/healthy counts adds confidence intervals (Simel 1991).
+
+*   **Clinical Example**: A D-dimer (sens 0.95, spec 0.60) in a patient with a 20% pre-test probability of pulmonary embolism.
+
+``` r
+kk_diagnostic_lrt(pre_test_prob = 0.20, sensitivity = 0.95, specificity = 0.60,
+                  n_diseased = 100, n_healthy = 400)
+#> # A tibble: 5 × 5
+#>   Metric                          Estimate    Lower   Upper Conf_Level
+#>   <chr>                              <dbl>    <dbl>   <dbl>      <dbl>
+#> 1 Pre-test probability              0.2    NA       NA            0.95
+#> 2 Positive likelihood ratio (LR+)   2.37    2.09     2.70         0.95
+#> 3 Negative likelihood ratio (LR-)   0.0833  0.0353   0.197        0.95
+#> 4 Post-test probability (test +)    0.373   0.343    0.403        0.95
+#> 5 Post-test probability (test -)    0.0204  0.00876  0.0468       0.95
+```
+
+> **Interpretation.** A negative test drives the probability of PE from 20% down to **~2%** (LR− = 0.08), low enough to safely rule out — the value of a sensitive test. A positive test raises it only to ~37% (LR+ = 2.4), so a positive D-dimer is not diagnostic and must be followed by imaging. This is Bayes' theorem in odds form: post-test odds = pre-test odds × likelihood ratio.
+
 #### `kk_roc(data, truth, predictor)`
 
 Builds an ROC curve for a continuous marker, returning the **AUC with a DeLong confidence interval** and the **Youden-optimal cutoff** together with the sensitivity, specificity, PPV, and NPV achieved at that threshold.
@@ -1712,6 +1733,27 @@ kk_markov(
 
 > **Interpretation.** Over the modelled horizon the cohort accrues about 29,063 in undiscounted cost and 8.07 QALYs; discounting future costs and effects at 3% lowers these to 22,276 and 6.68. Pairing two such runs (e.g. treatment vs. no treatment) feeds directly into `kk_icer` / `kk_nmb`.
 
+#### `kk_partsa(pfs, os, times, state_costs, state_utilities)`
+
+Runs a three-state **partitioned survival model** (the standard oncology HTA framework): state membership is read directly off the PFS and OS curves — Progression-Free = PFS(t), Progressed = OS(t) − PFS(t), Dead = 1 − OS(t) — and integrated (trapezoidal, half-cycle corrected) with per-state costs and utilities to give discounted life-years, QALYs and costs.
+
+
+``` r
+t <- seq(0, 10, by = 0.1)
+pfs <- exp(-0.5 * t)   # median PFS ~1.4y
+os  <- exp(-0.25 * t)  # median OS ~2.8y
+kk_partsa(pfs, os, times = t,
+          state_costs = c(PF = 12000, P = 8000, D = 0),
+          state_utilities = c(PF = 0.8, P = 0.6, D = 0))$summary
+#> # A tibble: 1 × 10
+#>   life_years life_years_disc qalys qalys_disc   cost cost_disc ly_pf ly_progressed
+#>        <dbl>           <dbl> <dbl>      <dbl>  <dbl>     <dbl> <dbl>         <dbl>
+#> 1       3.67            3.36  2.60       2.39 37323.    34388.  1.99          1.68
+#> # ℹ 2 more variables: disc_cost <dbl>, disc_effect <dbl>
+```
+
+> **Interpretation.** The cohort accrues **3.67 life-years** (the area under the OS curve: 1.99 progression-free + 1.68 progressed) and **2.60 QALYs** undiscounted, at a cost of ~£37,300; discounting at 3% lowers the QALYs to 2.39 and cost to £34,400. Because states come straight from the survival curves rather than transition probabilities, PartSA is quick to build but assumes the two curves are structurally consistent (OS ≥ PFS at all times, which the function enforces).
+
 #### `kk_discount(x, rate, times)`
 
 Discounts a stream of future costs or effects to **present value** with `PV = sum(x_t / (1 + rate)^t)`; the first element is treated as occurring now.
@@ -1890,6 +1932,58 @@ kk_nb_scan(d, region, time, count, expected, n_sim = 299, seed = 7)
 ```
 
 > **Interpretation.** The scan recovers the planted outbreak: a cluster of regions **6, 2, 5** during weeks **9–10** with 262 observed cases against 60 expected (p = 0.003). The estimated negative-binomial `size` of 3.2 quantifies the overdispersion that the scan accounts for — a Poisson scan on the same data would flag many more spurious clusters. Use `type = "trend"` to target gradually emerging outbreaks instead of step increases, and see the `scanstatistics` package for very large-scale surveillance systems.
+
+#### `kk_causal_mediation(data, exposure, mediator, outcome)` — mediation decomposition
+
+Decomposes an exposure's **total effect** into a **natural direct effect** (NDE, not through the mediator) and a **natural indirect effect** (NIE, through the mediator), by the regression-based product method with bootstrap CIs. Assumes a continuous mediator and no exposure-mediator interaction; effects are odds ratios for a binary outcome (rare-outcome approximation) or mean differences for a continuous one.
+
+
+``` r
+set.seed(1)
+n <- 800
+x <- rbinom(n, 1, 0.5)
+m <- 0.5 * x + rnorm(n)                              # exposure -> mediator
+y <- rbinom(n, 1, plogis(-1 + 0.3 * x + 0.6 * m))   # both paths open
+kk_causal_mediation(data.frame(x, m, y), x, m, y, boot_reps = 300)
+#> # A tibble: 4 × 6
+#>   Effect                Estimate Lower Upper Scale      Conf_Level
+#>   <chr>                    <dbl> <dbl> <dbl> <chr>           <dbl>
+#> 1 Total effect (TE)        1.58  1.10   2.21 odds ratio       0.95
+#> 2 Direct effect (NDE)      1.14  0.795  1.61 odds ratio       0.95
+#> 3 Indirect effect (NIE)    1.38  1.26   1.58 odds ratio       0.95
+#> 4 Proportion mediated      0.758 0.485  2.27 proportion       0.95
+```
+
+> **Interpretation.** The indirect effect (NIE OR ~1.38, 95% CI excludes 1) is the part of the exposure's effect that flows through the mediator `m`, and it is significant here; the direct effect (NDE) captures the remainder. The proportion mediated (~0.7) says most of the total effect operates through `m` — though note that proportion-mediated CIs are notoriously wide and unstable. Valid causal reading needs no unmeasured confounding of the exposure-outcome, mediator-outcome, and exposure-mediator relationships (add controls via `confounders`).
+
+#### `kk_apc(data, age, period, count, pop)` — age-period-cohort analysis
+
+Analyses rate trends by age, calendar period and birth cohort. Because cohort = period − age, their linear trends are **not separately identifiable**; the function therefore reports only estimable quantities — age-specific rates, the overall **net drift** (annual % change), and nested Poisson models whose deviances isolate the *non-linear* period and cohort contributions.
+
+
+``` r
+set.seed(3)
+d <- expand.grid(age = seq(30, 80, 5), period = seq(1970, 2015, 5))
+d$pop <- 2e6
+d$count <- rpois(nrow(d), d$pop * exp(-8 + 0.06 * (d$age - 55) - 0.025 * (d$period - 1990)))
+fit <- kk_apc(d, age, period, count, pop)
+fit$net_drift
+#> # A tibble: 1 × 3
+#>   annual_pct_change lower upper
+#>               <dbl> <dbl> <dbl>
+#> 1             -2.50 -2.54 -2.46
+fit$models
+#> # A tibble: 5 × 5
+#>   model             resid_dev resid_df    AIC lrt_p_vs_drift
+#>   <chr>                 <dbl>    <int>  <dbl>          <dbl>
+#> 1 Age                 14242.        99 15175.         NA    
+#> 2 Age-drift              64.9       98   999.         NA    
+#> 3 Age-Cohort             57.4       80  1028.          0.985
+#> 4 Age-Period             61.9       90  1012.          0.937
+#> 5 Age-Period-Cohort      49.9       72  1036.          0.847
+```
+
+> **Interpretation.** The **net drift** of ~−2.5%/yr is the estimable overall annual change in rates (here recovering the simulated period slope). The `models` deviance table shows that neither the Age-Period nor Age-Cohort model improves meaningfully on the Age-drift model (large `lrt_p_vs_drift`), i.e. there is no significant period *or* cohort *curvature* — the trend is a simple drift. What cannot be answered, by design, is how much of that drift is "period" versus "cohort": that split is not identifiable without an external assumption.
 
 ---
 

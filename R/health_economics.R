@@ -546,3 +546,102 @@ kk_evpi <- function(data, sim, strategy, cost, effect,
   }
   dplyr::bind_rows(out)
 }
+
+#' Partitioned Survival Analysis (KK)
+#'
+#' @description Runs a three-state partitioned survival model (PartSA), the
+#'   standard cost-effectiveness framework in oncology HTA. Rather than modelling
+#'   transitions, it partitions the cohort at each time point directly from two
+#'   survival curves: progression-free survival (PFS) and overall survival (OS).
+#'   State membership is `PF(t) = PFS(t)`, `Progressed(t) = OS(t) - PFS(t)`, and
+#'   `Dead(t) = 1 - OS(t)`. Time in each state is integrated (trapezoidal rule,
+#'   which applies the half-cycle correction at the interval level) and combined
+#'   with per-unit-time state costs and utilities, discounted, to give total
+#'   life-years, QALYs and costs.
+#'
+#' @param pfs,os Progression-free and overall survival at each `times` point.
+#'   Either numeric vectors of survival probabilities, or `survfit` objects from
+#'   which the survival is read off at `times`. OS must be >= PFS at every point.
+#' @param times Numeric vector of time points (in years) at which the curves are
+#'   evaluated; must start at 0.
+#' @param state_costs Length-3 numeric vector of annual costs for the
+#'   Progression-Free, Progressed, and Dead states (named or in that order).
+#' @param state_utilities Length-3 numeric vector of health utilities for the
+#'   three states (Dead is usually 0).
+#' @param disc_cost,disc_effect Annual discount rates for costs and effects
+#'   (default 0.03 each).
+#'
+#' @return A list with a `trace` tibble (state membership over time) and a
+#'   one-row `summary` tibble of undiscounted and discounted life-years, QALYs and
+#'   costs.
+#'
+#' @examples
+#' t <- seq(0, 10, by = 0.1)
+#' pfs <- exp(-0.5 * t)          # median PFS ~1.4y
+#' os <- exp(-0.25 * t)          # median OS ~2.8y
+#' kk_partsa(pfs, os, times = t,
+#'           state_costs = c(PF = 12000, P = 8000, D = 0),
+#'           state_utilities = c(PF = 0.8, P = 0.6, D = 0))
+#'
+#' @export
+kk_partsa <- function(pfs, os, times,
+                      state_costs, state_utilities,
+                      disc_cost = 0.03, disc_effect = 0.03) {
+  get_surv <- function(x, nm) {
+    if (inherits(x, "survfit")) {
+      s <- summary(x, times = times, extend = TRUE)$surv
+      if (length(s) != length(times)) {
+        stop(sprintf("Could not read `%s` survival at all `times`.", nm))
+      }
+      return(as.numeric(s))
+    }
+    if (!is.numeric(x) || length(x) != length(times)) {
+      stop(sprintf("`%s` must be a survfit object or a numeric vector matching `times`.", nm))
+    }
+    x
+  }
+  if (length(times) < 2 || times[1] != 0) stop("`times` must start at 0 and have >= 2 points.")
+  if (length(state_costs) != 3 || length(state_utilities) != 3) {
+    stop("`state_costs` and `state_utilities` must each have length 3 (PF, P, D).")
+  }
+
+  S_pfs <- get_surv(pfs, "pfs")
+  S_os <- get_surv(os, "os")
+  if (any(S_os + 1e-8 < S_pfs)) stop("`os` must be >= `pfs` at every time point.")
+
+  S_PF <- S_pfs
+  S_P <- pmax(S_os - S_pfs, 0)
+  S_D <- pmax(1 - S_os, 0)
+  states <- cbind(PF = S_PF, P = S_P, D = S_D)
+
+  # Discount factors evaluated at each time point
+  df_cost <- 1 / (1 + disc_cost)^times
+  df_eff <- 1 / (1 + disc_effect)^times
+
+  # Trapezoidal integral of a per-time quantity over `times`
+  trapz <- function(y) sum(diff(times) * (utils::head(y, -1) + utils::tail(y, -1)) / 2)
+
+  # Life-years / QALYs / costs, undiscounted and discounted
+  ly <- vapply(1:3, function(j) trapz(states[, j]), numeric(1))
+  ly_d <- vapply(1:3, function(j) trapz(states[, j] * df_eff), numeric(1))
+  qaly <- sum(vapply(1:3, function(j) trapz(states[, j] * state_utilities[j]), numeric(1)))
+  qaly_d <- sum(vapply(1:3, function(j) trapz(states[, j] * state_utilities[j] * df_eff), numeric(1)))
+  cost <- sum(vapply(1:3, function(j) trapz(states[, j] * state_costs[j]), numeric(1)))
+  cost_d <- sum(vapply(1:3, function(j) trapz(states[, j] * state_costs[j] * df_cost), numeric(1)))
+
+  trace <- tibble::tibble(
+    time = times, PF = S_PF, Progressed = S_P, Dead = S_D
+  )
+  # Life-years count time spent alive (PF + Progressed), not time-in-Dead
+  summary_tbl <- tibble::tibble(
+    life_years = ly[1] + ly[2],
+    life_years_disc = ly_d[1] + ly_d[2],
+    qalys = qaly,
+    qalys_disc = qaly_d,
+    cost = cost,
+    cost_disc = cost_d,
+    ly_pf = ly[1], ly_progressed = ly[2],
+    disc_cost = disc_cost, disc_effect = disc_effect
+  )
+  list(trace = trace, summary = summary_tbl)
+}
