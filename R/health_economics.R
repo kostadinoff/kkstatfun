@@ -444,3 +444,105 @@ kk_markov <- function(transition, costs, utilities, cycles,
 
   list(trace = trace_tbl, summary = summary_tbl)
 }
+
+#' Expected Value of Perfect Information (KK)
+#'
+#' @description Computes the expected value of perfect information (EVPI) from the
+#'   output of a probabilistic sensitivity analysis (PSA), quantifying the
+#'   expected cost of decision uncertainty at each willingness-to-pay threshold.
+#'   EVPI is the difference between the expected net benefit under perfect
+#'   information (choosing the best strategy in every simulation) and the expected
+#'   net benefit of the single strategy that is best on average:
+#'   `EVPI = E_theta[max_d NMB(d, theta)] - max_d E_theta[NMB(d, theta)]`.
+#'   Shares the PSA input format of [kk_ceac()].
+#'
+#' @param data Long-format data frame of PSA draws with one row per
+#'   simulation x strategy.
+#' @param sim Column identifying the simulation / iteration (bare name or string).
+#' @param strategy Column of strategy labels (bare name or string).
+#' @param cost Column of simulated costs (bare name or string).
+#' @param effect Column of simulated effects (bare name or string).
+#' @param wtp Numeric vector of willingness-to-pay thresholds to evaluate.
+#' @param pop_size Optional size of the affected population; when supplied the
+#'   population EVPI is returned alongside the per-patient value.
+#' @param horizon Optional decision time horizon in years over which the
+#'   population bears the decision (multiplies the population, discounted at
+#'   `disc_rate`). Ignored if `pop_size` is NULL.
+#' @param disc_rate Annual discount rate applied over `horizon` (default 0.03).
+#'
+#' @return Tibble with one row per threshold: the per-patient `evpi`, the
+#'   strategy optimal on the expected-NMB frontier (`optimal_strategy`), and, when
+#'   `pop_size` is supplied, `population_evpi`.
+#'
+#' @examples
+#' set.seed(1)
+#' psa <- do.call(rbind, lapply(1:400, function(i) {
+#'   data.frame(
+#'     sim = i,
+#'     strategy = c("A", "B"),
+#'     cost = c(rnorm(1, 8000, 1500), rnorm(1, 12000, 2000)),
+#'     effect = c(rnorm(1, 5.0, 0.3), rnorm(1, 5.5, 0.3))
+#'   )
+#' }))
+#' kk_evpi(psa, sim, strategy, cost, effect,
+#'         wtp = seq(0, 60000, 10000), pop_size = 5000, horizon = 10)
+#'
+#' @export
+kk_evpi <- function(data, sim, strategy, cost, effect,
+                    wtp = seq(0, 1e5, by = 5000),
+                    pop_size = NULL, horizon = NULL, disc_rate = 0.03) {
+  validate_data_frame(data)
+  sim_name <- .kk_colname(rlang::enquo(sim))
+  strat_name <- .kk_colname(rlang::enquo(strategy))
+  cost_name <- .kk_colname(rlang::enquo(cost))
+  effect_name <- .kk_colname(rlang::enquo(effect))
+
+  missing_cols <- setdiff(c(sim_name, strat_name, cost_name, effect_name), names(data))
+  if (length(missing_cols) > 0) {
+    stop("Column(s) not found in data: ", paste(missing_cols, collapse = ", "))
+  }
+
+  strategies <- sort(unique(as.character(data[[strat_name]])))
+  sims <- unique(data[[sim_name]])
+  n_sim <- length(sims)
+
+  # cost / effect matrices: rows = simulations, cols = strategies
+  cost_mat <- matrix(NA_real_, nrow = n_sim, ncol = length(strategies),
+    dimnames = list(NULL, strategies))
+  eff_mat <- cost_mat
+  sim_idx <- match(data[[sim_name]], sims)
+  strat_idx <- match(as.character(data[[strat_name]]), strategies)
+  cost_mat[cbind(sim_idx, strat_idx)] <- data[[cost_name]]
+  eff_mat[cbind(sim_idx, strat_idx)] <- data[[effect_name]]
+
+  if (anyNA(cost_mat) || anyNA(eff_mat)) {
+    stop("Every simulation must contain exactly one row per strategy.")
+  }
+
+  # Effective population when a horizon is supplied (discounted person-years)
+  pop_mult <- NULL
+  if (!is.null(pop_size)) {
+    pop_mult <- pop_size
+    if (!is.null(horizon)) {
+      years <- seq_len(horizon) - 1
+      pop_mult <- pop_size * sum(1 / (1 + disc_rate)^years)
+    }
+  }
+
+  out <- vector("list", length(wtp))
+  for (w in seq_along(wtp)) {
+    nmb <- eff_mat * wtp[w] - cost_mat
+    mean_nmb <- colMeans(nmb)
+    # E[max] under perfect info minus max of E (current decision)
+    evpi <- mean(apply(nmb, 1, max)) - max(mean_nmb)
+    evpi <- max(evpi, 0)  # numerical guard: EVPI is non-negative
+    row <- tibble::tibble(
+      wtp = wtp[w],
+      evpi = evpi,
+      optimal_strategy = strategies[which.max(mean_nmb)]
+    )
+    if (!is.null(pop_mult)) row$population_evpi <- evpi * pop_mult
+    out[[w]] <- row
+  }
+  dplyr::bind_rows(out)
+}

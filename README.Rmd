@@ -350,6 +350,18 @@ kk_calibration(df_cal, y, p)
 
 > **Interpretation.** Each row is a risk decile: compare `observed_rate` with `predicted_rate`. Good calibration means the two track closely. Here the model over-predicts in the higher-risk deciles (decile 7: 22% observed vs 44% predicted; decile 10: 56% vs 74%), so its probabilities are too high for high-risk patients. Retrieve the Brier score and Hosmer-Lemeshow test from `attr(x, "brier")` and `attr(x, "hosmer_lemeshow")`.
 
+#### `kk_decision_curve(data, truth, predictor, thresholds)`
+
+Evaluates **clinical utility** via decision curve analysis — the third leg alongside discrimination (`kk_roc`) and calibration (`kk_calibration`). At each threshold probability it computes the model's **net benefit** and compares it with the default "treat all" and "treat none" strategies. Returns a long, plot-ready tibble.
+
+*   **Clinical Example**: Deciding over what range of risk thresholds using the model to guide treatment beats simply treating everyone or no one.
+```{r ex-dca}
+# reuse the risk model from the calibration example (df_cal: y, p)
+kk_decision_curve(df_cal, y, p, thresholds = seq(0.05, 0.5, by = 0.05))
+```
+
+> **Interpretation.** Read across thresholds: the model is worth using wherever its `net_benefit` is the highest of the three strategies. "Treat all" starts high at low thresholds but falls (and turns negative) as the threshold rises, while "Treat none" is fixed at 0. Here the model's net benefit stays above both across the clinically relevant range, so it adds value over default strategies. A threshold `p_t` encodes the harm-to-benefit trade-off: `p_t = 0.2` means a missed case is judged 4× as costly as an unnecessary treatment.
+
 #### `kk_kappa(data, rater1, rater2)`
 
 Computes Cohen's Kappa coefficient ($\kappa$), standard error, Z-statistic, and confidence intervals to evaluate inter-rater agreement for categorical classifications.
@@ -1012,6 +1024,17 @@ psa <- do.call(rbind, lapply(1:200, function(i) data.frame(
 )))
 kk_ceac(psa, sim, strategy, cost, effect, wtp = seq(0, 60000, 20000))
 ```
+
+#### `kk_evpi(data, sim, strategy, cost, effect, wtp)`
+
+Computes the **expected value of perfect information** from the same PSA draws — the expected cost of decision uncertainty at each WTP, i.e. the most a rational decision-maker should pay to resolve all uncertainty before deciding. Supply `pop_size` (and optionally `horizon`) to scale it to the affected population.
+
+```{r ex-evpi}
+kk_evpi(psa, sim, strategy, cost, effect,
+        wtp = seq(0, 60000, 20000), pop_size = 5000, horizon = 10)
+```
+
+> **Interpretation.** Per-patient `evpi` is the value of eliminating decision uncertainty at each WTP. It is near zero at WTP = 0, where the cheaper strategy A clearly dominates (`optimal_strategy = A`), and grows once the decision switches to the more effective B and the net-benefit gap between strategies becomes more uncertain. `population_evpi` scales the per-patient value by the discounted population — an upper bound on what further research to resolve this uncertainty could be worth (here up to ~£84M at a £60k threshold).
 
 #### `kk_markov(transition, costs, utilities, cycles)`
 
