@@ -989,6 +989,21 @@ Sets a global ggplot2 theme font (loaded via `sysfonts`/`showtext`) for consiste
 set_plot_font("Roboto Condensed", size = 14)
 ```
 
+#### `set_plot_colors(colors)` / `kk_pal(n)` / `scale_fill_kk()`
+
+The colour counterpart to `set_plot_font()`. Register a set of anchor ("flag") colours once and **every discrete `kkplot`/`ggplot` fill and colour scale draws from them automatically**: fewer groups than anchors use your colours directly, more groups interpolate between them, and continuous scales (heatmaps) are left untouched. `kk_pal(n)` returns the palette for any `n`; `scale_fill_kk()` / `scale_colour_kk()` apply it to a single plot.
+
+```{r ex-colors, fig.height=3}
+set_plot_colors(c("#D62828", "#003049", "#F77F00"))   # your three flag colours
+
+library(ggplot2)
+kkplot(mtcars, aes(factor(cyl), fill = factor(cyl))) +
+  geom_bar() +
+  labs(x = "Cylinders", fill = "cyl")
+```
+
+> **Interpretation.** With three groups the bars are exactly the three flag colours; a fourth group would insert an interpolated colour between them, and so on. This applies globally after one call — put `set_plot_colors()` in your analysis preamble right after `set_plot_font()`. `kk_pal(2)` returns the first two anchors, `kk_pal(6)` returns six interpolated shades, and `scale_fill_kk()` forces the palette on an individual plot regardless of the global default.
+
 ---
 
 ### 11. Data Utilities & Setup
