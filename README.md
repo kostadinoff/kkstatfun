@@ -1628,6 +1628,12 @@ kkplot(mtcars, aes(factor(cyl), fill = factor(cyl))) +
 </div>
 
 > **Interpretation.** With three groups the bars are exactly the three flag colours; a fourth group would insert an interpolated colour between them, and so on. This applies globally after one call — put `set_plot_colors()` in your analysis preamble right after `set_plot_font()`. `kk_pal(2)` returns the first two anchors, `kk_pal(6)` returns six interpolated shades, and `scale_fill_kk()` forces the palette on an individual plot regardless of the global default.
+>
+> **Continuous fills** (heatmaps) stay viridis by default so they aren't hijacked. To build a *gradient* from the same anchors, add `scale_fill_kk_c()` (or `scale_colour_kk_c()`) to a plot, or pass `continuous = TRUE` to `set_plot_colors()` to make the flag gradient the global continuous default too:
+> ```r
+> set_plot_colors(c("#D62828", "#003049", "#F77F00"), continuous = TRUE)
+> kkplot(faithfuld, aes(waiting, eruptions, fill = density)) + geom_raster()
+> ```
 
 ---
 

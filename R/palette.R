@@ -49,6 +49,11 @@ kk_pal <- function(n, colors = getOption("kkstatfun.colors")) {
 #'   (default 24).
 #' @param set_default Whether to register the palette as the global ggplot2
 #'   default for discrete colour and fill (default TRUE).
+#' @param continuous Whether to also make a gradient built from the anchors the
+#'   global default for *continuous* colour and fill scales, e.g. heatmaps
+#'   (default FALSE, leaving continuous scales as ggplot2's viridis default). The
+#'   explicit [scale_fill_kk_c()] / [scale_colour_kk_c()] scales apply the
+#'   gradient to a single plot regardless of this setting.
 #'
 #' @return Invisibly, the validated anchor colours.
 #'
@@ -58,10 +63,14 @@ kk_pal <- function(n, colors = getOption("kkstatfun.colors")) {
 #' # now discrete fills/colours use the flag palette automatically
 #' kkplot(mtcars, ggplot2::aes(factor(cyl), fill = factor(cyl))) +
 #'   ggplot2::geom_bar()
+#'
+#' # opt in to the gradient for heatmaps too
+#' set_plot_colors(c("#D62828", "#003049", "#F77F00"), continuous = TRUE)
 #' }
 #'
 #' @export
-set_plot_colors <- function(colors, n_max = 24, set_default = TRUE) {
+set_plot_colors <- function(colors, n_max = 24, set_default = TRUE,
+                            continuous = FALSE) {
   if (!is.character(colors) || length(colors) < 1) {
     stop("`colors` must be a non-empty character vector of colours.")
   }
@@ -86,6 +95,19 @@ set_plot_colors <- function(colors, n_max = 24, set_default = TRUE) {
     )
     message(sprintf("✓ Default discrete palette set from %d anchor colour(s): %s",
       length(colors), paste(colors, collapse = ", ")))
+  }
+
+  if (continuous) {
+    anchors <- unname(colors)
+    options(
+      ggplot2.continuous.fill = function(...) {
+        ggplot2::scale_fill_gradientn(colours = anchors, ...)
+      },
+      ggplot2.continuous.colour = function(...) {
+        ggplot2::scale_colour_gradientn(colours = anchors, ...)
+      }
+    )
+    message("✓ Default continuous gradient set from the same anchors.")
   }
   invisible(unname(colors))
 }
@@ -122,3 +144,39 @@ scale_color_kk <- scale_colour_kk
 scale_fill_kk <- function(..., aesthetics = "fill") {
   ggplot2::discrete_scale(aesthetics, palette = function(n) kk_pal(n), ...)
 }
+
+#' Continuous KK Colour/Fill Gradient Scales
+#'
+#' @description ggplot2 *continuous* scales that build a gradient from the
+#'   registered [set_plot_colors()] anchors (via [ggplot2::scale_fill_gradientn()]
+#'   / [ggplot2::scale_colour_gradientn()]) — the continuous counterpart to
+#'   [scale_fill_kk()], for heatmaps and other continuously-mapped fills/colours.
+#'
+#' @param ... Passed to the underlying `gradientn` scale.
+#' @param colors Anchor colours; defaults to those set by [set_plot_colors()].
+#'
+#' @return A ggplot2 continuous scale.
+#'
+#' @examples
+#' \dontrun{
+#' kkplot(faithfuld, ggplot2::aes(waiting, eruptions, fill = density)) +
+#'   ggplot2::geom_raster() + scale_fill_kk_c()
+#' }
+#'
+#' @rdname scale_kk_c
+#' @export
+scale_fill_kk_c <- function(..., colors = getOption("kkstatfun.colors")) {
+  if (is.null(colors)) colors <- c("#D62828", "#003049", "#F77F00")
+  ggplot2::scale_fill_gradientn(colours = colors, ...)
+}
+
+#' @rdname scale_kk_c
+#' @export
+scale_colour_kk_c <- function(..., colors = getOption("kkstatfun.colors")) {
+  if (is.null(colors)) colors <- c("#D62828", "#003049", "#F77F00")
+  ggplot2::scale_colour_gradientn(colours = colors, ...)
+}
+
+#' @rdname scale_kk_c
+#' @export
+scale_color_kk_c <- scale_colour_kk_c

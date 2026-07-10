@@ -4,7 +4,7 @@
 \alias{set_plot_colors}
 \title{Set the Default Discrete Plot Palette}
 \usage{
-set_plot_colors(colors, n_max = 24, set_default = TRUE)
+set_plot_colors(colors, n_max = 24, set_default = TRUE, continuous = FALSE)
 }
 \arguments{
 \item{colors}{Character vector of anchor colours (hex codes), e.g. three flag
@@ -15,6 +15,12 @@ colours.}
 
 \item{set_default}{Whether to register the palette as the global ggplot2
 default for discrete colour and fill (default TRUE).}
+
+\item{continuous}{Whether to also make a gradient built from the anchors the
+global default for \emph{continuous} colour and fill scales, e.g. heatmaps
+(default FALSE, leaving continuous scales as ggplot2's viridis default). The
+explicit \code{\link[=scale_fill_kk_c]{scale_fill_kk_c()}} / \code{\link[=scale_colour_kk_c]{scale_colour_kk_c()}} scales apply the
+gradient to a single plot regardless of this setting.}
 }
 \value{
 Invisibly, the validated anchor colours.
@@ -36,6 +42,9 @@ set_plot_colors(c("#D62828", "#003049", "#F77F00"))
 # now discrete fills/colours use the flag palette automatically
 kkplot(mtcars, ggplot2::aes(factor(cyl), fill = factor(cyl))) +
   ggplot2::geom_bar()
+
+# opt in to the gradient for heatmaps too
+set_plot_colors(c("#D62828", "#003049", "#F77F00"), continuous = TRUE)
 }
 
 }
