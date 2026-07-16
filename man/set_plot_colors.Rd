@@ -4,11 +4,28 @@
 \alias{set_plot_colors}
 \title{Set the Default Discrete Plot Palette}
 \usage{
-set_plot_colors(colors, n_max = 24, set_default = TRUE, continuous = FALSE)
+set_plot_colors(
+  colors,
+  scheme = NULL,
+  n = NULL,
+  n_max = 24,
+  set_default = TRUE,
+  continuous = FALSE
+)
 }
 \arguments{
-\item{colors}{Character vector of anchor colours (hex codes), e.g. three flag
-colours.}
+\item{colors}{Character vector of \strong{1 to 12} anchor colours (hex codes or R
+colour names), e.g. three flag colours.}
+
+\item{scheme}{Optional name of a derived palette to build from \code{colors} with
+\code{\link[=kk_gen_palettes]{kk_gen_palettes()}} before registering — one of \code{"custom"}, \code{"sequential"},
+\code{"monochromatic"}, \code{"tints"}, \code{"shades"}, \code{"analogous"}, \code{"complementary"},
+\code{"split_complementary"}, \code{"triadic"}, \code{"tetradic"}, \code{"spectral"}. When
+\code{NULL} (default) \code{colors} are registered as-is.}
+
+\item{n}{Number of colours in the derived palette when \code{scheme} is supplied
+(default: the larger of \code{length(colors)} and 6). Ignored when \code{scheme} is
+\code{NULL}.}
 
 \item{n_max}{Largest number of discrete levels to pre-build palettes for
 (default 24).}
@@ -23,7 +40,7 @@ explicit \code{\link[=scale_fill_kk_c]{scale_fill_kk_c()}} / \code{\link[=scale_
 gradient to a single plot regardless of this setting.}
 }
 \value{
-Invisibly, the validated anchor colours.
+Invisibly, the validated anchor colours that were registered.
 }
 \description{
 Registers a set of anchor ("flag") colours and makes every
@@ -43,8 +60,15 @@ set_plot_colors(c("#D62828", "#003049", "#F77F00"))
 kkplot(mtcars, ggplot2::aes(factor(cyl), fill = factor(cyl))) +
   ggplot2::geom_bar()
 
+# derive a palette from a single seed and register it
+set_plot_colors("#D62828", scheme = "triadic", n = 6)
+
 # opt in to the gradient for heatmaps too
 set_plot_colors(c("#D62828", "#003049", "#F77F00"), continuous = TRUE)
 }
 
+}
+\seealso{
+\code{\link[=kk_gen_palettes]{kk_gen_palettes()}} to browse the derived schemes, and
+\code{\link[=kk_show_palettes]{kk_show_palettes()}} to preview them.
 }

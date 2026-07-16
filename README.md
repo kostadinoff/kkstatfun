@@ -1635,6 +1635,51 @@ kkplot(mtcars, aes(factor(cyl), fill = factor(cyl))) +
 > kkplot(faithfuld, aes(waiting, eruptions, fill = density)) + geom_raster()
 > ```
 
+#### `kk_gen_palettes(colors, n)` / `kk_show_palettes(palettes)`
+
+From **1 to 12** seed colours, derive a whole catalogue of named palettes — sequential/monochromatic ramps plus qualitative colour-theory schemes (analogous, complementary, triadic, tetradic, spectral, …) — each returned as exactly `n` hex colours. This is the programmatic counterpart to online generators such as coolors.co: browse the schemes, pick the one you like, then make it the plotting default with `set_plot_colors(seed, scheme = "...")`.
+
+
+``` r
+pals <- kk_gen_palettes("#D62828", n = 6)
+names(pals)
+#>  [1] "sequential"          "monochromatic"       "tints"              
+#>  [4] "shades"              "analogous"           "complementary"      
+#>  [7] "split_complementary" "triadic"             "tetradic"           
+#> [10] "spectral"
+pals$triadic
+#> [1] "#D62828" "#28D628" "#2828D6" "#ED8383" "#83ED83" "#8383ED"
+
+kk_show_palettes(pals)
+```
+
+<div class="figure">
+<img src="man/figures/README-ex-genpal-1.png" alt="plot of chunk ex-genpal" width="75%" />
+<p class="caption">plot of chunk ex-genpal</p>
+</div>
+
+> **Interpretation.** Schemes are built in HSV space from the **first** seed; the `sequential` ramp — and the `custom` entry, present only when you pass more than one seed — uses all seeds as anchors. The ramps (`sequential`, `monochromatic`, `tints`, `shades`) suit ordered or continuous quantities, while the qualitative schemes (`analogous`, `complementary`, `split_complementary`, `triadic`, `tetradic`, `spectral`) suit unordered categories. Where `n` exceeds a scheme's natural anchor count (e.g. `triadic` has three base hues), the extra colours are lightened/darkened variants of those hues.
+
+Pick a scheme and register it with `scheme =` — every discrete `kkplot` fill then draws from it:
+
+
+``` r
+set_plot_colors("#D62828", scheme = "triadic", n = 6)
+kk_pal(3)
+#> [1] "#D62828" "#28D628" "#2828D6"
+
+kkplot(mtcars, aes(factor(cyl), fill = factor(cyl))) +
+  geom_bar() +
+  labs(x = "Cylinders", fill = "cyl")
+```
+
+<div class="figure">
+<img src="man/figures/README-ex-genpal-set-1.png" alt="plot of chunk ex-genpal-set" width="75%" />
+<p class="caption">plot of chunk ex-genpal-set</p>
+</div>
+
+> **Note.** `set_plot_colors()` accepts **1 to 12** colours and errors clearly beyond that. With `scheme = NULL` (the default) your colours are registered exactly as given — the original behaviour is unchanged.
+
 ---
 
 ### 11. Data Utilities & Setup
