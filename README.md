@@ -1647,8 +1647,8 @@ names(pals)
 #>  [4] "shades"              "analogous"           "complementary"      
 #>  [7] "split_complementary" "triadic"             "tetradic"           
 #> [10] "spectral"
-pals$triadic
-#> [1] "#D62828" "#28D628" "#2828D6" "#ED8383" "#83ED83" "#8383ED"
+pals$analogous
+#> [1] "#D6289C" "#D6286E" "#D6283F" "#D63F28" "#D66E28" "#D69C28"
 
 kk_show_palettes(pals)
 ```
@@ -1664,9 +1664,9 @@ Pick a scheme and register it with `scheme =` — every discrete `kkplot` fill t
 
 
 ``` r
-set_plot_colors("#D62828", scheme = "triadic", n = 6)
+set_plot_colors("#D62828", scheme = "analogous", n = 6)
 kk_pal(3)
-#> [1] "#D62828" "#28D628" "#2828D6"
+#> [1] "#D6289C" "#D6286E" "#D6283F"
 
 kkplot(mtcars, aes(factor(cyl), fill = factor(cyl))) +
   geom_bar() +
@@ -1677,6 +1677,8 @@ kkplot(mtcars, aes(factor(cyl), fill = factor(cyl))) +
 <img src="man/figures/README-ex-genpal-set-1.png" alt="plot of chunk ex-genpal-set" width="75%" />
 <p class="caption">plot of chunk ex-genpal-set</p>
 </div>
+
+
 
 > **Note.** `set_plot_colors()` accepts **1 to 12** colours and errors clearly beyond that. With `scheme = NULL` (the default) your colours are registered exactly as given — the original behaviour is unchanged.
 

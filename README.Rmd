@@ -1017,7 +1017,7 @@ From **1 to 12** seed colours, derive a whole catalogue of named palettes — se
 ```{r ex-genpal, fig.height=5}
 pals <- kk_gen_palettes("#D62828", n = 6)
 names(pals)
-pals$triadic
+pals$analogous
 
 kk_show_palettes(pals)
 ```
@@ -1027,7 +1027,7 @@ kk_show_palettes(pals)
 Pick a scheme and register it with `scheme =` — every discrete `kkplot` fill then draws from it:
 
 ```{r ex-genpal-set, fig.height=3}
-set_plot_colors("#D62828", scheme = "triadic", n = 6)
+set_plot_colors("#D62828", scheme = "analogous", n = 6)
 kk_pal(3)
 
 kkplot(mtcars, aes(factor(cyl), fill = factor(cyl))) +
