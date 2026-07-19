@@ -16,16 +16,18 @@ kk_firth(data, outcome, predictors, conf.level = 0.95)
 \item{conf.level}{Confidence level (default 0.95).}
 }
 \value{
-Tibble of odds ratios with profile-penalized confidence intervals and
-p-values, carrying a logical attribute \code{separation} indicating whether
-separation was detected.
+Tibble of odds ratios for univariate and multivariable models with
+profile-penalized confidence intervals, p-values, and a \code{model_type}
+column (indicating "univariate" or "multivariable"). The tibble carries
+a logical attribute \code{separation} indicating whether separation was
+detected in the multivariable model.
 }
 \description{
-Fits a logistic regression using Firth's penalized likelihood,
-which removes the small-sample bias of maximum likelihood and yields finite
-estimates under complete or quasi-complete separation (e.g. rare events or
-a zero cell). Separation in the data is detected and reported. Returns a
-tidy odds-ratio table.
+Fits univariate and multivariable logistic regressions using
+Firth's penalized likelihood, which removes the small-sample bias of maximum
+likelihood and yields finite estimates under complete or quasi-complete
+separation (e.g. rare events or a zero cell). Separation in the data is
+detected and reported. Returns a tidy odds-ratio table.
 }
 \examples{
 \dontrun{

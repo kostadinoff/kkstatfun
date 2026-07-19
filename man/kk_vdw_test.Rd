@@ -5,7 +5,7 @@
 \title{van der Waerden Normal-Scores Test}
 \usage{
 kk_vdw_test(
-  data,
+  data = NULL,
   x = NULL,
   group = NULL,
   pairwise = TRUE,

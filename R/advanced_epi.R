@@ -33,13 +33,13 @@
 #'
 #' @export
 kk_stratified_2x2 <- function(data, exposure, outcome, strata, conf.level = 0.95, method = "mh") {
-              exposure_enquo <- rlang::enquo(exposure)
-              outcome_enquo <- rlang::enquo(outcome)
-              strata_enquo <- rlang::enquo(strata)
+              exp_name <- .kk_colname(rlang::enquo(exposure))
+              out_name <- .kk_colname(rlang::enquo(outcome))
+              str_name <- .kk_colname(rlang::enquo(strata))
 
-              exp_vec <- data %>% dplyr::pull(!!exposure_enquo)
-              out_vec <- data %>% dplyr::pull(!!outcome_enquo)
-              strata_vec <- data %>% dplyr::pull(!!strata_enquo)
+              exp_vec <- data[[exp_name]]
+              out_vec <- data[[out_name]]
+              strata_vec <- data[[str_name]]
 
               # Get unique strata
               strata_levels <- unique(strata_vec)
@@ -114,8 +114,8 @@ kk_stratified_2x2 <- function(data, exposure, outcome, strata, conf.level = 0.95
               # Iterative solution for expected a under common OR
               for (i in 1:k) {
                             # Solve quadratic equation for expected a
-                            A_coef <- mh_or - 1
-                            B_coef <- n1[i] + m1[i] + (mh_or - 1) * (n1[i] + m1[i])
+                            A_coef <- 1 - mh_or
+                            B_coef <- (n_total[i] - n1[i] - m1[i]) + mh_or * (n1[i] + m1[i])
                             C_coef <- -mh_or * n1[i] * m1[i]
 
                             if (abs(A_coef) < 1e-10) {
@@ -125,7 +125,13 @@ kk_stratified_2x2 <- function(data, exposure, outcome, strata, conf.level = 0.95
                                           if (discriminant >= 0) {
                                                         root1 <- (-B_coef + sqrt(discriminant)) / (2 * A_coef)
                                                         root2 <- (-B_coef - sqrt(discriminant)) / (2 * A_coef)
-                                                        expected_a[i] <- ifelse(root1 >= 0 && root1 <= min(n1[i], m1[i]), root1, root2)
+                                                        lim_max <- min(n1[i], m1[i])
+                                                        # Select the root that lies within the physical boundaries [0, lim_max]
+                                                        if (root1 >= -1e-7 && root1 <= lim_max + 1e-7) {
+                                                                      expected_a[i] <- max(0, min(root1, lim_max))
+                                                        } else {
+                                                                      expected_a[i] <- max(0, min(root2, lim_max))
+                                                        }
                                           } else {
                                                         expected_a[i] <- n1[i] * m1[i] / n_total[i]
                                           }
@@ -206,15 +212,19 @@ kk_stratified_2x2 <- function(data, exposure, outcome, strata, conf.level = 0.95
 #'
 #' @export
 kk_mcnemar <- function(data, exposure, outcome, pair_id = NULL, conf.level = 0.95, exact = TRUE) {
-              exposure_enquo <- rlang::enquo(exposure)
-              outcome_enquo <- rlang::enquo(outcome)
-              pair_enquo <- rlang::enquo(pair_id)
+              exp_name <- .kk_colname(rlang::enquo(exposure))
+              out_name <- .kk_colname(rlang::enquo(outcome))
+              pair_name <- if (!rlang::quo_is_null(rlang::enquo(pair_id))) .kk_colname(rlang::enquo(pair_id)) else NULL
 
-              exp_vec <- data %>% dplyr::pull(!!exposure_enquo)
-              out_vec <- data %>% dplyr::pull(!!outcome_enquo)
+              exp_vec <- data[[exp_name]]
+              out_vec <- data[[out_name]]
 
-              if (!rlang::quo_is_null(pair_enquo)) {
-                            pair_vec <- tryCatch(data %>% dplyr::pull(!!pair_enquo), error = function(e) NULL)
+              exposure_enquo <- rlang::sym(exp_name)
+              outcome_enquo <- rlang::sym(out_name)
+              pair_enquo <- if (!is.null(pair_name)) rlang::sym(pair_name) else NULL
+
+              if (!is.null(pair_enquo)) {
+                            pair_vec <- tryCatch(data[[pair_name]], error = function(e) NULL)
                             if (!is.null(pair_vec)) {
                                           pair_data <- data %>%
                                                         dplyr::select(!!pair_enquo, !!exposure_enquo, !!outcome_enquo) %>%
@@ -291,30 +301,41 @@ kk_mcnemar <- function(data, exposure, outcome, pair_id = NULL, conf.level = 0.9
 #'
 #' @export
 kk_trend_test <- function(data, outcome, dose_group, scores = NULL, conf.level = 0.95) {
-              outcome_enquo <- rlang::enquo(outcome)
-              dose_enquo <- rlang::enquo(dose_group)
+              outcome_name <- .kk_colname(rlang::enquo(outcome))
+              dose_name <- .kk_colname(rlang::enquo(dose_group))
 
-              out_vec <- data %>% dplyr::pull(!!outcome_enquo)
-              dose_vec <- data %>% dplyr::pull(!!dose_enquo)
+              # Filter out NA values in outcome and dose_group
+              clean_data <- data %>%
+                            dplyr::filter(!is.na(!!rlang::sym(outcome_name)), !is.na(!!rlang::sym(dose_name)))
+
+              out_vec <- clean_data[[outcome_name]]
+              dose_vec <- clean_data[[dose_name]]
 
               # Auto-detect if arguments are swapped:
               # The outcome variable must be binary (usually 2 unique values).
               # If the dose_group has 2 unique values and outcome has more than 2 unique values,
               # we swap them to match user expectations (exposure_level, outcome).
-              if (length(unique(out_vec)) > 2 && length(unique(dose_vec)) == 2) {
+              if (length(unique(stats::na.omit(out_vec))) > 2 && length(unique(stats::na.omit(dose_vec))) == 2) {
                             tmp_vec <- out_vec
                             out_vec <- dose_vec
                             dose_vec <- tmp_vec
 
-                            tmp_enquo <- outcome_enquo
-                            outcome_enquo <- dose_enquo
-                            dose_enquo <- tmp_enquo
+                            tmp_name <- outcome_name
+                            outcome_name <- dose_name
+                            dose_name <- tmp_name
               }
+
+              outcome_enquo <- rlang::sym(outcome_name)
+              dose_enquo <- rlang::sym(dose_name)
 
               # Convert to factor and get levels
               dose_fac <- factor(dose_vec)
               levels_dose <- levels(dose_fac)
               k <- length(levels_dose)
+
+              if (k < 2) {
+                            stop("dose_group must have at least 2 levels.")
+              }
 
               # Assign scores
               if (is.null(scores)) {
@@ -324,7 +345,7 @@ kk_trend_test <- function(data, outcome, dose_group, scores = NULL, conf.level =
               }
 
               # Create summary table
-              summary_tbl <- data %>%
+              summary_tbl <- clean_data %>%
                             dplyr::group_by(!!dose_enquo) %>%
                             dplyr::summarise(
                                           cases = sum(!!outcome_enquo == 1, na.rm = TRUE),
@@ -339,23 +360,42 @@ kk_trend_test <- function(data, outcome, dose_group, scores = NULL, conf.level =
               N <- sum(n)
 
               # Cochran-Armitage test statistic.
-              # With numerator U* = N * sum(s_i (r_i - n_i R/N)), the matching
-              # variance carries a 1/N factor; omitting it understates z by a
-              # factor of sqrt(N). Verified against stats::prop.trend.test().
+              # Use prop.trend.test for robust calculation of Cochran-Armitage statistic and p-value
               numerator <- N * sum(scores * r) - R * sum(scores * n)
-              denominator <- sqrt(R * (N - R) * (N * sum(scores^2 * n) - (sum(scores * n))^2) / N)
-              z_ca <- numerator / denominator
-              pvalue_ca <- 2 * stats::pnorm(abs(z_ca), lower.tail = FALSE)
+              prop_res <- tryCatch(stats::prop.trend.test(r, n, score = scores), error = function(e) NULL)
+              
+              if (!is.null(prop_res) && !is.na(prop_res$statistic)) {
+                            z_ca <- sign(numerator) * sqrt(prop_res$statistic)
+                            pvalue_ca <- prop_res$p.value
+              } else {
+                            # Fallback to manual formula if prop.trend.test fails
+                            term <- N * sum(scores^2 * n) - (sum(scores * n))^2
+                            denominator <- sqrt(R * (N - R) * term / N)
+                            z_ca <- numerator / denominator
+                            pvalue_ca <- 2 * stats::pnorm(abs(z_ca), lower.tail = FALSE)
+              }
 
               # Trend OR per unit increase in score
               # Fit logistic regression
               dose_numeric <- scores[as.numeric(dose_fac)]
-              model <- stats::glm(out_vec ~ dose_numeric, family = stats::binomial())
-              trend_or <- exp(stats::coef(model)[2])
-              trend_or_se <- summary(model)$coefficients[2, 2]
-              z <- stats::qnorm(1 - (1 - conf.level) / 2)
-              trend_or_lower <- exp(log(trend_or) - z * trend_or_se)
-              trend_or_upper <- exp(log(trend_or) + z * trend_or_se)
+              model <- tryCatch(
+                            stats::glm(out_vec ~ dose_numeric, family = stats::binomial()),
+                            error = function(e) NULL
+              )
+              
+              if (!is.null(model)) {
+                            trend_or <- exp(stats::coef(model)[2])
+                            trend_or_se <- summary(model)$coefficients[2, 2]
+                            z <- stats::qnorm(1 - (1 - conf.level) / 2)
+                            trend_or_lower <- exp(log(trend_or) - z * trend_or_se)
+                            trend_or_upper <- exp(log(trend_or) + z * trend_or_se)
+                            p_or <- summary(model)$coefficients[2, 4]
+              } else {
+                            trend_or <- NA_real_
+                            trend_or_lower <- NA_real_
+                            trend_or_upper <- NA_real_
+                            p_or <- NA_real_
+              }
 
               # Results
               tibble::tibble(
@@ -363,7 +403,7 @@ kk_trend_test <- function(data, outcome, dose_group, scores = NULL, conf.level =
                             Statistic = c(z_ca, trend_or),
                             Lower = c(NA, trend_or_lower),
                             Upper = c(NA, trend_or_upper),
-                            P_Value = c(pvalue_ca, summary(model)$coefficients[2, 4]),
+                            P_Value = c(pvalue_ca, p_or),
                             Conf_Level = conf.level,
                             N_Groups = k,
                             Total_N = N

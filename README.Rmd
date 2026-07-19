@@ -12,7 +12,7 @@ knitr::opts_chunk$set(
 )
 options(width = 90, tibble.print_min = 8, tibble.print_max = 20)
 set.seed(1)
-devtools::load_all('.', quiet = TRUE)
+pkgload::load_all('.', quiet = TRUE)
 suppressWarnings(suppressMessages(
   set_plot_font(font = 'sans', size = 12, search_sources = 'system')
 ))

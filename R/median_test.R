@@ -48,7 +48,7 @@
 #' kk_median_test(df, scores, gender)
 #'
 #' @export
-kk_median_test <- function(data, x = NULL, group = NULL,
+kk_median_test <- function(data = NULL, x = NULL, group = NULL,
                            tie_action = c("below", "drop", "split"),
                            alternative = c("two.sided", "less", "greater"),
                            continuity_correction = TRUE,
@@ -58,7 +58,7 @@ kk_median_test <- function(data, x = NULL, group = NULL,
   alternative <- match.arg(alternative)
   
   # Handle grouped data frame
-  if (dplyr::is_grouped_df(data)) {
+  if (!is.null(data) && dplyr::is_grouped_df(data)) {
     x_enquo <- rlang::enquo(x)
     group_enquo <- rlang::enquo(group)
     res <- data %>%
@@ -80,7 +80,13 @@ kk_median_test <- function(data, x = NULL, group = NULL,
   group_enquo <- rlang::enquo(group)
   
   # Handle data frame vs vector input
-  if (is.data.frame(data)) {
+  if (is.null(data)) {
+    if (is.null(x) || is.null(group)) {
+      stop("Argument 'x' and 'group' must be specified when 'data' is NULL.")
+    }
+    vec <- x
+    grp <- group
+  } else if (is.data.frame(data)) {
     if (rlang::quo_is_null(x_enquo)) {
       stop("Argument 'x' must be specified when 'data' is a data frame.")
     }
@@ -93,7 +99,11 @@ kk_median_test <- function(data, x = NULL, group = NULL,
     vec <- data
     grp <- group
     if (is.null(grp)) {
-      stop("Argument 'group' must be specified when 'data' is a vector.")
+      if (!is.null(x)) {
+        grp <- x
+      } else {
+        stop("Argument 'group' must be specified when 'data' is a vector.")
+      }
     }
   }
   

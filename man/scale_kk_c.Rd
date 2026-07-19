@@ -22,8 +22,8 @@ A ggplot2 continuous scale.
 }
 \description{
 ggplot2 \emph{continuous} scales that build a gradient from the
-registered \code{\link[=set_plot_colors]{set_plot_colors()}} anchors (via \code{\link[ggplot2:scale_fill_gradientn]{ggplot2::scale_fill_gradientn()}}
-/ \code{\link[ggplot2:scale_colour_gradientn]{ggplot2::scale_colour_gradientn()}}) — the continuous counterpart to
+registered \code{\link[=set_plot_colors]{set_plot_colors()}} anchors (via \code{\link[ggplot2:scale_gradient]{ggplot2::scale_fill_gradientn()}}
+/ \code{\link[ggplot2:scale_gradient]{ggplot2::scale_colour_gradientn()}}) — the continuous counterpart to
 \code{\link[=scale_fill_kk]{scale_fill_kk()}}, for heatmaps and other continuously-mapped fills/colours.
 }
 \examples{

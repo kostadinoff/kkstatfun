@@ -9,7 +9,15 @@
               if (is.character(expr)) {
                             return(expr)
               }
-              rlang::as_name(rlang::quo_get_expr(quo))
+              # If it's a symbol, try evaluating it in the quosure's environment
+              # (supporting loop variables and parameters passed from parent scopes)
+              env <- rlang::quo_get_env(quo)
+              if (is.null(env)) env <- parent.frame()
+              val <- tryCatch(eval(expr, envir = env), error = function(e) NULL)
+              if (is.character(val) && length(val) == 1) {
+                            return(val)
+              }
+              rlang::as_name(expr)
 }
 
 #' Cox Proportional Hazards Model (KK)

@@ -77,21 +77,22 @@ kk_smr <- function(data, observed, pop, ref_rate, conf.level = 0.95,
 }
 
 #' Firth-Penalized Logistic Regression (KK)
-#'
-#' @description Fits a logistic regression using Firth's penalized likelihood,
-#'   which removes the small-sample bias of maximum likelihood and yields finite
-#'   estimates under complete or quasi-complete separation (e.g. rare events or
-#'   a zero cell). Separation in the data is detected and reported. Returns a
-#'   tidy odds-ratio table.
+#' @description Fits univariate and multivariable logistic regressions using
+#'   Firth's penalized likelihood, which removes the small-sample bias of maximum
+#'   likelihood and yields finite estimates under complete or quasi-complete
+#'   separation (e.g. rare events or a zero cell). Separation in the data is
+#'   detected and reported. Returns a tidy odds-ratio table.
 #'
 #' @param data Data frame.
 #' @param outcome Binary outcome column (bare name or string).
 #' @param predictors Character vector of predictor column names.
 #' @param conf.level Confidence level (default 0.95).
 #'
-#' @return Tibble of odds ratios with profile-penalized confidence intervals and
-#'   p-values, carrying a logical attribute `separation` indicating whether
-#'   separation was detected.
+#' @return Tibble of odds ratios for univariate and multivariable models with
+#'   profile-penalized confidence intervals, p-values, and a `model_type`
+#'   column (indicating "univariate" or "multivariable"). The tibble carries
+#'   a logical attribute `separation` indicating whether separation was
+#'   detected in the multivariable model.
 #'
 #' @examples
 #' \dontrun{
@@ -125,36 +126,43 @@ kk_firth <- function(data, outcome, predictors, conf.level = 0.95) {
                                   else if (is.logical(y_raw)) as.integer(y_raw)
                                   else as.numeric(y_raw)
 
-              fml <- stats::as.formula(paste(out_name, "~",
-                                             paste(predictors, collapse = " + ")))
+              fit_one <- function(rhs, model_type) {
+                            fml <- stats::as.formula(paste(out_name, "~", rhs))
+                            model <- stats::glm(fml, data = data, family = stats::binomial(),
+                                                method = brglm2::brglmFit, type = "AS_mean")
+                            broom::tidy(model, conf.int = TRUE, conf.level = conf.level) %>%
+                                          dplyr::transmute(
+                                                        term = .data$term,
+                                                        model_type = model_type,
+                                                        odds_ratio = exp(.data$estimate),
+                                                        conf.low = exp(.data$conf.low),
+                                                        conf.high = exp(.data$conf.high),
+                                                        std.error = .data$std.error,
+                                                        statistic = .data$statistic,
+                                                        p.value = .data$p.value,
+                                                        conf.level = conf.level
+                                          ) %>%
+                                          dplyr::filter(.data$term != "(Intercept)")
+              }
+
+              univariate <- purrr::map_dfr(predictors, function(p) fit_one(p, "univariate"))
+              multivariable_formula_str <- paste(predictors, collapse = " + ")
+              multivariable <- fit_one(multivariable_formula_str, "multivariable")
+
+              res <- dplyr::bind_rows(univariate, multivariable)
 
               # Detect separation (pass the fitter as a function, since the
               # package is loaded via requireNamespace and not attached)
               separation <- FALSE
               if (requireNamespace("detectseparation", quietly = TRUE)) {
+                            fml_mv <- stats::as.formula(paste(out_name, "~", multivariable_formula_str))
                             det <- tryCatch(
-                                          stats::glm(fml, data = data, family = stats::binomial(),
+                                          stats::glm(fml_mv, data = data, family = stats::binomial(),
                                                      method = detectseparation::detect_separation),
                                           error = function(e) NULL
                             )
                             if (!is.null(det)) separation <- isTRUE(det$outcome)
               }
-
-              model <- stats::glm(fml, data = data, family = stats::binomial(),
-                                  method = brglm2::brglmFit, type = "AS_mean")
-
-              res <- broom::tidy(model, conf.int = TRUE, conf.level = conf.level) %>%
-                            dplyr::transmute(
-                                          term = .data$term,
-                                          odds_ratio = exp(.data$estimate),
-                                          conf.low = exp(.data$conf.low),
-                                          conf.high = exp(.data$conf.high),
-                                          std.error = .data$std.error,
-                                          statistic = .data$statistic,
-                                          p.value = .data$p.value,
-                                          conf.level = conf.level
-                            ) %>%
-                            dplyr::filter(.data$term != "(Intercept)")
 
               attr(res, "separation") <- separation
               res

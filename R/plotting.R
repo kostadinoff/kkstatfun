@@ -306,9 +306,9 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                                         # Subtle minor ticks (half the major length); only rendered
                                                         # when requested via kkplot(minor_ticks = TRUE).
                                                         axis.minor.ticks.length = unit(tick_len / 2, "mm"),
-                                                        plot.title = ggtext::element_markdown(family = font_family, size = title_size, hjust = 0, vjust = 1, margin = margin(t = 2, b = 2), face = "bold"),
-                                                        plot.subtitle = ggtext::element_markdown(family = font_family, size = subtitle_size, lineheight = 1, margin = margin(b = 2)),
-                                                        plot.caption = ggtext::element_markdown(family = font_family, hjust = 0.5, vjust = 1, size = caption_size),
+                                                        plot.title = element_text(family = font_family, size = title_size, hjust = 0, vjust = 1, margin = margin(t = 2, b = 2), face = "bold"),
+                                                        plot.subtitle = element_text(family = font_family, size = subtitle_size, lineheight = 1, margin = margin(b = 2)),
+                                                        plot.caption = element_text(family = font_family, hjust = 0.5, vjust = 1, size = caption_size),
                                                         plot.caption.position = "plot",
                                                         # Flush-left title/subtitle to the figure edge (Tufte layout),
                                                         # consistent with the flush caption.

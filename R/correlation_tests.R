@@ -231,14 +231,14 @@ kk_compare_independent_correlations <- function(data, x = NULL, y = NULL, group 
 #' kk_compare_dependent_correlations(rxz = 0.955, ryz = 0.52, rxy = 0.37, n = 5)
 #'
 #' @export
-kk_compare_dependent_correlations <- function(data, x = NULL, y = NULL, z = NULL,
+kk_compare_dependent_correlations <- function(data = NULL, x = NULL, y = NULL, z = NULL,
                                               rxz = NULL, ryz = NULL, rxy = NULL, n = NULL,
                                               alternative = c("two.sided", "less", "greater")) {
   
   alternative <- match.arg(alternative)
   
   # Handle grouped data frame
-  if (dplyr::is_grouped_df(data)) {
+  if (!is.null(data) && dplyr::is_grouped_df(data)) {
     x_enquo <- rlang::enquo(x)
     y_enquo <- rlang::enquo(y)
     z_enquo <- rlang::enquo(z)
@@ -265,7 +265,15 @@ kk_compare_dependent_correlations <- function(data, x = NULL, y = NULL, z = NULL
   }
   
   # Handle raw data vs pre-calculated input
-  if (is.data.frame(data)) {
+  if (is.null(data)) {
+    rxz_val <- rxz
+    ryz_val <- ryz
+    rxy_val <- rxy
+    n_val <- n
+    if (is.null(rxz_val) || is.null(ryz_val) || is.null(rxy_val) || is.null(n_val)) {
+      stop("Must specify either (x, y, z) for raw data or (rxz, ryz, rxy, n) for pre-computed correlations.")
+    }
+  } else if (is.data.frame(data)) {
     x_enquo <- rlang::enquo(x)
     y_enquo <- rlang::enquo(y)
     z_enquo <- rlang::enquo(z)

@@ -5,7 +5,7 @@
 \title{Median Test for Independent Samples}
 \usage{
 kk_median_test(
-  data,
+  data = NULL,
   x = NULL,
   group = NULL,
   tie_action = c("below", "drop", "split"),

@@ -5,7 +5,7 @@
 \title{Compare Dependent Correlations}
 \usage{
 kk_compare_dependent_correlations(
-  data,
+  data = NULL,
   x = NULL,
   y = NULL,
   z = NULL,

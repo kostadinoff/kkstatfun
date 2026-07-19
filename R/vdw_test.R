@@ -43,12 +43,12 @@
 #' kk_vdw_test(df, scores, groups)
 #'
 #' @export
-kk_vdw_test <- function(data, x = NULL, group = NULL,
+kk_vdw_test <- function(data = NULL, x = NULL, group = NULL,
                         pairwise = TRUE,
                         adjust_method = "bonferroni") {
   
   # Handle grouped data frame
-  if (dplyr::is_grouped_df(data)) {
+  if (!is.null(data) && dplyr::is_grouped_df(data)) {
     x_enquo <- rlang::enquo(x)
     group_enquo <- rlang::enquo(group)
     res <- data %>%
@@ -68,7 +68,13 @@ kk_vdw_test <- function(data, x = NULL, group = NULL,
   x_enquo <- rlang::enquo(x)
   group_enquo <- rlang::enquo(group)
   
-  if (is.data.frame(data)) {
+  if (is.null(data)) {
+    if (is.null(x) || is.null(group)) {
+      stop("Argument 'x' and 'group' must be specified when 'data' is NULL.")
+    }
+    vec <- x
+    grp <- group
+  } else if (is.data.frame(data)) {
     if (rlang::quo_is_null(x_enquo)) {
       stop("Argument 'x' must be specified when 'data' is a data frame.")
     }
@@ -81,7 +87,11 @@ kk_vdw_test <- function(data, x = NULL, group = NULL,
     vec <- data
     grp <- group
     if (is.null(grp)) {
-      stop("Argument 'group' must be specified when 'data' is a vector.")
+      if (!is.null(x)) {
+        grp <- x
+      } else {
+        stop("Argument 'group' must be specified when 'data' is a vector.")
+      }
     }
   }
   

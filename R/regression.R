@@ -30,18 +30,27 @@
 kk_reg <- function(data, outcome, predictors, log_outcome = FALSE, custom_formula = NULL, include_diagnostics = TRUE, ...) {
               # Validate inputs
               if (!is.data.frame(data)) stop("`data` must be a data frame.")
-              if (!rlang::is_string(outcome)) stop("`outcome` must be a character string.")
               if (!is.character(predictors)) stop("`predictors` must be a character vector.")
               if (!is.logical(log_outcome)) stop("`log_outcome` must be a logical value (TRUE or FALSE).")
               if (!is.logical(include_diagnostics)) stop("`include_diagnostics` must be a logical value.")
 
-              # Capture outcome as symbol
-              outcome_sym <- rlang::ensym(outcome)
-              outcome_name <- rlang::as_name(outcome_sym)
+              # Resolve outcome name (accepts bare symbol or string, supports loops)
+              outcome_name <- .kk_colname(rlang::enquo(outcome))
+              outcome_sym <- rlang::sym(outcome_name)
 
               # Check if outcome exists
               if (!outcome_name %in% colnames(data)) {
                             stop("Outcome variable '", outcome_name, "' not found in the data.")
+              }
+
+              # Check for 0/1 numeric outcome to prevent silent linear regression fitting
+              if (is.numeric(data[[outcome_name]])) {
+                            unique_vals <- unique(stats::na.omit(data[[outcome_name]]))
+                            if (all(unique_vals %in% c(0, 1))) {
+                                          stop("Outcome variable '", outcome_name, "' is numeric with only 0/1 values. ",
+                                               "kk_reg() will not fit a logistic regression unless the outcome is a factor. ",
+                                               "Please convert it using factor() or as.factor() first.")
+                            }
               }
 
               # Check if predictors exist
