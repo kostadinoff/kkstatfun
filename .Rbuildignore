@@ -1,0 +1,4 @@
+^booksources$
+^booksources/.*$
+^Rplots\.pdf$
+^\.claude$

@@ -95,6 +95,24 @@ df_int %>% kk_reri(asbestos, smoking, cancer)
 
 > **Interpretation.** RERI is the excess risk on the *additive* scale beyond the sum of the two separate exposure effects. Here RERI = 0.44 but its 95% CI (−0.42 to 1.29) includes 0, so there is no evidence of additive interaction — the joint effect is consistent with independent effects. (Simulated data, so the point estimate will differ from a real study.)
 
+#### `kk_paf(data, outcome, exposure, covariates)`
+
+Calculates crude and model-adjusted Population Attributable Fraction (PAF), Attributable Fraction in Exposed ($\text{AF}_{\text{exp}}$), and Population Attributable Risk ($\text{PAR}$). Uses Bruzzi's model-based standardization and Miettinen's formula via logistic regression for adjusted estimates with bootstrap confidence intervals.
+
+*   **Epidemiological Example**: Estimating the population attributable fraction of smoking on disease risk adjusted for age and BMI confounding.
+```{r ex-paf}
+set.seed(123)
+df_paf <- data.frame(
+  disease = rbinom(200, 1, 0.3),
+  smoking = rbinom(200, 1, 0.4),
+  age = rnorm(200, 50, 10),
+  bmi = rnorm(200, 26, 4)
+)
+kk_paf(df_paf, outcome = disease, exposure = smoking, covariates = c("age", "bmi"), n_boot = 100)
+```
+
+> **Interpretation.** The output table presents both crude and adjusted attributable fractions. Bruzzi's model-standardization (`PAF (Adjusted - Bruzzi)`) controls for confounding by age and BMI to quantify the proportion of disease cases in the population that would be prevented if exposure were entirely eliminated.
+
 #### `kk_trend_test(data, exposure_level, outcome)` / `prop_trend_test()`
 
 Performs the Cochran-Armitage test for trend in proportions to evaluate linear trends in binomial proportions across ordinal levels.
@@ -605,6 +623,23 @@ df_stay %>% kk_median_test(days, ward)
 
 > **Interpretation.** The median test dichotomises each observation at the pooled (composite) median of 5 days and compares the above/below split across wards. χ² = 0.54 on 2 df, p = 0.77 — no evidence that median stay differs by ward. It trades power for robustness, so it is most useful with heavily skewed data.
 
+#### `kk_jonckheere_test(data, outcome, group)`
+
+Performs the Jonckheere-Terpstra non-parametric test for monotonic trend in continuous outcomes across ordered categorical exposure levels.
+
+*   **Clinical Example**: Testing for an increasing trend in continuous biomarker response across ordered dose levels (Control < Low < Medium < High).
+```{r ex-jonckheere}
+set.seed(42)
+df_jt <- data.frame(
+  dose = factor(rep(c("Control", "Low", "Medium", "High"), each = 20),
+                levels = c("Control", "Low", "Medium", "High"), ordered = TRUE),
+  response = c(rnorm(20, 10, 2), rnorm(20, 12, 2), rnorm(20, 15, 2.5), rnorm(20, 19, 3))
+)
+kk_jonckheere_test(df_jt, outcome = response, group = dose, alternative = "increasing")
+```
+
+> **Interpretation.** The Jonckheere-Terpstra test assesses monotonic trend across ordered dose groups ($J = 2126$, $Z = 7.96$, $p < 0.001$). Because the groups have an inherent order, Jonckheere-Terpstra has substantially greater statistical power to detect a dose-response gradient than a standard non-ordered Kruskal-Wallis test.
+
 #### `kk_vdw_test(data, x, group)`
 
 Performs the van der Waerden Normal-Scores Test as a highly powerful non-parametric alternative to ANOVA, converting ranks to normal distribution quantiles.
@@ -837,6 +872,24 @@ df_cr %>% kk_cuminc(time, status, arm, cause = 1)
 
 > **Interpretation.** The cumulative incidence of relapse (cause 1), accounting for death as a competing risk, reaches ~0.52 in arm A and ~0.44 in arm B by the reported times. Using the Aalen-Johansen estimator (not naïve 1 − KM) avoids over-stating incidence when competing events remove people from risk. Gray's test — available via `attr(x, "gray_test")` when `cmprsk` is installed — formally compares the two curves.
 
+#### `kk_finegray(data, time, status, predictors, cause)`
+
+Fits Fine-Gray proportional subdistribution hazards regression for competing risks in time-to-event epidemiological data.
+
+*   **Epidemiological Example**: Estimating multivariable subdistribution hazard ratios (SHR) for cause 1 (e.g. disease-specific death) while accounting for cause 2 (competing death from other causes).
+```{r ex-finegray}
+set.seed(123)
+df_fg <- data.frame(
+  time = runif(150, 1, 100),
+  status = sample(c(0, 1, 2), 150, replace = TRUE, prob = c(0.3, 0.4, 0.3)),
+  age = rnorm(150, 60, 10),
+  treatment = factor(sample(c("Control", "Drug"), 150, replace = TRUE))
+)
+kk_finegray(df_fg, time = "time", status = "status", predictors = c("age", "treatment"), cause = 1)
+```
+
+> **Interpretation.** The output table reports Subdistribution Hazard Ratios ($\text{SHR} = e^\beta$) for both univariate and multivariable models. Unlike standard Cox models that censor competing events (which can bias cumulative incidence interpretation), Fine-Gray regression explicitly keeps individuals who experience competing events in the risk set with appropriate weights, directly modeling the cumulative incidence function over time.
+
 ---
 
 ### 7. Demographics & EGN Utilities (Bulgarian Registry)
@@ -997,9 +1050,13 @@ The colour counterpart to `set_plot_font()`. Register a set of anchor ("flag") c
 set_plot_colors(c("#D62828", "#003049", "#F77F00"))   # your three flag colours
 
 library(ggplot2)
-kkplot(mtcars, aes(factor(cyl), fill = factor(cyl))) +
+df_stage <- data.frame(
+  stage = factor(rep(c("Stage I", "Stage II", "Stage III"), times = c(45, 60, 35)),
+                 levels = c("Stage I", "Stage II", "Stage III"))
+)
+kkplot(df_stage, aes(stage, fill = stage)) +
   geom_bar() +
-  labs(x = "Cylinders", fill = "cyl")
+  labs(x = "Disease Stage", fill = "Stage")
 ```
 
 > **Interpretation.** With three groups the bars are exactly the three flag colours; a fourth group would insert an interpolated colour between them, and so on. This applies globally after one call — put `set_plot_colors()` in your analysis preamble right after `set_plot_font()`. `kk_pal(2)` returns the first two anchors, `kk_pal(6)` returns six interpolated shades, and `scale_fill_kk()` forces the palette on an individual plot regardless of the global default.
@@ -1007,7 +1064,7 @@ kkplot(mtcars, aes(factor(cyl), fill = factor(cyl))) +
 > **Continuous fills** (heatmaps) stay viridis by default so they aren't hijacked. To build a *gradient* from the same anchors, add `scale_fill_kk_c()` (or `scale_colour_kk_c()`) to a plot, or pass `continuous = TRUE` to `set_plot_colors()` to make the flag gradient the global continuous default too:
 > ```r
 > set_plot_colors(c("#D62828", "#003049", "#F77F00"), continuous = TRUE)
-> kkplot(faithfuld, aes(waiting, eruptions, fill = density)) + geom_raster()
+> kkplot(grid_epi, aes(age, sbp, fill = risk_density)) + geom_raster()
 > ```
 
 #### `kk_gen_palettes(colors, n)` / `kk_show_palettes(palettes)`
@@ -1030,9 +1087,9 @@ Pick a scheme and register it with `scheme =` — every discrete `kkplot` fill t
 set_plot_colors("#D62828", scheme = "analogous", n = 6)
 kk_pal(3)
 
-kkplot(mtcars, aes(factor(cyl), fill = factor(cyl))) +
+kkplot(df_stage, aes(stage, fill = stage)) +
   geom_bar() +
-  labs(x = "Cylinders", fill = "cyl")
+  labs(x = "Disease Stage", fill = "Stage")
 ```
 
 ```{r ex-genpal-reset, include=FALSE}
@@ -1331,6 +1388,19 @@ fit$models
 
 ---
 
+## Methodological References & Textbooks
+
+The statistical algorithms and epidemiological methods in `kkstatfun` are implemented according to standard theoretical frameworks from the following reference textbooks:
+
+1. **Rothman, K. J., Greenland, S., & Lash, T. L. (2008)**. *Modern Epidemiology* (3rd ed.). Lippincott Williams & Wilkins.
+2. **Szklo, M., & Nieto, F. J. (2014)**. *Epidemiology: Beyond the Basics* (3rd ed.). Jones & Bartlett Learning.
+3. **Jewell, N. P. (2003)**. *Statistics for Epidemiology*. Chapman & Hall/CRC.
+4. **Zar, J. H. (2010)**. *Biostatistical Analysis* (5th ed.). Prentice Hall.
+5. **Sheskin, D. J. (2000)**. *Handbook of Parametric and Nonparametric Statistical Procedures* (2nd ed.). Chapman & Hall/CRC.
+6. **Stevenson, M., et al.** *Epidemiology with R*. R Epidemiological Community.
+
+---
+
 ## License
 
 MIT
@@ -1341,10 +1411,10 @@ If you use this package in your research, please cite it as follows:
 
 ```bibtex
 @Software{kkstatfun,
-  title = {kkstatfun: R Statistical Analysis Toolkit for Medical statistics and Epidemiology},
+  title = {kkstatfun: R Statistical Analysis Toolkit for Medical Statistics and Epidemiology},
   author = {Kostadinov, Kostadin},
   year = {2026},
-  version = {0.2.0},
+  version = {0.2.8},
   url = {https://github.com/kostadinoff/kkstatfun},
   doi = {10.5281/zenodo.21203936},
 }
@@ -1352,4 +1422,5 @@ If you use this package in your research, please cite it as follows:
 
 ## Credits
 
-This package was architected, refactored, and enhanced by **Antigravity**, an advanced AI coding assistant developed by **Google DeepMind**. 
+This package was architected, refactored, and enhanced by **Antigravity**, an advanced AI coding assistant developed by **Google DeepMind**.
+ 

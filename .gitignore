@@ -5,3 +5,7 @@
 .DS_Store
 *.Rproj
 Rplots.pdf
+booksources/*.pdf
+booksources/extracted_text/
+scratch/
+
