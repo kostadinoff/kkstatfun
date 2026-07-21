@@ -20,7 +20,7 @@ suppressWarnings(suppressMessages(
 
 # kkstatfun
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21203936.svg)](https://doi.org/10.5281/zenodo.21203936)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21475840.svg)](https://doi.org/10.5281/zenodo.21475840)
 
 **R Statistical Analysis Toolkit for Medical and Epidemiology**
 
@@ -1416,7 +1416,7 @@ If you use this package in your research, please cite it as follows:
   year = {2026},
   version = {0.2.8},
   url = {https://github.com/kostadinoff/kkstatfun},
-  doi = {10.5281/zenodo.21203936},
+  doi = {10.5281/zenodo.21475840},
 }
 ```
 
