@@ -8,7 +8,8 @@ This index tracks key references and statistical formulas used for developing `k
 | :--- | :--- | :--- |
 | `modern-epidemiology.pdf` | Rothman, Greenland, Lash | Study design, stratified analysis (CMH, Breslow-Day), causal inference, interaction (RERI), bias analysis |
 | `epidemiology-beyond-the-basics.pdf` | Szklo & Nieto | Intermediate/advanced epi, rate standardization, Cox PH, regression models, sensitivity analysis |
-| `epidemiology-data-analysis.pdf` | Jewell | Mathematical & statistical foundations of epidemiological data analysis |
+| `epidemiology-data-analysis.pdf` | Mark Woodward | *Epidemiology: Study Design and Data Analysis*, 3rd Edition (Chapman & Hall/CRC, 2014) — Matched designs, cluster RCTs, crossover trials, sample size & power, reclassification (NRI/IDI), dose-response trend & non-linearity |
+| `statistics-for-epidemiology.pdf` | Nicholas P. Jewell | *Statistics for Epidemiology* (Chapman & Hall/CRC) — Mathematical & statistical foundations of epidemiological data analysis |
 | `epidemiology-with-r.pdf` | Various / R Epi Community | Tidy R implementations, surveillance, outbreak analysis, diagnostic testing |
 | `biostatistical-analysis.pdf` | Zar | Classical biostatistics, non-parametric tests, contingency tables, agreement, circular/trend tests |
 | `handbook-of-parametric-and-nonparametric-statistical-procedures.pdf` | Sheskin | Comprehensive formulas & edge cases for parametric/non-parametric tests |

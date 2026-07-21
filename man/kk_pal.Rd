@@ -19,7 +19,7 @@ Character vector of \code{n} hex colours.
 Generates \code{n} colours from a set of anchor ("flag") colours. When
 \code{n} does not exceed the number of anchors the anchor colours are used
 directly; when more are needed the anchors are interpolated with
-\code{\link[grDevices:colorRamp]{grDevices::colorRampPalette()}}. The anchors default to those set by
+\code{\link[grDevices:colorRampPalette]{grDevices::colorRampPalette()}}. The anchors default to those set by
 \code{\link[=set_plot_colors]{set_plot_colors()}}.
 }
 \examples{

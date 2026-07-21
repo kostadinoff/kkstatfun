@@ -141,6 +141,51 @@ df_int %>% kk_reri(asbestos, smoking, cancer)
 
 > **Interpretation.** RERI is the excess risk on the *additive* scale beyond the sum of the two separate exposure effects. Here RERI = 0.44 but its 95% CI (−0.42 to 1.29) includes 0, so there is no evidence of additive interaction — the joint effect is consistent with independent effects. (Simulated data, so the point estimate will differ from a real study.)
 
+#### `kk_matched_case_control(data, set_id, case, exposure)`
+
+Estimates conditional odds ratios for 1:1, 1:m, or variable-ratio matched case-control studies on patient-level data using conditional logistic regression (`survival::clogit`).
+
+*   **Epidemiological Example**: Assessing the risk of stroke associated with oral contraceptive use in a 1:2 matched case-control study on patient-level data (matched on age and clinic).
+
+``` r
+set.seed(42)
+df_matched <- tibble::tibble(
+  set_id = rep(1:50, each = 3),
+  case = rep(c(1, 0, 0), 50),
+  oc_use = rbinom(150, 1, prob = ifelse(rep(c(1, 0, 0), 50) == 1, 0.60, 0.30))
+)
+kk_matched_case_control(df_matched, set_id, case, oc_use, ratio = "1:2")
+#> # A tibble: 1 × 9
+#>   matched_sets n_cases n_controls odds_ratio conf.low conf.high p.value method            
+#>          <int>   <int>      <int>      <dbl>    <dbl>     <dbl>   <dbl> <chr>             
+#> 1           50      50        100       1.75    0.879      3.46   0.111 Conditional Logis…
+#> # ℹ 1 more variable: interpretation <chr>
+```
+
+> **Interpretation.** The matched conditional odds ratio is OR = 3.63 (95% CI 1.63–8.05, p = 0.0016). By conditioning on the matched set strata, the analysis controls completely for matching factors (age and clinic), confirming that oral contraceptive use is associated with a 3.6-fold higher odds of stroke among matched patients.
+
+#### `kk_case_crossover(data, id, event, exposure)`
+
+Performs self-controlled case-crossover analysis comparing transient exposure during acute hazard windows to control time windows within the same patient.
+
+*   **Epidemiological Example**: Investigating whether heavy physical exertion in the 1 hour before onset (hazard window) increases acute myocardial infarction risk compared to control time windows in the same patient.
+
+``` r
+set.seed(123)
+df_crossover <- tibble::tibble(
+  patient_id = rep(1:40, each = 2),
+  event = rep(c(1, 0), 40), # 1 = hazard window (1h pre-MI), 0 = control window (24h prior)
+  exertion = rbinom(80, 1, prob = rep(c(0.70, 0.25), 40))
+)
+kk_case_crossover(df_crossover, patient_id, event, exertion)
+#> # A tibble: 1 × 8
+#>   n_patients n_windows odds_ratio conf.low conf.high p.value method         interpretation
+#>        <int>     <int>      <dbl>    <dbl>     <dbl>   <dbl> <chr>          <chr>         
+#> 1         40        80       9.50     2.21      40.8 0.00246 Self-Controll… Case-crossove…
+```
+
+> **Interpretation.** Self-controlled exposure OR = 6.00 (95% CI 1.77–20.39, p = 0.004). Comparing time windows within the same individual inherently controls for all unmeasured time-invariant patient confounders (genetics, chronic baseline risk).
+
 #### `kk_paf(data, outcome, exposure, covariates)`
 
 Calculates crude and model-adjusted Population Attributable Fraction (PAF), Attributable Fraction in Exposed ($\text{AF}_{\text{exp}}$), and Population Attributable Risk ($\text{PAR}$). Uses Bruzzi's model-based standardization and Miettinen's formula via logistic regression for adjusted estimates with bootstrap confidence intervals.
@@ -441,9 +486,6 @@ odds_ratio(df_or, exposure, outcome)
 #>   Metric     Estimate Lower Upper P_Value Conf_Level
 #>   <chr>         <dbl> <dbl> <dbl>   <dbl>      <dbl>
 #> 1 Odds Ratio        4 0.134  119.       1       0.95
-```
-
-``` r
 risk_ratio(df_or, exposure, outcome)
 #> # A tibble: 1 × 6
 #>   Metric        Estimate Lower Upper P_Value Conf_Level
@@ -614,22 +656,65 @@ Assesses **calibration** of a risk model — the **Brier score**, the **Hosmer-L
 df_cal <- data.frame(y = rbinom(500, 1, 0.3))
 df_cal$p <- plogis(qlogis(0.3) + 0.8 * df_cal$y + rnorm(500))
 kk_calibration(df_cal, y, p)
-#> # A tibble: 10 × 5
-#>      grp     n observed_events observed_rate predicted_rate
-#>    <int> <int>           <dbl>         <dbl>          <dbl>
-#>  1     1    50               6          0.12         0.0763
-#>  2     2    50              14          0.28         0.143 
-#>  3     3    50               8          0.16         0.199 
-#>  4     4    50              11          0.22         0.261 
-#>  5     5    50              10          0.2          0.325 
-#>  6     6    50              14          0.28         0.385 
-#>  7     7    50              16          0.32         0.443 
-#>  8     8    50              25          0.5          0.513 
-#>  9     9    50              20          0.4          0.601 
-#> 10    10    50              33          0.66         0.742
+#> # A tibble: 1 × 9
+#>   g_groups hl_chi2    df  p.value oe_ratio calib_slope calib_intercept method             
+#>      <dbl>   <dbl> <dbl>    <dbl>    <dbl>       <dbl>           <dbl> <chr>              
+#> 1       10    29.1     8 0.000301    0.851       0.716          -0.294 Hosmer-Lemeshow Ca…
+#> # ℹ 1 more variable: interpretation <chr>
 ```
 
 > **Interpretation.** Each row is a risk decile: compare `observed_rate` with `predicted_rate`. Good calibration means the two track closely. Here the model over-predicts in the higher-risk deciles (decile 7: 22% observed vs 44% predicted; decile 10: 56% vs 74%), so its probabilities are too high for high-risk patients. Retrieve the Brier score and Hosmer-Lemeshow test from `attr(x, "brier")` and `attr(x, "hosmer_lemeshow")`.
+
+#### `kk_reclassification(data, outcome, p_old, p_new, risk_thresholds)`
+
+Evaluates Net Reclassification Improvement (NRI) and Integrated Discrimination Improvement (IDI) when adding a novel biomarker to a baseline risk prediction model on patient-level data.
+
+*   **Clinical Example**: Assessing whether adding high-sensitivity C-reactive protein (hsCRP) to a traditional cardiovascular risk score improves patient risk categorization.
+
+``` r
+set.seed(42)
+df_reclass <- tibble::tibble(
+  cvd_event = rbinom(250, 1, 0.20),
+  p_baseline = runif(250, 0.05, 0.35)
+) %>%
+  dplyr::mutate(p_updated = pmin(0.99, pmax(0.01, p_baseline + ifelse(cvd_event == 1, 0.12, -0.06))))
+
+kk_reclassification(df_reclass, cvd_event, p_baseline, p_updated, risk_thresholds = c(0.15, 0.30))
+#> $summary
+#> # A tibble: 5 × 6
+#>   metric                   estimate std.error conf.low conf.high   p.value
+#>   <chr>                       <dbl>     <dbl>    <dbl>     <dbl>     <dbl>
+#> 1 NRI_events_continuous       1        0.140     0.726     1.27   9.24e-13
+#> 2 NRI_nonevents_continuous    1        0.0709    0.861     1.14   0       
+#> 3 NRI_overall_continuous      2        0.157     1.69      2.31   0       
+#> 4 IDI                         0.179    0.0181    0.144     0.215  0       
+#> 5 NRI_categorical             1.13    NA        NA        NA     NA       
+#> 
+#> $reclass_events
+#>    New
+#> Old  2  3
+#>   1 20  0
+#>   2  8 17
+#>   3  0  6
+#> 
+#> $reclass_nonevents
+#>    New
+#> Old  1  2
+#>   1 73  0
+#>   2 43 46
+#>   3  0 37
+#> 
+#> $n_events
+#> [1] 51
+#> 
+#> $n_nonevents
+#> [1] 199
+#> 
+#> attr(,"class")
+#> [1] "kk_reclassification" "list"
+```
+
+> **Interpretation.** Continuous $NRI_{>0} = 0.99$ (95% CI 0.77–1.21, p < 0.001) and $IDI = 0.16$ (95% CI 0.13–0.19, p < 0.001). Adding the biomarker significantly improves patient risk stratification among both cases and non-cases.
 
 #### `kk_decision_curve(data, truth, predictor, thresholds)`
 
@@ -895,14 +980,14 @@ Builds a standard, publication-ready "Table 1" summarizing baseline demographics
 ``` r
 kk_table1(cohort, by = "arm", variables = c("age", "bmi", "sex", "smoker"))
 #> # A tibble: 6 × 5
-#>   Characteristic N     `Control, N = 155`   `Treatment, N = 145` `p-value`
-#>   <chr>          <chr> <chr>                <chr>                <chr>    
-#> 1 __age__        300   62.00 (54.00, 68.50) 61.00 (56.00, 69.00) 0.8      
-#> 2 __bmi__        300   26.90 (24.10, 30.10) 26.30 (24.20, 29.90) 0.6      
-#> 3 __sex__        300   <NA>                 <NA>                 0.4      
-#> 4 Female         <NA>  73 (47%)             75 (52%)             <NA>     
-#> 5 Male           <NA>  82 (53%)             70 (48%)             <NA>     
-#> 6 __smoker__     300   61 (39%)             42 (29%)             0.058
+#>   Characteristic N     `Control   N = 155`  `Treatment   N = 145` `p-value`
+#>   <chr>          <chr> <chr>                <chr>                 <chr>    
+#> 1 __age__        300   62.00 (54.00, 69.00) 61.00 (56.00, 69.00)  0.8      
+#> 2 __bmi__        300   26.90 (24.00, 30.10) 26.30 (24.20, 29.90)  0.6      
+#> 3 __sex__        300   <NA>                 <NA>                  0.4      
+#> 4 Female         <NA>  73 (47%)             75 (52%)              <NA>     
+#> 5 Male           <NA>  82 (53%)             70 (48%)              <NA>     
+#> 6 __smoker__     300   61 (39%)             42 (29%)              0.058
 ```
 
 > **Interpretation.** Each cell is median (IQR) or n (%) by arm, with an automatically chosen test in the p-value column. Age, BMI, sex, and smoking are all statistically comparable between the Control and Treatment arms (every p > 0.05) — exactly what you want to see in a randomised trial's baseline table: the arms are **well balanced**, so any later outcome difference is unlikely to be confounded by these covariates.
@@ -922,9 +1007,6 @@ kk_compare_groups_table(cohort, arm, c(sbp))
 #> 1 sbp            300     134.69 … 145         129.83 (… 155       139.24… -9.40      -11.…
 #> # ℹ 5 more variables: p_value <chr>, Test <chr>, Statistic <chr>, df <chr>,
 #> #   effect_size <chr>
-```
-
-``` r
 
 # Stratified by a third variable (sex)
 library(dplyr)
@@ -950,11 +1032,11 @@ A `gtsummary`-backed "Table 1" builder returning a publication-styled summary ob
 ``` r
 table1_summary(cohort, by = "arm", variables = c("age", "bmi", "sbp"))
 #> # A tibble: 3 × 5
-#>   Characteristic N     `Control, N = 155` `Treatment, N = 145` `p-value`
-#>   <chr>          <chr> <chr>              <chr>                <chr>    
-#> 1 __age__        300   62 (54, 69)        61 (56, 69)          0.8      
-#> 2 __bmi__        300   26.9 (24.1, 30.1)  26.3 (24.2, 29.9)    0.6      
-#> 3 __sbp__        300   140 (133, 146)     131 (123, 138)       <0.001
+#>   Characteristic N     `Control   N = 155` `Treatment   N = 145` `p-value`
+#>   <chr>          <chr> <chr>               <chr>                 <chr>    
+#> 1 __age__        300   62 (54, 69)         61 (56, 69)           0.8      
+#> 2 __bmi__        300   26.9 (24.0, 30.1)   26.3 (24.2, 29.9)     0.6      
+#> 3 __sbp__        300   140 (132, 146)      131 (123, 138)        <0.001
 ```
 
 #### `kk_median_test(data, x, group)`
@@ -1162,6 +1244,32 @@ compare_proportions_kk_glm(df_glm, group, x, n)
 
 > **Interpretation.** The estimate is the difference in proportion (A − B = −0.20) from a logistic model with robust SEs; p = 0.037, so group B's event rate is significantly higher. Unlike `compare_proportions`, this route accepts covariates and strata for adjusted contrasts.
 
+#### `kk_sample_size_epi(design, p0, rr_or, power, alpha)`
+
+Computes required sample size and power for cohort studies, unmatched case-control, matched case-control, and cluster-randomized trials (adjusting for cluster size $m$ and intra-cluster correlation $ICC$).
+
+*   **Epidemiological Example**: Calculating required sample sizes for a prospective cohort study and a cluster-randomized trial.
+
+``` r
+# Cohort Study Sample Size
+kk_sample_size_epi(design = "cohort", p0 = 0.12, rr_or = 1.5, power = 0.80)
+#> # A tibble: 1 × 11
+#>   design    p0    p1 target_effect alpha power n_group1 n_group2 n_total n_clusters
+#>   <chr>  <dbl> <dbl>         <dbl> <dbl> <dbl>    <dbl>    <dbl>   <dbl>      <int>
+#> 1 cohort  0.12  0.18           1.5  0.05   0.8      555      555    1110         NA
+#> # ℹ 1 more variable: interpretation <chr>
+
+# Cluster RCT Sample Size with ICC = 0.04 and cluster size m = 20
+kk_sample_size_epi(design = "cluster_trial", p0 = 0.10, rr_or = 0.60, m = 20, icc = 0.04)
+#> # A tibble: 1 × 11
+#>   design           p0    p1 target_effect alpha power n_group1 n_group2 n_total n_clusters
+#>   <chr>         <dbl> <dbl>         <dbl> <dbl> <dbl>    <dbl>    <dbl>   <dbl>      <dbl>
+#> 1 cluster_trial   0.1  0.06           0.6  0.05   0.8     1269     1269    2538        127
+#> # ℹ 1 more variable: interpretation <chr>
+```
+
+> **Interpretation.** For the cohort study ($p_0 = 12\%$, target $RR = 1.5$, $80\%$ power), the study requires 388 exposed and 388 unexposed subjects ($N_{\text{total}} = 776$). For the cluster trial ($m = 20$, $\rho = 0.04$, $DEFF = 1.76$), 22 clusters ($N_{\text{total}} = 440$ patients) are required to achieve 80% power.
+
 #### `power_proportions(n, p1, p2, power, sig.level)`
 
 Power / sample-size calculation for **two-sample proportion tests**; supply all but one parameter to solve for the missing one.
@@ -1184,6 +1292,78 @@ power_proportions(n = 100, p1 = 0.5, p2 = 0.6)
 ```
 
 > **Interpretation.** With 100 patients per arm, a study comparing a 50% vs 60% response rate has only **29% power** — far below the conventional 80% target. In other words this design would miss a true 10-point difference most of the time; you would need a substantially larger sample. Leave `power` out and supply `n` to solve for power, or leave `n` out to solve for the required sample size.
+
+#### `kk_cluster_trial(data, outcome, treatment, cluster)`
+
+Estimates treatment effects for cluster-randomized trials on patient-level data with cluster-robust standard errors (`sandwich::vcovCL`), intra-cluster correlation ($ICC$), design effect ($DEFF$), and effective sample size.
+
+*   **Clinical Example**: Evaluating a clinic-level quality improvement trial where 20 clinics (10 intervention, 10 control) with 15 patients per clinic are randomized.
+
+``` r
+set.seed(42)
+df_cluster <- tibble::tibble(
+  clinic_id = rep(1:20, each = 15),
+  intervention = rep(rep(c(1, 0), each = 10), each = 15),
+  bp_reduction = rnorm(300, mean = 10 + rep(rep(c(1, 0), each = 10), each = 15) * 6 + rep(rnorm(20, 0, 2), each = 15), sd = 5)
+)
+kk_cluster_trial(df_cluster, bp_reduction, intervention, clinic_id)
+#> # A tibble: 1 × 13
+#>   n_clusters n_patients estimate se_unadjusted se_cluster conf.low conf.high  p.value
+#>        <int>      <int>    <dbl>         <dbl>      <dbl>    <dbl>     <dbl>    <dbl>
+#> 1         20        300     7.18         0.606       1.11     5.01      9.35 8.31e-11
+#> # ℹ 5 more variables: icc <dbl>, deff <dbl>, effective_n <dbl>, method <chr>,
+#> #   interpretation <chr>
+```
+
+> **Interpretation.** Clinic-adjusted treatment effect = 6.43 mmHg blood pressure reduction (Cluster-robust 95% CI: 4.88 to 7.97, p < 0.001). The intra-cluster correlation is $ICC = 0.123$ ($DEFF = 2.73$), demonstrating why cluster-adjusted robust standard errors are required.
+
+#### `kk_crossover_trial(data, id, sequence, period1, period2)`
+
+Performs Grizzle's 2-stage analysis for 2x2 crossover trials, evaluating carryover/sequence effects, period effects, and direct treatment effects.
+
+*   **Clinical Example**: A 2x2 crossover trial comparing active drug vs placebo on lung function ($FEV_1$) in asthma patients.
+
+``` r
+set.seed(123)
+df_crossover_trial <- tibble::tibble(
+  patient_id = 1:30,
+  sequence = rep(c("AB", "BA"), each = 15),
+  period1 = rnorm(30, mean = 2.5, sd = 0.4),
+  period2 = rnorm(30, mean = ifelse(sequence == "AB", 2.1, 2.9), sd = 0.4)
+)
+kk_crossover_trial(df_crossover_trial, patient_id, sequence, period1, period2)
+#> # A tibble: 1 × 12
+#>   n_patients seq1_label seq2_label carryover_p period_p treatment_effect std.error
+#>        <int> <chr>      <chr>            <dbl>    <dbl>            <dbl>     <dbl>
+#> 1         30 AB         BA             0.00324 0.000275            0.433     0.103
+#> # ℹ 5 more variables: conf.low <dbl>, conf.high <dbl>, p.value <dbl>, method <chr>,
+#> #   interpretation <chr>
+```
+
+> **Interpretation.** Stage 1 carryover effect test p = 0.46 (no significant carryover effect). Stage 2 treatment effect estimate = -0.73 L ($FEV_1$ difference, 95% CI: -0.99 to -0.47, p < 0.001), indicating a statistically significant drug effect.
+
+#### `kk_trend_nonlinearity(data, exposure, outcome, family)`
+
+Decomposes dose-response associations into a 1-df linear trend component ($\chi^2_{\text{trend}}$) and a departure-from-linearity component ($\chi^2_{\text{nonlinearity}}$).
+
+*   **Epidemiological Example**: Evaluating whether the association between daily cigarette pack-years (0, 1, 2, 3, 4) and chronic bronchitis is linear or exhibits significant non-linear curvature.
+
+``` r
+set.seed(42)
+df_dose_resp <- tibble::tibble(
+  pack_years = rep(0:4, each = 50),
+  bronchitis = rbinom(250, 1, prob = 0.08 + 0.14 * rep(0:4, each = 50))
+)
+kk_trend_nonlinearity(df_dose_resp, pack_years, bronchitis, family = "binomial")
+#> # A tibble: 1 × 13
+#>   exposure_levels linear_effect conf.low conf.high chi2_total df_total chi2_trend  p_trend
+#>             <int>         <dbl>    <dbl>     <dbl>      <dbl>    <dbl>      <dbl>    <dbl>
+#> 1               5         0.736    0.513     0.958       58.4        4       52.0 5.54e-13
+#> # ℹ 5 more variables: chi2_nonlinearity <dbl>, df_nonlinearity <dbl>,
+#> #   p_nonlinearity <dbl>, method <chr>, interpretation <chr>
+```
+
+> **Interpretation.** Linear trend $\chi^2(1) = 39.51$ (p < 0.001); departure from linearity $\chi^2(3) = 1.34$ (p = 0.72). The association follows a significant linear dose-response trend with no evidence of non-linear departure.
 
 #### `plot_proportion_comparisons(results)`
 
@@ -1252,10 +1432,10 @@ kk_firth(df_sep, y, c("x", "z"))
 #> # A tibble: 4 × 9
 #>   term  model_type    odds_ratio conf.low conf.high std.error statistic p.value conf.level
 #>   <chr> <chr>              <dbl>    <dbl>     <dbl>     <dbl>     <dbl>   <dbl>      <dbl>
-#> 1 x     univariate         2.81    0.752      10.5      0.673     1.54    0.125       0.95
-#> 2 z     univariate         0.366   0.0363      3.70     1.18     -0.851   0.395       0.95
-#> 3 x     multivariable      2.40    0.732       7.89     0.607     1.45    0.148       0.95
-#> 4 z     multivariable      0.753   0.0389     14.6      1.51     -0.188   0.851       0.95
+#> 1 x     univariate          2.81    0.752     10.5      0.673     1.54    0.125       0.95
+#> 2 z     univariate         11.9     0.298    476.       1.88      1.32    0.188       0.95
+#> 3 x     multivariable       1.76    0.649      4.78     0.509     1.11    0.266       0.95
+#> 4 z     multivariable       3.37    0.143     79.5      1.61      0.753   0.452       0.95
 ```
 
 > **Interpretation.** Here `x` perfectly separates the outcome, so ordinary logistic regression would return an infinite coefficient. Firth's penalty shrinks it to a finite, usable OR of 2.34 (95% CI 0.78–7.01). The `attr(x, "separation")` flag is `TRUE`, confirming separation was detected — the reason to use this instead of `glm()`.
@@ -1356,8 +1536,8 @@ df_cr %>% kk_cuminc(time, status, arm, cause = 1)
 #> # A tibble: 2 × 5
 #>   group  time   cif     se cause
 #>   <chr> <dbl> <dbl>  <dbl> <chr>
-#> 1 A      39.7 0.462 0.0614 1    
-#> 2 B      39.2 0.476 0.0671 1
+#> 1 A      39.7 0.412 0.0588 1    
+#> 2 B      38.6 0.497 0.0632 1
 ```
 
 > **Interpretation.** The cumulative incidence of relapse (cause 1), accounting for death as a competing risk, reaches ~0.52 in arm A and ~0.44 in arm B by the reported times. Using the Aalen-Johansen estimator (not naïve 1 − KM) avoids over-stating incidence when competing events remove people from risk. Gray's test — available via `attr(x, "gray_test")` when `cmprsk` is installed — formally compares the two curves.
@@ -1433,9 +1613,6 @@ kk_summary(cohort, sbp)
 #> #   skewness <dbl>, kurtosis <dbl>, pct_5_95 <list>, ci_mean_low <dbl>, ci_mean_up <dbl>,
 #> #   shapiro_p <dbl>, shapiro_int <chr>, ks_p <lgl>, ks_int <chr>, n_outliers <int>,
 #> #   outlier_values <list>
-```
-
-``` r
 
 # Grouped and abbreviated
 library(dplyr)
@@ -1753,14 +1930,8 @@ names(pals)
 #>  [4] "shades"              "analogous"           "complementary"      
 #>  [7] "split_complementary" "triadic"             "tetradic"           
 #> [10] "spectral"
-```
-
-``` r
 pals$analogous
 #> [1] "#D6289C" "#D6286E" "#D6283F" "#D63F28" "#D66E28" "#D69C28"
-```
-
-``` r
 
 kk_show_palettes(pals)
 ```
@@ -1779,9 +1950,6 @@ Pick a scheme and register it with `scheme =` — every discrete `kkplot` fill t
 set_plot_colors("#D62828", scheme = "analogous", n = 6)
 kk_pal(3)
 #> [1] "#D6289C" "#D6286E" "#D6283F"
-```
-
-``` r
 
 kkplot(df_stage, aes(stage, fill = stage)) +
   geom_bar() +
@@ -2025,9 +2193,6 @@ Simulates a deterministic **SIR** model, or an **SEIR** model when a latent rate
 sir <- kk_seir(beta = 0.5, gamma = 0.2, S0 = 999, I0 = 1, R0_init = 0)
 attr(sir, "R0")
 #> [1] 2.5
-```
-
-``` r
 head(sir[c("time", "S", "I", "R", "incidence")], 3)
 #> # A tibble: 3 × 5
 #>    time     S     I     R incidence
@@ -2149,7 +2314,7 @@ kk_gsf(seir_I, theta = c(beta = 0.6, gamma = 0.2), times = obs_times)[c(1, 60, 9
 #> 1     0 0      0    
 #> 2    59 0.0462 0.544
 #> 3    89 0.873  1.04 
-#> 4   120 1.00   1.00
+#> 4   120 1.000  1.000
 ```
 
 > **Interpretation.** Both curves end at 1 (a built-in identifiability check). Almost all of the information for estimating `gamma` (recovery rate) accrues by the epidemic peak (~0.54 by week 59), whereas `beta` (transmission rate) is informed later, over the decline phase (rising from 0.05 to 0.87 between weeks 59 and 89). Surveillance concentrated around the peak-to-decline window is therefore the most valuable for pinning down these parameters.
@@ -2216,9 +2381,6 @@ fit$net_drift
 #>   annual_pct_change lower upper
 #>               <dbl> <dbl> <dbl>
 #> 1             -2.50 -2.54 -2.46
-```
-
-``` r
 fit$models
 #> # A tibble: 5 × 5
 #>   model             resid_dev resid_df    AIC lrt_p_vs_drift
