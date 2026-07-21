@@ -111,7 +111,14 @@ df_paf <- data.frame(
 kk_paf(df_paf, outcome = disease, exposure = smoking, covariates = c("age", "bmi"), n_boot = 100)
 ```
 
-> **Interpretation.** The output table presents both crude and adjusted attributable fractions. Bruzzi's model-standardization (`PAF (Adjusted - Bruzzi)`) controls for confounding by age and BMI to quantify the proportion of disease cases in the population that would be prevented if exposure were entirely eliminated.
+> **Interpretation.** The function returns a 5-row summary table comparing crude and model-adjusted attributable risk metrics:
+> - **Crude PAF**: $\text{PAF} = -16.2\%$ ($95\%\text{ CI: } -93.2\%\text{ to } 30.0\%$).
+> - **AF in Exposed**: $\text{AF}_{\text{exp}} = -55.8\%$ ($95\%\text{ CI: } 0.0\%\text{ to } 6.2\%$).
+> - **PAR (Population Attributable Risk)**: $\text{PAR} = -0.045$ absolute risk difference ($95\%\text{ CI: } -0.107\text{ to } 0.017$).
+> - **Adjusted PAF (Bruzzi)**: Model-standardized $\text{PAF}_{\text{adj}} = -15.9\%$ ($95\%\text{ CI: } -4.2\%\text{ to } 13.4\%$) controlling for age and BMI.
+> - **Adjusted PAF (Miettinen)**: $\text{PAF}_{\text{adj}} = -23.7\%$ ($95\%\text{ CI: } -47.1\%\text{ to } 4.9\%$).
+>
+> In simulated data where exposure happens to be slightly less prevalent among cases by chance, the attributable fractions are negative. In observational studies with a true harmful risk factor ($\text{OR} > 1$), Bruzzi's model-standardization isolates the true proportion of population cases attributable to exposure after eliminating confounding by age and BMI.
 
 #### `kk_trend_test(data, exposure_level, outcome)` / `prop_trend_test()`
 
@@ -889,7 +896,15 @@ df_fg <- data.frame(
 kk_finegray(df_fg, time = "time", status = "status", predictors = c("age", "treatment"), cause = 1)
 ```
 
-> **Interpretation.** The output table reports Subdistribution Hazard Ratios ($\text{SHR} = e^\beta$) for both univariate and multivariable models. Unlike standard Cox models that censor competing events (which can bias cumulative incidence interpretation), Fine-Gray regression explicitly keeps individuals who experience competing events in the risk set with appropriate weights, directly modeling the cumulative incidence function over time.
+> **Interpretation.** The function outputs a tidy 4-row comparison table containing both **Univariate** and **Multivariable** Fine-Gray subdistribution hazards models for cause 1 (e.g. disease-specific death):
+> - **Univariate Models**:
+>   - **Age**: Subdistribution Hazard Ratio $\text{SHR} = 0.996$ ($95\%\text{ CI: } 0.973\text{ to } 1.020$, robust $\text{SE} = 0.0119$, $Z = -0.354$, $p = 0.724$).
+>   - **Treatment (Drug vs Control)**: $\text{SHR} = 1.32$ ($95\%\text{ CI: } 0.874\text{ to } 1.99$, robust $\text{SE} = 0.211$, $Z = 1.32$, $p = 0.187$).
+> - **Multivariable Model**:
+>   - **Age**: $\text{SHR}_{\text{adj}} = 0.999$ ($95\%\text{ CI: } 0.975\text{ to } 1.020$, robust $\text{SE} = 0.0123$, $Z = -0.094$, $p = 0.925$).
+>   - **Treatment**: $\text{SHR}_{\text{adj}} = 1.31$ ($95\%\text{ CI: } 0.858\text{ to } 2.01$, robust $\text{SE} = 0.217$, $Z = 1.26$, $p = 0.208$).
+>
+> Unlike naive Cox proportional hazards models that treat competing events (cause 2) as non-informative right-censoring (which artificially inflates cumulative incidence estimates), Fine-Gray regression retains subjects who experience competing events in the risk set with time-varying inverse probability weights. Here, neither age nor treatment show a statistically significant effect on subdistribution hazard ($p > 0.05$).
 
 ---
 
