@@ -990,7 +990,8 @@ kk_jonckheere_test(df_jt, outcome = response, group = dose, alternative = "incre
 #> 1   2126     1200 13533.   7.96 8.91e-16 increasing     80        4
 ```
 
-> **Interpretation.** The Jonckheere-Terpstra test assesses monotonic trend across ordered dose groups ($J = 2126$, $Z = 7.96$, $p < 0.001$). Because the groups have an inherent order, Jonckheere-Terpstra has substantially greater statistical power to detect a dose-response gradient than a standard non-ordered Kruskal-Wallis test.
+> **Interpretation.** Across $N = 80$ total observations in 4 ordered dose groups ($n = 20$ per group), the test computes the sum of pairwise Mann-Whitney counts $J = 2126$. Under the null hypothesis of no trend ($H_0$), the expected count is $E(J) = 1200$. The observed $J$ exceeds expectation by nearly 1,000 counts, yielding a highly elevated standardized test statistic of $Z = 7.96$ and a definitive $p$-value of $8.91 \times 10^{-16}$ ($p < 0.001$). This provides overwhelming evidence of a statistically significant monotonic dose-response trend where biomarker response systematically increases with dose (Control < Low < Medium < High). Because Jonckheere-Terpstra incorporates the natural ordering of exposure levels, it achieves substantially higher statistical power than non-ordered alternatives (such as the Kruskal-Wallis test).
+
 
 #### `kk_vdw_test(data, x, group)`
 
