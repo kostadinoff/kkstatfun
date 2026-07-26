@@ -1,8 +1,25 @@
+# kkstatfun 1.0.1
+
+Metadata-only release. **This is the version to cite** — no code, documentation or
+test changes from 1.0.0.
+
+* Set the maintainer address to `drkostadinkostadinov@gmail.com`. 1.0.0 shipped with a
+  `kostadinov@example.com` placeholder, and Zenodo archives are immutable, so the
+  correction needed its own release.
+* Added `.zenodo.json`. The 1.0.0 Zenodo record was created with Zenodo's default
+  licence, **CC BY 4.0**, which contradicts the package's **MIT** licence — a real
+  inconsistency on a citable software artifact. `.zenodo.json` pins the licence, author
+  name and affiliation, `upload_type` and keywords for this and future releases. It is
+  `.Rbuildignore`d and does not ship in the tarball.
+
+The concept DOI [10.5281/zenodo.18936019](https://doi.org/10.5281/zenodo.18936019) always
+resolves to the newest release, so the README badge needs no change.
+
 # kkstatfun 1.0.0
 
 Zenodo DOI for this exact version: [10.5281/zenodo.21599314](https://doi.org/10.5281/zenodo.21599314).
-The concept DOI [10.5281/zenodo.18936019](https://doi.org/10.5281/zenodo.18936019) always
-resolves to the newest release.
+Superseded by 1.0.1 for citation purposes (placeholder maintainer email, and the record
+is labelled CC BY 4.0 rather than MIT).
 
 First stable release. This version makes `group_by()` support real across the
 package, fixes eight bugs, and brings the package to a clean `R CMD check`

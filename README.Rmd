@@ -25,7 +25,7 @@ suppressWarnings(suppressMessages(
 # kkstatfun
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18936019.svg)](https://doi.org/10.5281/zenodo.18936019)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
 
 **R Statistical Analysis Toolkit for Medical and Epidemiology**
 
@@ -1628,7 +1628,7 @@ If you use this package in your research, please cite it as follows:
   title = {kkstatfun: R Statistical Analysis Toolkit for Medical Statistics and Epidemiology},
   author = {Kostadinov, Kostadin},
   year = {2026},
-  version = {1.0.0},
+  version = {1.0.1},
   url = {https://github.com/kostadinoff/kkstatfun},
   doi = {10.5281/zenodo.18936019},
 }
