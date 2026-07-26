@@ -3283,14 +3283,14 @@ If you use this package in your research, please cite it as follows:
   year = {2026},
   version = {1.0.1},
   url = {https://github.com/kostadinoff/kkstatfun},
-  doi = {10.5281/zenodo.18936019},
+  doi = {10.5281/zenodo.21599749},
 }
 ```
 
 The DOI above is the Zenodo *concept* DOI: it always resolves to the
 most recent release. To cite the exact version you used, take the
 version-specific DOI from [the Zenodo
-record](https://doi.org/10.5281/zenodo.18936019), or run
+record](https://doi.org/10.5281/zenodo.21599749), or run
 `citation("kkstatfun")`.
 
 ## Credits
