@@ -1,5 +1,7 @@
 # kkstatfun 1.0.1
 
+Zenodo DOI for this exact version: [10.5281/zenodo.21599749](https://doi.org/10.5281/zenodo.21599749).
+
 Metadata-only release. **This is the version to cite** — no code, documentation or
 test changes from 1.0.0.
 
