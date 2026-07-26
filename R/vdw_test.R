@@ -23,7 +23,7 @@
 #' @return A tibble with the following columns:
 #'   \itemize{
 #'     \item \code{method}: The test method used.
-#'     \item \code{statistic}: Pearson's Chi-Square statistic ($\chi^2_{\text{vdw}}$).
+#'     \item \code{statistic}: Pearson's Chi-Square statistic (\eqn{\chi^2_{\mathrm{vdw}}}).
 #'     \item \code{df}: The degrees of freedom.
 #'     \item \code{p_value}: The p-value of the test.
 #'     \item \code{variance_normal_scores}: The variance of the normal scores ($s^2$).

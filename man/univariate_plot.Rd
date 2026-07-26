@@ -38,6 +38,9 @@ univariate_plot(
 \item{nrow}{Number of rows for layout}
 
 \item{force_100}{Whether to force categorical x-axis to 100\% (default: TRUE)}
+
+\item{stats}{Summary statistic annotated on continuous panels: \code{"mean"}
+(default) or \code{"median"}.}
 }
 \description{
 Automatically detects variable type and plots accordingly

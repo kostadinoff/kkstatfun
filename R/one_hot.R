@@ -53,5 +53,6 @@ kkonehot <- function(data, column) {
               return(data)
 }
 
+#' @rdname kkonehot
 #' @export
 one_hot_encode <- kkonehot

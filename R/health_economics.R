@@ -36,6 +36,10 @@
 #'
 #' @export
 kk_icer <- function(data, cost, effect = NULL, strategy = NULL) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   # Vector interface: kk_icer(costs, effects, labels)
   if (is.numeric(data)) {
     costs <- data
@@ -163,6 +167,10 @@ kk_icer <- function(data, cost, effect = NULL, strategy = NULL) {
 #'
 #' @export
 kk_nmb <- function(data, cost, effect = NULL, wtp = 50000, strategy = NULL) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   if (is.numeric(data)) {
     costs <- data
     effects <- cost
@@ -238,6 +246,10 @@ kk_nmb <- function(data, cost, effect = NULL, wtp = 50000, strategy = NULL) {
 #' @export
 kk_ceac <- function(data, sim, strategy, cost, effect,
                     wtp = seq(0, 1e5, by = 5000)) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   validate_data_frame(data)
   sim_name <- .kk_colname(rlang::enquo(sim))
   strat_name <- .kk_colname(rlang::enquo(strategy))
@@ -491,6 +503,10 @@ kk_markov <- function(transition, costs, utilities, cycles,
 kk_evpi <- function(data, sim, strategy, cost, effect,
                     wtp = seq(0, 1e5, by = 5000),
                     pop_size = NULL, horizon = NULL, disc_rate = 0.03) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   validate_data_frame(data)
   sim_name <- .kk_colname(rlang::enquo(sim))
   strat_name <- .kk_colname(rlang::enquo(strategy))

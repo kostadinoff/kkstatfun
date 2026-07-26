@@ -1,0 +1,16 @@
+citHeader("To cite kkstatfun in publications use:")
+
+bibentry(
+  bibtype  = "Manual",
+  title    = "kkstatfun: R Statistical Analysis Toolkit for Medical Statistics and Epidemiology",
+  author   = person("Kostadin", "Kostadinov"),
+  year     = "2026",
+  note     = sprintf("R package version %s", meta$Version),
+  url      = "https://github.com/kostadinoff/kkstatfun",
+  doi      = "10.5281/zenodo.18936019",
+  textVersion = paste0(
+    "Kostadinov, K. (2026). kkstatfun: R Statistical Analysis Toolkit for ",
+    "Medical Statistics and Epidemiology. R package version ", meta$Version,
+    ". doi:10.5281/zenodo.18936019"
+  )
+)

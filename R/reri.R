@@ -15,14 +15,23 @@
 #' @return Tibble with RERI, AP, and S estimates and CIs (using delta method)
 #' @export
 #' @examples
-#' \dontrun{
+#' set.seed(42)
+#' df <- data.frame(
+#'   exp1 = rbinom(400, 1, 0.4),
+#'   exp2 = rbinom(400, 1, 0.3),
+#'   age = rnorm(400, 60, 10)
+#' )
+#' df$outcome <- rbinom(
+#'   400, 1,
+#'   plogis(-3 + 0.7 * df$exp1 + 0.6 * df$exp2 + 0.8 * df$exp1 * df$exp2)
+#' )
+#'
 #' # Using a fitted glm model
 #' model <- glm(outcome ~ exp1 * exp2 + age, family = binomial, data = df)
 #' kk_reri(model, "exp1", "exp2")
 #'
 #' # Using a data frame directly
 #' kk_reri(df, exp1, exp2, outcome)
-#' }
 kk_reri <- function(model, exp1, exp2, outcome = NULL, conf.level = 0.95) {
   # Helper to resolve argument names (handles strings, symbols, or variable contents)
   resolve_arg <- function(arg_expr, pf = parent.frame()) {

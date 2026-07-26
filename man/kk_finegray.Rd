@@ -19,6 +19,7 @@ kk_finegray(data, time, status, predictors, cause = 1)
 }
 \value{
 A tidy \code{tibble} with columns:
+\describe{
 \item{variable}{Name of predictor variable}
 \item{term}{Level / contrast term name}
 \item{subdist_hr}{Subdistribution Hazard Ratio (SHR = \eqn{\exp(\beta)})}
@@ -28,6 +29,7 @@ A tidy \code{tibble} with columns:
 \item{z_stat}{Wald $Z$ statistic}
 \item{p_value}{$p$-value}
 \item{model_type}{"Univariate" or "Multivariable"}
+}
 }
 \description{
 Fits Fine-Gray subdistribution hazards model for competing risks in time-to-event epidemiological data.

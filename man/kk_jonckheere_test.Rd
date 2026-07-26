@@ -26,6 +26,7 @@ kk_jonckheere_test(
 }
 \value{
 A tidy \code{tibble} with columns:
+\describe{
 \item{j_stat}{Jonckheere-Terpstra $J$ statistic (sum of pairwise Mann-Whitney U statistics)}
 \item{expect_j}{Expected value of $J$ under the null hypothesis}
 \item{var_j}{Variance of $J$ (adjusted for ties)}
@@ -35,12 +36,13 @@ A tidy \code{tibble} with columns:
 \item{n_obs}{Total number of observations}
 \item{n_groups}{Number of ordered groups}
 }
+}
 \description{
 Performs the Jonckheere-Terpstra non-parametric test to evaluate monotonic dose-response
 trends across ordered independent groups or exposure levels for continuous outcomes.
 }
 \details{
-The Jonckheere-Terpstra test is a non-parametric test for ordered alternatives ($H_0: \theta_1 = \theta_2 = \dots = \theta_k$ vs $H_1: \theta_1 \le \theta_2 \le \dots \le \theta_k$ with at least one strict inequality).
+The Jonckheere-Terpstra test is a non-parametric test for ordered alternatives (\eqn{H_0: \theta_1 = \theta_2 = \dots = \theta_k} vs \eqn{H_1: \theta_1 \le \theta_2 \le \dots \le \theta_k} with at least one strict inequality).
 It evaluates pairwise Mann-Whitney $U$ count statistics $U_{ij}$ for all ordered group pairs $i < j$:
 \deqn{J = \sum_{i=1}^{k-1} \sum_{j=i+1}^k U_{ij}}
 Variance calculation includes exact adjustment for tied observation ranks across the full sample (Sheskin, 2000; Zar, 2010).

@@ -31,6 +31,10 @@
 #'
 #' @export
 kk_smd <- function(data, treatment, variables = NULL, threshold = 0.1) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
 
               treat_name <- .kk_colname(rlang::enquo(treatment))

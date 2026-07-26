@@ -39,13 +39,11 @@ Compares the AUCs of two markers measured on the same subjects
 using DeLong's test for paired ROC curves (via \code{pROC::roc.test}).
 }
 \examples{
-\dontrun{
 df <- data.frame(
   disease = rbinom(200, 1, 0.4),
   marker_a = rnorm(200),
   marker_b = rnorm(200)
 )
 kk_compare_roc(df, disease, marker_a, marker_b)
-}
 
 }

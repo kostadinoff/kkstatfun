@@ -18,6 +18,10 @@
 #'
 #' @export
 pcit <- function(data, conf.level = 0.95) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               # Identify numeric columns
               numeric_cols <- sapply(data, is.numeric)
 
@@ -102,6 +106,10 @@ compare_proportions_kk_glm <- function(data, group, x, n,
                                        by = NULL, covariates = NULL,
                                        adjust = "holm", conf.level = 0.95,
                                        vcov_type = "HC3", drop_empty = TRUE) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               for (pkg in c("emmeans", "sandwich")) {
                             if (!requireNamespace(pkg, quietly = TRUE)) {
                                           stop(sprintf("Package '%s' is required. Install it first.", pkg))
@@ -111,7 +119,10 @@ compare_proportions_kk_glm <- function(data, group, x, n,
               group_sym <- dplyr::ensym(group)
               x_sym <- dplyr::ensym(x)
               n_sym <- dplyr::ensym(n)
-              by_sym <- if (is.null(by)) NULL else dplyr::ensym(by)
+              # enquo before testing for NULL: `is.null(by)` would force the promise
+              # and error on a bare column name such as `by = strat`.
+              by_quo <- rlang::enquo(by)
+              by_sym <- if (rlang::quo_is_null(by_quo)) NULL else rlang::ensym(by)
 
               group_name <- rlang::as_string(group_sym)
               by_name <- if (is.null(by_sym)) NULL else rlang::as_string(by_sym)
@@ -146,12 +157,13 @@ compare_proportions_kk_glm <- function(data, group, x, n,
                             emm_resp <- emmeans::regrid(emm, transform = "response")
                             cmp <- emmeans::contrast(emm_resp, method = "pairwise", adjust = adjust)
                             out <- as.data.frame(summary(cmp, infer = TRUE, level = conf.level)) # <- no emmeans:: here
+                            cl <- .kk_emm_cl(out)
                             tibble::tibble(
                                           group1     = sub(" - .*", "", out$contrast),
                                           group2     = sub(".* - ", "", out$contrast),
                                           estimate   = out$estimate,
-                                          conf_low   = out$lower.CL,
-                                          conf_high  = out$upper.CL,
+                                          conf_low   = cl$lower,
+                                          conf_high  = cl$upper,
                                           p_value    = out$p.value,
                                           adjust     = adjust,
                                           conf_level = conf.level
@@ -161,13 +173,14 @@ compare_proportions_kk_glm <- function(data, group, x, n,
                             emm_resp <- emmeans::regrid(emm, transform = "response")
                             cmp <- emmeans::contrast(emm_resp, method = "pairwise", by = by_name, adjust = adjust)
                             tmp <- as.data.frame(summary(cmp, infer = TRUE, level = conf.level)) # <- no emmeans::
+                            cl <- .kk_emm_cl(tmp)
                             out <- tibble::tibble(
                                           !!by_name := tmp[[by_name]],
                                           group1     = sub(" - .*", "", tmp$contrast),
                                           group2     = sub(".* - ", "", tmp$contrast),
                                           estimate   = tmp$estimate,
-                                          conf_low   = tmp$lower.CL,
-                                          conf_high  = tmp$upper.CL,
+                                          conf_low   = cl$lower,
+                                          conf_high  = cl$upper,
                                           p_value    = tmp$p.value,
                                           adjust     = adjust,
                                           conf_level = conf.level
@@ -198,6 +211,10 @@ compare_proportions_kk_glm <- function(data, group, x, n,
 compare_proportions <- function(data,
                                 conf.level = 0.95,
                                 method = "holm") {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               # Validate the input data
               required_cols <- c("proportion", "trials")
               if (!all(required_cols %in% names(data))) {
@@ -301,6 +318,10 @@ compare_proportions <- function(data,
 compare_proportions_by <- function(data,
                                    conf.level = 0.95,
                                    method = "holm") {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               # Validate the input data
               required_cols <- c("proportion", "trials")
               if (!all(required_cols %in% names(data))) {
@@ -434,6 +455,10 @@ compare_proportions_by <- function(data,
 #'
 #' @export
 prop_trend_test <- function(data, x, n = NULL, group = NULL) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               x_enquo <- rlang::enquo(x)
               n_enquo <- rlang::enquo(n)
               group_enquo <- rlang::enquo(group)
@@ -463,5 +488,18 @@ prop_trend_test <- function(data, x, n = NULL, group = NULL) {
                             n_vec <- df$trials
               }
 
-              stats::prop.trend.test(x_vec, n_vec)
+              ht <- stats::prop.trend.test(x_vec, n_vec)
+
+              # Tidy out, like the rest of the package. The untidied htest is
+              # kept as an attribute for anyone who needs the original object.
+              res <- tibble::tibble(
+                            Test = "Cochran-Armitage Trend",
+                            Statistic = unname(ht$statistic),
+                            df = unname(ht$parameter),
+                            P_Value = unname(ht$p.value),
+                            N_Groups = length(x_vec),
+                            Total_N = sum(n_vec)
+              )
+              attr(res, "htest") <- ht
+              res
 }

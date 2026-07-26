@@ -22,8 +22,8 @@ Ignored if \code{data} is a table or matrix.}
 A tibble with the following columns:
 \itemize{
 \item \code{method}: The test method used.
-\item \code{kappa}: Cohen's Kappa coefficient ($\kappa$).
-\item \code{std_error}: The standard error ($\sigma_\kappa$).
+\item \code{kappa}: Cohen's Kappa coefficient (\eqn{\kappa}).
+\item \code{std_error}: The standard error (\eqn{\sigma_\kappa}).
 \item \code{z_statistic}: The standard normal Z-statistic.
 \item \code{p_value}: Two-sided p-value.
 \item \code{conf_lower}: Lower limit of the confidence interval.
@@ -34,7 +34,7 @@ A tibble with the following columns:
 }
 }
 \description{
-Computes Cohen's Kappa coefficient ($\kappa$) to evaluate the agreement
+Computes Cohen's Kappa coefficient (\eqn{\kappa}) to evaluate the agreement
 between two raters or judges categorizing subjects into mutually exclusive categories.
 It includes the standard error, Z-statistic, p-value, and confidence interval limits
 matching textbook formulas.

@@ -39,9 +39,7 @@ ggplot object
 Kaplan-Meier plot with risk table and p-value.
 }
 \examples{
-\dontrun{
 library(survival)
 kk_survival_plot(lung, time, status, sex)
-}
 
 }

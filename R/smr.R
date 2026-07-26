@@ -37,6 +37,10 @@
 #' @export
 kk_smr <- function(data, observed, pop, ref_rate, conf.level = 0.95,
                    multiplier = 1000) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
 
               obs_name <- .kk_colname(rlang::enquo(observed))
@@ -95,7 +99,6 @@ kk_smr <- function(data, observed, pop, ref_rate, conf.level = 0.95,
 #'   detected in the multivariable model.
 #'
 #' @examples
-#' \dontrun{
 #' # A predictor that perfectly predicts the outcome (separation)
 #' df <- data.frame(
 #'   y = c(0, 0, 0, 0, 1, 1, 1, 1),
@@ -103,10 +106,13 @@ kk_smr <- function(data, observed, pop, ref_rate, conf.level = 0.95,
 #'   z = rnorm(8)
 #' )
 #' kk_firth(df, y, c("x", "z"))
-#' }
 #'
 #' @export
 kk_firth <- function(data, outcome, predictors, conf.level = 0.95) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
               if (!requireNamespace("brglm2", quietly = TRUE)) {
                             stop("Package 'brglm2' is required for kk_firth().")

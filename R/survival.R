@@ -15,10 +15,8 @@
 #' @return ggplot object
 #'
 #' @examples
-#' \dontrun{
 #' library(survival)
 #' survival_plot(lung, "time", "status", "sex")
-#' }
 #'
 #' @export
 survival_plot <- function(data, time_col, status_col, group_col = NULL, conf.int = TRUE) {
@@ -45,7 +43,7 @@ survival_plot <- function(data, time_col, status_col, group_col = NULL, conf.int
                             ))
               }
 
-              fit <- survival::survfit2(fml, data = data)
+              fit <- ggsurvfit::survfit2(fml, data = data)
 
               p <- ggsurvfit::ggsurvfit(fit) +
                             ggsurvfit::add_confidence_interval() +
@@ -84,10 +82,8 @@ survival_plot <- function(data, time_col, status_col, group_col = NULL, conf.int
 #' @return ggplot object
 #'
 #' @examples
-#' \dontrun{
 #' library(survival)
 #' kk_survival_plot(lung, time, status, sex)
-#' }
 #'
 #' @export
 kk_survival_plot <- function(data, time, status, group = NULL,

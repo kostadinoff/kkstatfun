@@ -26,7 +26,6 @@
 #'   with likelihood-ratio tests for the period and cohort curvatures).
 #'
 #' @examples
-#' \dontrun{
 #' d <- expand.grid(age = seq(30, 70, 10), period = seq(1980, 2010, 10))
 #' d$pop <- 100000
 #' d$count <- rpois(nrow(d),
@@ -34,10 +33,13 @@
 #' fit <- kk_apc(d, age, period, count, pop)
 #' fit$net_drift
 #' fit$models
-#' }
 #'
 #' @export
 kk_apc <- function(data, age, period, count, pop) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   validate_data_frame(data)
   age_name <- .kk_colname(rlang::enquo(age))
   per_name <- .kk_colname(rlang::enquo(period))

@@ -30,10 +30,11 @@ kk_sample_size_epi(
 
 \item{m}{Matching ratio (controls per case for matched designs) or cluster size (for cluster trials). Default \code{1}.}
 
-\item{icc}{Intra-cluster correlation coefficient ($\rho$) for cluster-randomized trials (default \code{0}).}
+\item{icc}{Intra-cluster correlation coefficient (\eqn{\rho}) for cluster-randomized trials (default \code{0}).}
 }
 \value{
 A tidy tibble of class \code{kk_sample_size_epi} containing:
+\describe{
 \item{design}{Study design specified}
 \item{p0}{Baseline risk in unexposed / control group}
 \item{p1}{Implied risk in exposed / case group}
@@ -46,6 +47,7 @@ A tidy tibble of class \code{kk_sample_size_epi} containing:
 \item{n_clusters}{Required number of clusters (if cluster trial)}
 \item{interpretation}{Human-readable summary of sample size requirements}
 }
+}
 \description{
 Computes sample size and power for epidemiological study designs including cohort
 studies, unmatched case-control studies, 1:m matched case-control studies, and
@@ -54,7 +56,7 @@ cluster-randomized trials with design effect adjustments.
 \details{
 Implements formulas from Woodward (2014) \emph{Epidemiology: Study Design and Data Analysis}, 3rd Edition, Chapter 8,
 and Fleiss et al. (2003). For cluster-randomized trials, individual sample size is adjusted by the design effect
-$DEFF = 1 + (m - 1) \times \text{icc}$.
+\eqn{DEFF = 1 + (m - 1) \times \mathrm{icc}}.
 }
 \examples{
 # Cohort study sample size calculation

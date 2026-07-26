@@ -1,6 +1,4 @@
-library(testthat)
 library(dplyr)
-pkgload::load_all(".", quiet = TRUE)
 
 test_that("kk_matched_case_control works as expected", {
   set.seed(42)
@@ -84,3 +82,38 @@ test_that("kk_trend_nonlinearity works as expected", {
   expect_s3_class(res_trend, "kk_trend_nonlinearity")
   expect_equal(res_trend$exposure_levels, 4)
 })
+
+test_that("kk_dose_response, kk_survival_nnt, and kk_std_rates_ci work as expected", {
+  set.seed(42)
+  df_dr <- tibble(
+    bmi = runif(150, 18, 38),
+    disease = rbinom(150, 1, plogis(-4 + 0.15 * (bmi - 25)))
+  )
+  res_dr <- kk_dose_response(df_dr, bmi, disease, family = "binomial", ref_value = 22)
+  expect_s3_class(res_dr, "kk_dose_response")
+  expect_equal(nrow(res_dr), 100)
+  expect_true(!is.null(attr(res_dr, "nonlinearity_test")))
+
+  df_surv <- data.frame(
+    time = rexp(100, rate = rep(c(0.05, 0.02), each = 50)),
+    status = rbinom(100, 1, 0.8),
+    rx = rep(c("Control", "Treated"), each = 50)
+  )
+  res_nnt <- kk_survival_nnt(df_surv, time, status, rx, times = c(10, 20))
+  expect_s3_class(res_nnt, "kk_survival_nnt")
+  expect_equal(nrow(res_nnt), 2)
+  expect_true("NNT" %in% names(res_nnt))
+
+  df_std <- tibble(
+    age_group = c("0-14", "15-64", "65+"),
+    cases = c(2, 45, 120),
+    pop = c(10000, 50000, 15000),
+    std_pop = c(12000, 60000, 20000)
+  )
+  res_std <- kk_std_rates_ci(df_std, cases, pop, std_pop, method = "tiwari")
+  expect_s3_class(res_std, "kk_std_rates_ci")
+  expect_true(res_std$std_rate > 0)
+  expect_true(res_std$conf.low <= res_std$std_rate)
+  expect_true(res_std$conf.high >= res_std$std_rate)
+})
+

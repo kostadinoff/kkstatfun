@@ -28,11 +28,13 @@ kk_paf(
 }
 \value{
 A tidy \code{tibble} with columns:
+\describe{
 \item{metric}{Name of the metric (e.g., "PAF (Adjusted - Bruzzi)", "PAF (Adjusted - Miettinen)", "PAF (Crude)", "AF (Exposed)", "PAR")}
 \item{estimate}{Point estimate (as a proportion or rate difference)}
 \item{conf_low}{Lower confidence limit}
 \item{conf_high}{Upper confidence limit}
 \item{method}{Calculation method used}
+}
 }
 \description{
 Calculates crude and model-adjusted Population Attributable Fraction (PAF),

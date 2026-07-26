@@ -29,14 +29,12 @@
 #'   Assumes the covariate enters the formula untransformed.
 #'
 #' @examples
-#' \dontrun{
 #' set.seed(1)
 #' u <- rnorm(500, 0, 1)          # true latent exposure
 #' y <- 1 + 1.5 * u + rnorm(500)  # true relationship
 #' x <- u + rnorm(500, 0, 0.8)    # observed, measured with error (sd 0.8)
 #' naive <- lm(y ~ x)             # slope attenuated below 1.5
 #' kk_simex(naive, x, error_sd = 0.8)
-#' }
 #'
 #' @export
 kk_simex <- function(model, variable, error_sd, lambda = c(0.5, 1, 1.5, 2),

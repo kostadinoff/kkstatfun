@@ -9,3 +9,11 @@ booksources/*.pdf
 booksources/extracted_text/
 scratch/
 
+# Machine-local Claude Code permissions; the shared skill under
+# .claude/skills/ is tracked deliberately.
+.claude/settings.local.json
+
+# Build artefacts
+*.tar.gz
+*.Rcheck/
+README.html

@@ -35,8 +35,8 @@
 #'     \item \code{alternative}: The alternative hypothesis.
 #'     \item \code{n_obs}: The effective number of observations.
 #'     \item \code{observed_runs}: The total number of runs ($r$).
-#'     \item \code{expected_runs}: The expected number of runs under the null hypothesis ($\mu$).
-#'     \item \code{variance_runs}: The variance of the number of runs ($\sigma^2$).
+#'     \item \code{expected_runs}: The expected number of runs under the null hypothesis (\eqn{\mu}).
+#'     \item \code{variance_runs}: The variance of the number of runs (\eqn{\sigma^2}).
 #'     \item \code{z_statistic}: The standard normal $Z$-statistic.
 #'     \item \code{p_value}: The p-value of the test.
 #'     \item \code{tie_action}: (Only for \code{"up_down"}) The tie-handling action applied.
@@ -124,7 +124,7 @@ kk_runs_test <- function(data, x = NULL,
       } else if (threshold == "median") {
         stats::median(vec)
       } else if (threshold == "mean") {
-        stats::mean(vec)
+        base::mean(vec)
       } else {
         stop("Invalid threshold. Must be a numeric value, 'median', or 'mean'.")
       }
@@ -297,7 +297,7 @@ kk_random_seq <- kk_runs_test
 #'   Ignored if `data` is a vector.
 #' @param p Expected probabilities under the null hypothesis. Can be a single numeric value
 #'   for $k=2$ (representing probability of first category), a numeric vector of length $k$ (summing to 1),
-#'   or `NULL` (default, assuming equally probable alternatives $p_j = 1/k$).
+#'   or `NULL` (default, assuming equally probable alternatives \eqn{p_j = 1/k}).
 #' @param alternative Character string specifying the alternative hypothesis for binary tests.
 #'   Must be one of `"two.sided"` (default), `"less"`, or `"greater"`. Ignored for $k > 2$ Chi-Square test.
 #' @param continuity_correction Logical, whether to apply the correction for continuity in the binomial Z-test (default: `TRUE`).
@@ -512,7 +512,7 @@ kk_frequency_test <- function(data, x = NULL, p = NULL,
 #'     \item \code{alternative}: The alternative hypothesis.
 #'     \item \code{n_obs}: The number of observations.
 #'     \item \code{statistic_C}: The C statistic value ($C = 1 - s_{ms}^2 / s^2$).
-#'     \item \code{s_variance}: The standard sample variance ($s^2$).
+#'     \item \code{s_variance}: The standard sample variance (\eqn{s^2}).
 #'     \item \code{s_ms_difference}: The mean square successive difference ($s_{ms}^2$).
 #'     \item \code{z_statistic}: The large sample normal Z-statistic.
 #'     \item \code{p_value}: The p-value of the test.

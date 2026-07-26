@@ -2,9 +2,20 @@
 % Please edit documentation in R/summary.R
 \name{kk_summary}
 \alias{kk_summary}
+\alias{comprehensive_summary}
 \title{Comprehensive Summary Statistics (KK Summary)}
 \usage{
 kk_summary(
+  data,
+  col,
+  var_name = NULL,
+  verbose = c("full", "basic", "custom"),
+  stats = NULL,
+  pairwise = TRUE,
+  chi_probs = NULL
+)
+
+comprehensive_summary(
   data,
   col,
   var_name = NULL,

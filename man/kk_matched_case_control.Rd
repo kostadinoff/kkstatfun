@@ -28,6 +28,7 @@ kk_matched_case_control(
 }
 \value{
 A tidy tibble of class \code{kk_matched_case_control} containing:
+\describe{
 \item{matched_sets}{Total number of valid matched sets}
 \item{n_cases}{Total number of cases}
 \item{n_controls}{Total number of controls}
@@ -37,6 +38,7 @@ A tidy tibble of class \code{kk_matched_case_control} containing:
 \item{p.value}{Two-sided p-value from conditional likelihood ratio test}
 \item{method}{Statistical method used}
 \item{interpretation}{Human-readable summary of association}
+}
 }
 \description{
 Estimates conditional odds ratios for 1:1, 1:m, or variable-ratio matched

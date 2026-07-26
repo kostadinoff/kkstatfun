@@ -297,5 +297,6 @@ kk_summary <- function(data, col, var_name = NULL,
               return(result)
 }
 
+#' @rdname kk_summary
 #' @export
 comprehensive_summary <- kk_summary

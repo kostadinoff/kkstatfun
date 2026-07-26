@@ -22,7 +22,7 @@ Ignored if \code{data} is a vector.}
 
 \item{p}{Expected probabilities under the null hypothesis. Can be a single numeric value
 for $k=2$ (representing probability of first category), a numeric vector of length $k$ (summing to 1),
-or \code{NULL} (default, assuming equally probable alternatives $p_j = 1/k$).}
+or \code{NULL} (default, assuming equally probable alternatives \eqn{p_j = 1/k}).}
 
 \item{alternative}{Character string specifying the alternative hypothesis for binary tests.
 Must be one of \code{"two.sided"} (default), \code{"less"}, or \code{"greater"}. Ignored for $k > 2$ Chi-Square test.}

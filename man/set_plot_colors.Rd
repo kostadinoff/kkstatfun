@@ -18,7 +18,7 @@ set_plot_colors(
 colour names), e.g. three flag colours.}
 
 \item{scheme}{Optional name of a derived palette to build from \code{colors} with
-\code{\link[=kk_gen_palettes]{kk_gen_palettes()}} before registering — one of \code{"custom"}, \code{"sequential"},
+\code{\link[=kk_gen_palettes]{kk_gen_palettes()}} before registering -- one of \code{"custom"}, \code{"sequential"},
 \code{"monochromatic"}, \code{"tints"}, \code{"shades"}, \code{"analogous"}, \code{"complementary"},
 \code{"split_complementary"}, \code{"triadic"}, \code{"tetradic"}, \code{"spectral"}. When
 \code{NULL} (default) \code{colors} are registered as-is.}
@@ -44,7 +44,7 @@ Invisibly, the validated anchor colours that were registered.
 }
 \description{
 Registers a set of anchor ("flag") colours and makes every
-discrete \code{ggplot2} colour and fill scale draw from them by default — so
+discrete \code{ggplot2} colour and fill scale draw from them by default -- so
 \code{\link[=kkplot]{kkplot()}} (and any \code{ggplot()}) automatically uses your chosen colours for
 grouped bars, points, lines, etc. Continuous colour/fill scales (e.g.
 heatmaps) are left untouched. Fewer groups than anchors use the anchor
@@ -54,7 +54,6 @@ This is the colour counterpart to \code{\link[=set_plot_font]{set_plot_font()}};
 preamble is \verb{kk_setup(); set_plot_font("Roboto Condensed", size = 14); set_plot_colors(c("#D62828", "#003049", "#F77F00"))}.
 }
 \examples{
-\dontrun{
 set_plot_colors(c("#D62828", "#003049", "#F77F00"))
 # now discrete fills/colours use the flag palette automatically
 kkplot(mtcars, ggplot2::aes(factor(cyl), fill = factor(cyl))) +
@@ -65,7 +64,6 @@ set_plot_colors("#D62828", scheme = "triadic", n = 6)
 
 # opt in to the gradient for heatmaps too
 set_plot_colors(c("#D62828", "#003049", "#F77F00"), continuous = TRUE)
-}
 
 }
 \seealso{

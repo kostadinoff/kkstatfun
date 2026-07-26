@@ -25,15 +25,17 @@
 #'   supplied, a row for the RMST difference and ratio with CIs and p-values.
 #'
 #' @examples
-#' \dontrun{
 #' library(survival)
 #' # Time-to-death by sex, restricted to 1 year
 #' kk_rmst(lung, time, status, sex, tau = 365)
-#' }
 #'
 #' @export
 kk_rmst <- function(data, time, status, group = NULL, tau = NULL,
                     conf.level = 0.95) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
               if (!requireNamespace("survival", quietly = TRUE)) {
                             stop("Package 'survival' is required for kk_rmst().")
@@ -160,7 +162,6 @@ kk_rmst <- function(data, time, status, group = NULL, tau = NULL,
 #'   `gray_test` containing Gray's test result when available.
 #'
 #' @examples
-#' \dontrun{
 #' # 0 = censored, 1 = relapse (of interest), 2 = death without relapse
 #' df <- data.frame(
 #'   time = rexp(200, 0.1),
@@ -168,10 +169,13 @@ kk_rmst <- function(data, time, status, group = NULL, tau = NULL,
 #'   arm = rep(c("A", "B"), each = 100)
 #' )
 #' kk_cuminc(df, time, status, arm, cause = 1)
-#' }
 #'
 #' @export
 kk_cuminc <- function(data, time, status, group = NULL, cause = 1, times = NULL) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
               if (!requireNamespace("survival", quietly = TRUE)) {
                             stop("Package 'survival' is required for kk_cuminc().")

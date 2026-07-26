@@ -2,9 +2,12 @@
 % Please edit documentation in R/egn.R
 \name{extract_age_from_egn}
 \alias{extract_age_from_egn}
+\alias{extract_egn_info}
 \title{Extract Information from EGN}
 \usage{
 extract_age_from_egn(egn, admission_date = Sys.Date())
+
+extract_egn_info(egn, admission_date = Sys.Date())
 }
 \arguments{
 \item{egn}{Vector of EGNs (character or numeric)}

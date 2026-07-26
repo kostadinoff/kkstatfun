@@ -25,7 +25,6 @@ subjects. Returns all six Shrout-Fleiss forms (ICC1, ICC2, ICC3 and their
 average-rater counterparts) with F-tests and confidence intervals.
 }
 \examples{
-\dontrun{
 # Three raters scoring the same 10 subjects
 ratings <- data.frame(
   r1 = c(9, 6, 8, 7, 10, 6, 8, 7, 9, 5),
@@ -33,6 +32,5 @@ ratings <- data.frame(
   r3 = c(9, 5, 8, 8, 9, 6, 7, 7, 8, 5)
 )
 kk_icc(ratings)
-}
 
 }

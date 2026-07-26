@@ -29,6 +29,9 @@ univariate_continuous_plot(
 \item{group}{Optional grouping variable}
 
 \item{label_size}{Size for text labels (default: 3.5)}
+
+\item{stats}{Summary statistic annotated on the plot: \code{"mean"} (default) or
+\code{"median"}.}
 }
 \description{
 Univariate Continuous Plot

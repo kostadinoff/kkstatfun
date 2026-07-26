@@ -10,15 +10,17 @@
 #' @param cause Event code for the cause of interest (default 1).
 #'
 #' @return A tidy \code{tibble} with columns:
-#'   \item{variable}{Name of predictor variable}
-#'   \item{term}{Level / contrast term name}
-#'   \item{subdist_hr}{Subdistribution Hazard Ratio (SHR = \eqn{\exp(\beta)})}
-#'   \item{conf_low}{Lower 95% confidence limit}
-#'   \item{conf_high}{Upper 95% confidence limit}
-#'   \item{std_error}{Robust standard error of \eqn{\beta}}
-#'   \item{z_stat}{Wald $Z$ statistic}
-#'   \item{p_value}{$p$-value}
-#'   \item{model_type}{"Univariate" or "Multivariable"}
+#'   \describe{
+#'     \item{variable}{Name of predictor variable}
+#'     \item{term}{Level / contrast term name}
+#'     \item{subdist_hr}{Subdistribution Hazard Ratio (SHR = \eqn{\exp(\beta)})}
+#'     \item{conf_low}{Lower 95% confidence limit}
+#'     \item{conf_high}{Upper 95% confidence limit}
+#'     \item{std_error}{Robust standard error of \eqn{\beta}}
+#'     \item{z_stat}{Wald $Z$ statistic}
+#'     \item{p_value}{$p$-value}
+#'     \item{model_type}{"Univariate" or "Multivariable"}
+#'   }
 #'
 #' @details
 #' The Fine-Gray model (Fine & Gray, 1999) models the hazard of the subdistribution for a specific cause in the presence of competing events.
@@ -43,6 +45,10 @@
 #' # Fine-Gray regression for cause = 1
 #' kk_finegray(dat, time = "time", status = "status", predictors = c("age", "treatment"), cause = 1)
 kk_finegray <- function(data, time, status, predictors, cause = 1) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   
   if (!requireNamespace("survival", quietly = TRUE)) {
     stop("Package 'survival' is required for kk_finegray. Please install it.")

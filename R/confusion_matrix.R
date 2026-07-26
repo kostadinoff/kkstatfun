@@ -23,11 +23,10 @@
 #' Includes 22+ classification metrics:
 #' - **Binomial CIs:** Sensitivity, Specificity, PPV, NPV, Accuracy, Prevalence
 #' - **Derived CIs:** FPR, FNR, FDR, FOR
-#' - **Likelihood Ratios:** LR+, LR−, DOR (with log-normal CIs)
+#' - **Likelihood Ratios:** LR+, LR-, DOR (with log-normal CIs)
 #' - **Point Estimates:** F1, Balanced Accuracy, MCC, Youden's J, etc.
 #'
 #' @examples
-#' \dontrun{
 #' library(kkstatfun)
 #'
 #' # Example 1: Named vector input
@@ -78,7 +77,6 @@
 #'                             "sensitivity (TPR)", "specificity (TNR)",
 #'                             "PPV (precision)", "NPV"
 #'               ))
-#' }
 #'
 #' @export
 kk_confusion_matrix <- function(x,
@@ -92,7 +90,9 @@ kk_confusion_matrix <- function(x,
                             if (is.data.frame(x)) {
                                           nm <- tolower(trimws(names(x)[1]))
                                           if (ncol(x) == 2 && (nm %in% c("name", "metric", "label") || is.character(x[[1]]))) {
-                                                        kv <- setNames(as.numeric(x[[2]]), tolower(gsub("[^a-z ]", "", x[[1]])))
+                                                        # Lower-case first: stripping with a lower-case-only class
+                                                        # would otherwise erase upper-case labels such as "TP".
+                                                        kv <- setNames(as.numeric(x[[2]]), gsub("[^a-z ]", "", tolower(x[[1]])))
                                           } else if (all(c("tp", "fp", "fn", "tn") %in% tolower(names(x)))) {
                                                         take <- tolower(names(x)) %in% c("tp", "fp", "fn", "tn")
                                                         kv <- setNames(as.numeric(x[1, take]), tolower(names(x))[take])
@@ -114,6 +114,8 @@ kk_confusion_matrix <- function(x,
                             out <- c(tp = NA_real_, fp = NA_real_, fn = NA_real_, tn = NA_real_)
                             for (k in names(kv)) if (k %in% names(map)) out[map[[k]]] <- kv[[k]]
                             if (any(is.na(out))) stop("Missing one or more of TP/FP/FN/TN.")
+                            # `out` is seeded as NA_real_, so counts are already doubles here;
+                            # integer inputs are coerced on assignment.
                             as.list(out)
               }
 
@@ -187,8 +189,11 @@ kk_confusion_matrix <- function(x,
               fm <- if (!is.na(ppv) && !is.na(sens)) sqrt(ppv * sens) else NA_real_
               ts <- if ((TP + FN + FP) > 0) TP / (TP + FN + FP) else NA_real_
 
-              denom_mcc <- sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
-              mcc <- if (denom_mcc > 0) ((TP * TN) - (FP * FN)) / denom_mcc else NA_real_
+              # Multiply the square roots rather than the raw products: the product
+              # of the four marginals overflows integer/double range for realistic
+              # epidemiological counts, which silently yields NA.
+              denom_mcc <- sqrt(TP + FP) * sqrt(TP + FN) * sqrt(TN + FP) * sqrt(TN + FN)
+              mcc <- if (isTRUE(denom_mcc > 0)) ((TP * TN) - (FP * FN)) / denom_mcc else NA_real_
 
               PT <- if (!is.na(sens) && !is.na(fpr) && (sens - fpr) != 0) {
                             (sqrt(sens * fpr) - fpr) / (sens - fpr)
@@ -196,7 +201,7 @@ kk_confusion_matrix <- function(x,
                             NA_real_
               }
 
-              # Haldane–Anscombe for LR/DOR if any zero
+              # Haldane-Anscombe for LR/DOR if any zero
               TPc <- TP
               FPc <- FP
               FNc <- FN
@@ -287,20 +292,20 @@ kk_confusion_matrix <- function(x,
                             as_row(
                                           "LR+", ci_lr_pos[[1]], ci_lr_pos[[2]], ci_lr_pos[[3]],
                                           "log-normal (approx.)",
-                                          if (add_0_5_for_lr && any(c(TP, FP, FN, TN) == 0)) "Haldane–Anscombe +0.5 used" else NA_character_
+                                          if (add_0_5_for_lr && any(c(TP, FP, FN, TN) == 0)) "Haldane\u2013Anscombe +0.5 used" else NA_character_
                             ),
                             as_row(
-                                          "LR−", ci_lr_neg[[1]], ci_lr_neg[[2]], ci_lr_neg[[3]],
+                                          "LR\u2212", ci_lr_neg[[1]], ci_lr_neg[[2]], ci_lr_neg[[3]],
                                           "log-normal (approx.)",
-                                          if (add_0_5_for_lr && any(c(TP, FP, FN, TN) == 0)) "Haldane–Anscombe +0.5 used" else NA_character_
+                                          if (add_0_5_for_lr && any(c(TP, FP, FN, TN) == 0)) "Haldane\u2013Anscombe +0.5 used" else NA_character_
                             ),
                             as_row("DOR", ci_dor[[1]], ci_dor[[2]], ci_dor[[3]], "log-normal (approx.)"),
                             as_row("Prevalence threshold (PT)", PT, NA, NA, "point estimate"),
                             as_row("balanced accuracy", ba, NA, NA, "point estimate"),
                             as_row("F1 score", f1, NA, NA, "point estimate"),
-                            as_row("Fowlkes–Mallows", fm, NA, NA, "point estimate"),
+                            as_row("Fowlkes\u2013Mallows", fm, NA, NA, "point estimate"),
                             as_row("Threat score (CSI)", ts, NA, NA, "point estimate"),
-                            as_row("Markedness (Δp)", mk, NA, NA, "point estimate"),
+                            as_row("Markedness (\u0394p)", mk, NA, NA, "point estimate"),
                             as_row("Bookmaker informedness (BM/Youden)", bm, NA, NA, "point estimate"),
                             as_row("Matthews corr. coeff. (MCC)", mcc, NA, NA, "point estimate")
               ))
@@ -326,20 +331,24 @@ kk_confusion_matrix <- function(x,
                                           ts <- if ((tp + fn + fp) > 0) tp / (tp + fn + fp) else NA_real_
                                           mk <- if (!is.na(ppv) && !is.na(npv)) ppv + npv - 1 else NA_real_
                                           bm <- if (!is.na(sens) && !is.na(spec)) sens + spec - 1 else NA_real_
-                                          denom <- sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
-                                          mcc <- if (denom > 0) ((tp * tn) - (fp * fn)) / denom else NA_real_
+                                          # See the point-estimate branch: multiply square roots to
+                                          # avoid overflowing on the product of the four marginals.
+                                          denom <- sqrt(tp + fp) * sqrt(tp + fn) * sqrt(tn + fp) * sqrt(tn + fn)
+                                          mcc <- if (isTRUE(denom > 0)) ((tp * tn) - (fp * fn)) / denom else NA_real_
                                           c(ba = ba, f1 = f1, fm = fm, ts = ts, mk = mk, bm = bm, mcc = mcc)
                             }
 
                             boot_mat <- matrix(NA_real_, nrow = B, ncol = 7)
                             colnames(boot_mat) <- c(
-                                          "balanced accuracy", "F1 score", "Fowlkes–Mallows",
-                                          "Threat score (CSI)", "Markedness (Δp)",
+                                          "balanced accuracy", "F1 score", "Fowlkes\u2013Mallows",
+                                          "Threat score (CSI)", "Markedness (\u0394p)",
                                           "Bookmaker informedness (BM/Youden)", "Matthews corr. coeff. (MCC)"
                             )
 
                             for (b in seq_len(B)) {
-                                          draw <- as.vector(stats::rmultinom(1, size = total, prob = probs))
+                                          # as.numeric: rmultinom returns integers, which overflow in
+                                          # the metric arithmetic for large totals.
+                                          draw <- as.numeric(stats::rmultinom(1, size = total, prob = probs))
                                           boot_mat[b, ] <- do.call(one_metric, as.list(draw))
                             }
 
@@ -402,6 +411,10 @@ confusion_metrics_ci <- function(x,
 #'
 #' @export
 diagnostic_summary <- function(data, truth, test, cutoff = 0.5, positive = NULL, ...) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               truth_enquo <- rlang::enquo(truth)
               test_enquo <- rlang::enquo(test)
 

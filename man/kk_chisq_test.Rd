@@ -23,7 +23,7 @@ Ignored if \code{data} is a table or matrix.}
 \item{c}{Column name (as symbol or string) representing columns if \code{data} is a data frame.
 Ignored if \code{data} is a table or matrix.}
 
-\item{correct}{Logical, whether to apply continuity correction for $2 \times 2$ tables (default: \code{TRUE}).}
+\item{correct}{Logical, whether to apply continuity correction for \eqn{2 \times 2} tables (default: \code{TRUE}).}
 
 \item{pairwise}{Logical, whether to perform post-hoc pairwise comparisons of rows when the table
 has more than 2 rows (default: \code{TRUE}).}
@@ -35,7 +35,7 @@ comparisons (default: \code{"bonferroni"}). Must be one of the methods accepted 
 A tibble with the following columns:
 \itemize{
 \item \code{method}: The test method used.
-\item \code{statistic}: Pearson's Chi-Square statistic ($\chi^2$).
+\item \code{statistic}: Pearson's Chi-Square statistic (\eqn{\chi^2}).
 \item \code{df}: The degrees of freedom.
 \item \code{p_value}: The p-value of the test.
 \item \code{observed}: Observed frequencies formatted as a string.
@@ -47,7 +47,7 @@ A tibble with the following columns:
 \description{
 Performs Pearson's Chi-Square Test of Independence or Homogeneity on categorical data.
 Supports raw data frames, aggregated tables/matrices, grouped data frames, and automatic
-post-hoc pairwise comparisons for tables larger than $2 \times 2$.
+post-hoc pairwise comparisons for tables larger than \eqn{2 \times 2}.
 }
 \examples{
 # Example 16.5: Biting frequency among species (4 x 3 table)

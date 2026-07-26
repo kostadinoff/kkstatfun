@@ -25,7 +25,6 @@
 #'   dispersion statistic.
 #'
 #' @examples
-#' \dontrun{
 #' df <- data.frame(
 #'   cases = rpois(100, 3),
 #'   pyears = runif(100, 50, 150),
@@ -33,11 +32,14 @@
 #'   sex = rbinom(100, 1, 0.5)
 #' )
 #' kk_rate_reg(df, cases, c("age", "sex"), person_time = pyears)
-#' }
 #'
 #' @export
 kk_rate_reg <- function(data, outcome, predictors, person_time = NULL,
                         conf.level = 0.95, dispersion_threshold = 1.5, ...) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
               if (!is.character(predictors) || length(predictors) < 1) {
                             stop("`predictors` must be a non-empty character vector.")
@@ -125,18 +127,20 @@ kk_poisson <- kk_rate_reg
 #'   (univariate / multivariable).
 #'
 #' @examples
-#' \dontrun{
 #' df <- data.frame(
 #'   event = rbinom(200, 1, 0.3),
 #'   exposure = rbinom(200, 1, 0.5),
 #'   age = rnorm(200, 50, 10)
 #' )
 #' kk_rr_reg(df, event, c("exposure", "age"))
-#' }
 #'
 #' @export
 kk_rr_reg <- function(data, outcome, predictors, conf.level = 0.95,
                       vcov_type = "HC0") {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
               if (!requireNamespace("sandwich", quietly = TRUE)) {
                             stop("Package 'sandwich' is required for kk_rr_reg().")

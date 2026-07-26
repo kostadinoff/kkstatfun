@@ -41,7 +41,6 @@ stabilized), and returns the weighted treatment effect on a binary outcome.
 Pair with \code{kk_smd} to check covariate balance before and after weighting.
 }
 \examples{
-\dontrun{
 df <- data.frame(
   trt = rbinom(500, 1, 0.5),
   age = rnorm(500, 50, 10),
@@ -49,6 +48,5 @@ df <- data.frame(
 )
 df$out <- rbinom(500, 1, plogis(-1 + 0.5 * df$trt + 0.02 * df$age))
 kk_iptw(df, trt, out, covariates = c("age", "sex"))
-}
 
 }

@@ -19,6 +19,7 @@ kk_case_crossover(data, id, event, exposure, alpha = 0.05)
 }
 \value{
 A tidy tibble of class \code{kk_case_crossover} containing:
+\describe{
 \item{n_patients}{Total number of case patients}
 \item{n_windows}{Total number of evaluated time windows}
 \item{odds_ratio}{Self-controlled exposure odds ratio}
@@ -27,6 +28,7 @@ A tidy tibble of class \code{kk_case_crossover} containing:
 \item{p.value}{Two-sided p-value}
 \item{method}{Statistical method description}
 \item{interpretation}{Human-readable interpretation}
+}
 }
 \description{
 Estimates exposure odds ratios for acute events using patient-level self-controlled

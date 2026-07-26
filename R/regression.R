@@ -28,6 +28,10 @@
 #'
 #' @export
 kk_reg <- function(data, outcome, predictors, log_outcome = FALSE, custom_formula = NULL, include_diagnostics = TRUE, ...) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               # Validate inputs
               if (!is.data.frame(data)) stop("`data` must be a data frame.")
               if (!is.character(predictors)) stop("`predictors` must be a character vector.")

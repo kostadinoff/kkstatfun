@@ -5,7 +5,7 @@
 \title{Compare Independent Correlations}
 \usage{
 kk_compare_independent_correlations(
-  data,
+  data = NULL,
   x = NULL,
   y = NULL,
   group = NULL,

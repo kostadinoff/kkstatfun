@@ -37,7 +37,6 @@
 #'   scale of the effect.
 #'
 #' @examples
-#' \dontrun{
 #' set.seed(1)
 #' n <- 500
 #' x <- rbinom(n, 1, 0.5)
@@ -45,7 +44,6 @@
 #' y <- rbinom(n, 1, plogis(-1 + 0.3 * x + 0.6 * m))  # both paths
 #' df <- data.frame(x = x, m = m, y = y)
 #' kk_causal_mediation(df, x, m, y, boot_reps = 500)
-#' }
 #'
 #' @export
 kk_causal_mediation <- function(data, exposure, mediator, outcome,
@@ -53,6 +51,10 @@ kk_causal_mediation <- function(data, exposure, mediator, outcome,
                                 mediator_family = "gaussian",
                                 outcome_family = "binomial",
                                 boot_reps = 1000, conf.level = 0.95) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   validate_data_frame(data)
   a_name <- .kk_colname(rlang::enquo(exposure))
   m_name <- .kk_colname(rlang::enquo(mediator))

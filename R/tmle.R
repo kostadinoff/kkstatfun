@@ -47,6 +47,10 @@
 #' @export
 kk_tmle <- function(data, outcome, treatment, covariates,
                     g_bounds = c(0.025, 0.975), conf.level = 0.95) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   validate_data_frame(data)
   y_name <- .kk_colname(rlang::enquo(outcome))
   a_name <- .kk_colname(rlang::enquo(treatment))

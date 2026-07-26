@@ -25,6 +25,7 @@ kk_trend_nonlinearity(
 }
 \value{
 A tidy tibble of class \code{kk_trend_nonlinearity} containing:
+\describe{
 \item{exposure_levels}{Number of unique exposure levels evaluated}
 \item{linear_effect}{Linear slope coefficient estimate per unit exposure}
 \item{conf.low}{Lower bound of 95\% CI for linear effect}
@@ -37,6 +38,7 @@ A tidy tibble of class \code{kk_trend_nonlinearity} containing:
 \item{p_nonlinearity}{P-value for non-linearity (lack of fit)}
 \item{interpretation}{Human-readable summary of dose-response shape}
 }
+}
 \description{
 Decomposes exposure-outcome associations across ordered exposure levels into a 1-df linear
 trend component and a departure-from-linearity (non-linearity) component on patient-level data.
@@ -44,7 +46,7 @@ trend component and a departure-from-linearity (non-linearity) component on pati
 \details{
 Follows methods in Woodward (2014) \emph{Epidemiology: Study Design and Data Analysis}, 3rd Edition, Chapter 3.6.3.
 Decomposes total exposure deviance into a 1-df linear trend component and a $(k-2)$-df non-linear departure
-component. A significant $p_{\text{trend}}$ with a non-significant $p_{\text{nonlinearity}}$ indicates a consistent
+component. A significant \eqn{p_{\mathrm{trend}}} with a non-significant \eqn{p_{\mathrm{nonlinearity}}} indicates a consistent
 monotonic linear dose-response relationship.
 }
 \examples{

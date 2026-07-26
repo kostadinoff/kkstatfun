@@ -13,11 +13,13 @@
 #' @param n_boot Number of bootstrap iterations for adjusted PAF confidence intervals (default 500).
 #'
 #' @return A tidy \code{tibble} with columns:
-#'   \item{metric}{Name of the metric (e.g., "PAF (Adjusted - Bruzzi)", "PAF (Adjusted - Miettinen)", "PAF (Crude)", "AF (Exposed)", "PAR")}
-#'   \item{estimate}{Point estimate (as a proportion or rate difference)}
-#'   \item{conf_low}{Lower confidence limit}
-#'   \item{conf_high}{Upper confidence limit}
-#'   \item{method}{Calculation method used}
+#'   \describe{
+#'     \item{metric}{Name of the metric (e.g., "PAF (Adjusted - Bruzzi)", "PAF (Adjusted - Miettinen)", "PAF (Crude)", "AF (Exposed)", "PAR")}
+#'     \item{estimate}{Point estimate (as a proportion or rate difference)}
+#'     \item{conf_low}{Lower confidence limit}
+#'     \item{conf_high}{Upper confidence limit}
+#'     \item{method}{Calculation method used}
+#'   }
 #'
 #' @details
 #' Adjusted PAF is estimated using both Bruzzi's model-based standardization method
@@ -47,6 +49,10 @@
 #' fit <- glm(disease ~ smoking + age + bmi, data = dat, family = binomial)
 #' kk_paf(fit, exposure = "smoking", n_boot = 100)
 kk_paf <- function(data, outcome = NULL, exposure = NULL, covariates = NULL, conf_level = 0.95, n_boot = 200) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   
   # Check if data is a fitted glm
   if (inherits(data, "glm")) {

@@ -6,7 +6,7 @@
 #'
 #' @description Performs Pearson's Chi-Square Test of Independence or Homogeneity on categorical data.
 #'   Supports raw data frames, aggregated tables/matrices, grouped data frames, and automatic
-#'   post-hoc pairwise comparisons for tables larger than $2 \times 2$.
+#'   post-hoc pairwise comparisons for tables larger than \eqn{2 \times 2}.
 #'
 #' @param data A data frame, table, or matrix. If a data frame is provided, the row
 #'   variable must be specified in `r` and the column variable in `c`.
@@ -14,7 +14,7 @@
 #'   Ignored if `data` is a table or matrix.
 #' @param c Column name (as symbol or string) representing columns if `data` is a data frame.
 #'   Ignored if `data` is a table or matrix.
-#' @param correct Logical, whether to apply continuity correction for $2 \times 2$ tables (default: `TRUE`).
+#' @param correct Logical, whether to apply continuity correction for \eqn{2 \times 2} tables (default: `TRUE`).
 #' @param pairwise Logical, whether to perform post-hoc pairwise comparisons of rows when the table
 #'   has more than 2 rows (default: `TRUE`).
 #' @param adjust_method Character string specifying the p-value adjustment method for post-hoc
@@ -23,7 +23,7 @@
 #' @return A tibble with the following columns:
 #'   \itemize{
 #'     \item \code{method}: The test method used.
-#'     \item \code{statistic}: Pearson's Chi-Square statistic ($\chi^2$).
+#'     \item \code{statistic}: Pearson's Chi-Square statistic (\eqn{\chi^2}).
 #'     \item \code{df}: The degrees of freedom.
 #'     \item \code{p_value}: The p-value of the test.
 #'     \item \code{observed}: Observed frequencies formatted as a string.

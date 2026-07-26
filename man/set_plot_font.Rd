@@ -7,7 +7,7 @@
 set_plot_font(
   font = "Roboto Condensed",
   size = 18,
-  search_sources = c("google", "system", "local"),
+  search_sources = c("system", "local", "google"),
   fallbacks = c("Arial", "Helvetica", "sans"),
   update_theme = TRUE,
   enable_showtext = FALSE,
@@ -19,7 +19,9 @@ set_plot_font(
 
 \item{size}{Base font size (default: 18)}
 
-\item{search_sources}{Sources to search: "google", "system", "local"}
+\item{search_sources}{Sources to search, in order. Any of \code{"system"}
+(installed OS fonts), \code{"local"} (font files on disk), and \code{"google"}
+(Google Fonts). Default \code{c("system", "local", "google")}.}
 
 \item{fallbacks}{Fallback fonts}
 
@@ -30,10 +32,26 @@ set_plot_font(
 \item{force_ragg}{Whether to attempt to force AGG (ragg) for rendering on Windows (default: FALSE)}
 }
 \value{
-List with font details
+Invisibly, a list with the requested and resolved font, whether it
+was found, the source used, and the per-source search results.
 }
 \description{
-Sets the font for ggplot2 plots, searching Google Fonts, system fonts, and local directories.
+Sets the font for ggplot2 plots, searching installed system
+fonts, local font directories, and Google Fonts.
+}
+\details{
+Two font registries exist and they are not interchangeable. The AGG (\code{ragg})
+and cairo devices resolve families through \strong{systemfonts}; \code{showtext}
+resolves them through \strong{sysfonts}. \code{search_sources} is ordered
+\code{"system"}, \code{"local"}, \code{"google"} by default because the first two yield
+fonts that AGG can use directly, which is what you want when rendering
+without \code{showtext}.
+
+Whatever the source, a resolved family is registered with \strong{both}
+registries where possible, so the same call works on AGG, cairo, and
+showtext devices. If a Google font cannot be mirrored into systemfonts, the
+function says so rather than reporting success for a font AGG would silently
+replace with a default face.
 }
 \examples{
 \dontrun{

@@ -30,7 +30,6 @@ separation (e.g. rare events or a zero cell). Separation in the data is
 detected and reported. Returns a tidy odds-ratio table.
 }
 \examples{
-\dontrun{
 # A predictor that perfectly predicts the outcome (separation)
 df <- data.frame(
   y = c(0, 0, 0, 0, 1, 1, 1, 1),
@@ -38,6 +37,5 @@ df <- data.frame(
   z = rnorm(8)
 )
 kk_firth(df, y, c("x", "z"))
-}
 
 }

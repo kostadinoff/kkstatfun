@@ -40,13 +40,15 @@
 #'   (`ph_global_p`).
 #'
 #' @examples
-#' \dontrun{
 #' library(survival)
 #' kk_coxph(lung, time, status, predictors = c("age", "sex", "ph.ecog"))
-#' }
 #'
 #' @export
 kk_coxph <- function(data, time, status, predictors, conf.level = 0.95, ...) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
               if (!requireNamespace("survival", quietly = TRUE)) {
                             stop("Package 'survival' is required for kk_coxph().")
@@ -125,13 +127,15 @@ kk_coxph <- function(data, time, status, predictors, conf.level = 0.95, ...) {
 #'   the overall test statistic, degrees of freedom, and p-value.
 #'
 #' @examples
-#' \dontrun{
 #' library(survival)
 #' kk_logrank(lung, time, status, sex)
-#' }
 #'
 #' @export
 kk_logrank <- function(data, time, status, group, rho = 0) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
               if (!requireNamespace("survival", quietly = TRUE)) {
                             stop("Package 'survival' is required for kk_logrank().")
@@ -201,6 +205,10 @@ kk_logrank <- function(data, time, status, group, rho = 0) {
 #' @export
 kk_incidence_rate <- function(data, cases, person_time, by = NULL,
                               conf.level = 0.95, multiplier = 1000) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
 
               cases_name <- .kk_colname(rlang::enquo(cases))

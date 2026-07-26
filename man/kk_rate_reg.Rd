@@ -55,7 +55,6 @@ is assessed via the Pearson dispersion statistic; when it is substantial and
 standard errors are not understated.
 }
 \examples{
-\dontrun{
 df <- data.frame(
   cases = rpois(100, 3),
   pyears = runif(100, 50, 150),
@@ -63,6 +62,5 @@ df <- data.frame(
   sex = rbinom(100, 1, 0.5)
 )
 kk_rate_reg(df, cases, c("age", "sex"), person_time = pyears)
-}
 
 }

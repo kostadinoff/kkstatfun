@@ -13,16 +13,32 @@ kk_table1(
   p_value = TRUE
 )
 }
+\arguments{
+\item{data}{Data frame.}
+
+\item{by}{Grouping variable (character column name) to stratify columns by.}
+
+\item{variables}{Character vector of variables to include (optional; defaults to all
+columns other than \code{by}).}
+
+\item{label_list}{Optional named list of display labels for variables.}
+
+\item{digits}{Number of digits for rounding summary statistics (default \code{2}).}
+
+\item{p_value}{Logical; include a p-value column comparing groups (default \code{TRUE}).}
+}
+\value{
+Tibble containing the formatted Table 1.
+}
 \description{
 A wrapper around \code{table1_summary} to generate a publication-ready descriptive table
-returned as a standard tibble.
+returned as a standard tibble. Supports \code{group_by()} for stratified tables.
 }
 \examples{
-\dontrun{
 trial <- data.frame(
   arm = sample(c("Control", "Treatment"), 100, replace = TRUE),
   age = rnorm(100, 60, 10), bmi = rnorm(100, 27, 4)
 )
 kk_table1(trial, by = "arm", variables = c("age", "bmi"))
-}
+
 }

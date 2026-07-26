@@ -60,7 +60,6 @@ further requires no unmeasured exposure-outcome, mediator-outcome, or
 exposure-mediator confounding (adjust for these via \code{confounders}).
 }
 \examples{
-\dontrun{
 set.seed(1)
 n <- 500
 x <- rbinom(n, 1, 0.5)
@@ -68,6 +67,5 @@ m <- 0.5 * x + rnorm(n)                       # exposure -> mediator
 y <- rbinom(n, 1, plogis(-1 + 0.3 * x + 0.6 * m))  # both paths
 df <- data.frame(x = x, m = m, y = y)
 kk_causal_mediation(df, x, m, y, boot_reps = 500)
-}
 
 }

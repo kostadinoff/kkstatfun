@@ -53,12 +53,11 @@ Includes 22+ classification metrics:
 \itemize{
 \item \strong{Binomial CIs:} Sensitivity, Specificity, PPV, NPV, Accuracy, Prevalence
 \item \strong{Derived CIs:} FPR, FNR, FDR, FOR
-\item \strong{Likelihood Ratios:} LR+, LR−, DOR (with log-normal CIs)
+\item \strong{Likelihood Ratios:} LR+, LR-, DOR (with log-normal CIs)
 \item \strong{Point Estimates:} F1, Balanced Accuracy, MCC, Youden's J, etc.
 }
 }
 \examples{
-\dontrun{
 library(kkstatfun)
 
 # Example 1: Named vector input
@@ -109,6 +108,5 @@ test_result \%>\%
                             "sensitivity (TPR)", "specificity (TNR)",
                             "PPV (precision)", "NPV"
               ))
-}
 
 }

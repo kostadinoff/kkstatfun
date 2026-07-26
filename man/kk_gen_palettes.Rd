@@ -7,7 +7,7 @@
 kk_gen_palettes(colors, n = 6, plot = FALSE)
 }
 \arguments{
-\item{colors}{Character vector of 1–12 seed colours (hex or R colour names).}
+\item{colors}{Character vector of 1-12 seed colours (hex or R colour names).}
 
 \item{n}{Number of colours per palette (default 6).}
 
@@ -22,8 +22,8 @@ seed colours stored in \code{attr(x, "seed")}. Names: \code{custom} (multi-seed 
 }
 \description{
 From \strong{1 to 12} seed colours, derive a named catalogue of
-palettes — sequential/monochromatic ramps and qualitative colour-theory
-schemes (analogous, complementary, triadic, tetradic, …) — each returned as
+palettes -- sequential/monochromatic ramps and qualitative colour-theory
+schemes (analogous, complementary, triadic, tetradic, ...) -- each returned as
 exactly \code{n} hex colours ready for \code{\link[=kkplot]{kkplot()}} / \code{\link[=scale_fill_kk]{scale_fill_kk()}}. Schemes are
 built in HSV space from the \strong{first} seed; the \code{sequential} ramp (and the
 \code{custom} entry, present only when more than one seed is given) use all seeds
@@ -36,9 +36,7 @@ coolors.co: pick a scheme you like, then make it the plotting default with
 \examples{
 pals <- kk_gen_palettes("#D62828", n = 6)
 pals$triadic
-\dontrun{
 kk_gen_palettes(c("#D62828", "#003049", "#F77F00"), n = 8, plot = TRUE)
-}
 
 }
 \seealso{

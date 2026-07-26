@@ -21,16 +21,18 @@
 #'   threshold, and the sensitivity / specificity / PPV / NPV at that threshold.
 #'
 #' @examples
-#' \dontrun{
 #' df <- data.frame(
 #'   disease = rbinom(200, 1, 0.4),
 #'   marker = rnorm(200)
 #' )
 #' kk_roc(df, disease, marker)
-#' }
 #'
 #' @export
 kk_roc <- function(data, truth, predictor, conf.level = 0.95, direction = "auto") {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
               if (!requireNamespace("pROC", quietly = TRUE)) {
                             stop("Package 'pROC' is required for kk_roc().")
@@ -93,18 +95,20 @@ kk_roc <- function(data, truth, predictor, conf.level = 0.95, direction = "auto"
 #'   and the p-value.
 #'
 #' @examples
-#' \dontrun{
 #' df <- data.frame(
 #'   disease = rbinom(200, 1, 0.4),
 #'   marker_a = rnorm(200),
 #'   marker_b = rnorm(200)
 #' )
 #' kk_compare_roc(df, disease, marker_a, marker_b)
-#' }
 #'
 #' @export
 kk_compare_roc <- function(data, truth, predictor1, predictor2,
                            method = "delong", paired = TRUE, conf.level = 0.95) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
               if (!requireNamespace("pROC", quietly = TRUE)) {
                             stop("Package 'pROC' is required for kk_compare_roc().")

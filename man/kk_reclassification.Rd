@@ -28,9 +28,11 @@ kk_reclassification(
 }
 \value{
 An S3 object of class \code{kk_reclassification} containing:
+\describe{
 \item{summary}{Tidy tibble with NRI_events, NRI_nonevents, NRI_overall, IDI, 95\% CIs, and p-values}
 \item{reclass_events}{Reclassification cross-tabulation table for event cases}
 \item{reclass_nonevents}{Reclassification cross-tabulation table for non-event controls}
+}
 }
 \description{
 Evaluates whether adding a new biomarker or risk factor improves patient risk predictions

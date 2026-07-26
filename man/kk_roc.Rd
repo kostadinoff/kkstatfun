@@ -30,12 +30,10 @@ interval and the Youden-optimal cutoff together with the sensitivity and
 specificity achieved there.
 }
 \examples{
-\dontrun{
 df <- data.frame(
   disease = rbinom(200, 1, 0.4),
   marker = rnorm(200)
 )
 kk_roc(df, disease, marker)
-}
 
 }

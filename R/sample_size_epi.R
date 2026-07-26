@@ -11,25 +11,27 @@
 #' @param alpha Type I error rate (default `0.05`).
 #' @param ratio Ratio of unexposed to exposed subjects or controls per case (default `1`).
 #' @param m Matching ratio (controls per case for matched designs) or cluster size (for cluster trials). Default `1`.
-#' @param icc Intra-cluster correlation coefficient ($\rho$) for cluster-randomized trials (default `0`).
+#' @param icc Intra-cluster correlation coefficient (\eqn{\rho}) for cluster-randomized trials (default `0`).
 #'
 #' @return A tidy tibble of class `kk_sample_size_epi` containing:
-#'   \item{design}{Study design specified}
-#'   \item{p0}{Baseline risk in unexposed / control group}
-#'   \item{p1}{Implied risk in exposed / case group}
-#'   \item{target_effect}{Target RR or OR}
-#'   \item{alpha}{Type I error rate}
-#'   \item{power}{Target statistical power}
-#'   \item{n_group1}{Required sample size for Group 1 (Exposed / Cases)}
-#'   \item{n_group2}{Required sample size for Group 2 (Unexposed / Controls)}
-#'   \item{n_total}{Total individual sample size}
-#'   \item{n_clusters}{Required number of clusters (if cluster trial)}
-#'   \item{interpretation}{Human-readable summary of sample size requirements}
+#'   \describe{
+#'     \item{design}{Study design specified}
+#'     \item{p0}{Baseline risk in unexposed / control group}
+#'     \item{p1}{Implied risk in exposed / case group}
+#'     \item{target_effect}{Target RR or OR}
+#'     \item{alpha}{Type I error rate}
+#'     \item{power}{Target statistical power}
+#'     \item{n_group1}{Required sample size for Group 1 (Exposed / Cases)}
+#'     \item{n_group2}{Required sample size for Group 2 (Unexposed / Controls)}
+#'     \item{n_total}{Total individual sample size}
+#'     \item{n_clusters}{Required number of clusters (if cluster trial)}
+#'     \item{interpretation}{Human-readable summary of sample size requirements}
+#'   }
 #'
 #' @details
 #' Implements formulas from Woodward (2014) *Epidemiology: Study Design and Data Analysis*, 3rd Edition, Chapter 8,
 #' and Fleiss et al. (2003). For cluster-randomized trials, individual sample size is adjusted by the design effect
-#' $DEFF = 1 + (m - 1) \times \text{icc}$.
+#' \eqn{DEFF = 1 + (m - 1) \times \mathrm{icc}}.
 #'
 #' @export
 #' @examples

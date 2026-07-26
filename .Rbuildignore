@@ -2,3 +2,14 @@
 ^booksources/.*$
 ^Rplots\.pdf$
 ^\.claude$
+^scratch$
+^scratch/.*$
+^README\.html$
+^README\.Rmd$
+^MANUAL\.md$
+^examples$
+^examples/.*$
+^.*\.tar\.gz$
+^CITATION\.bib$
+^\.git$
+^\.gitignore$

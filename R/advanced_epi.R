@@ -33,6 +33,10 @@
 #'
 #' @export
 kk_stratified_2x2 <- function(data, exposure, outcome, strata, conf.level = 0.95, method = "mh") {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               exp_name <- .kk_colname(rlang::enquo(exposure))
               out_name <- .kk_colname(rlang::enquo(outcome))
               str_name <- .kk_colname(rlang::enquo(strata))
@@ -212,6 +216,10 @@ kk_stratified_2x2 <- function(data, exposure, outcome, strata, conf.level = 0.95
 #'
 #' @export
 kk_mcnemar <- function(data, exposure, outcome, pair_id = NULL, conf.level = 0.95, exact = TRUE) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               exp_name <- .kk_colname(rlang::enquo(exposure))
               out_name <- .kk_colname(rlang::enquo(outcome))
               pair_name <- if (!rlang::quo_is_null(rlang::enquo(pair_id))) .kk_colname(rlang::enquo(pair_id)) else NULL
@@ -301,6 +309,10 @@ kk_mcnemar <- function(data, exposure, outcome, pair_id = NULL, conf.level = 0.9
 #'
 #' @export
 kk_trend_test <- function(data, outcome, dose_group, scores = NULL, conf.level = 0.95) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               outcome_name <- .kk_colname(rlang::enquo(outcome))
               dose_name <- .kk_colname(rlang::enquo(dose_group))
 
@@ -432,6 +444,10 @@ kk_trend_test <- function(data, outcome, dose_group, scores = NULL, conf.level =
 #'
 #' @export
 kk_agreement <- function(data, rater1, rater2, weights = "unweighted", conf.level = 0.95) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               rater1_enquo <- rlang::enquo(rater1)
               rater2_enquo <- rlang::enquo(rater2)
 

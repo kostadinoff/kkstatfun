@@ -31,13 +31,11 @@ log-binomial regression while yielding valid risk ratios rather than odds
 ratios, which are preferable for common outcomes in cohort studies.
 }
 \examples{
-\dontrun{
 df <- data.frame(
   event = rbinom(200, 1, 0.3),
   exposure = rbinom(200, 1, 0.5),
   age = rnorm(200, 50, 10)
 )
 kk_rr_reg(df, event, c("exposure", "age"))
-}
 
 }

@@ -18,7 +18,6 @@
 #'   F statistic, and p-value.
 #'
 #' @examples
-#' \dontrun{
 #' # Three raters scoring the same 10 subjects
 #' ratings <- data.frame(
 #'   r1 = c(9, 6, 8, 7, 10, 6, 8, 7, 9, 5),
@@ -26,10 +25,13 @@
 #'   r3 = c(9, 5, 8, 8, 9, 6, 7, 7, 8, 5)
 #' )
 #' kk_icc(ratings)
-#' }
 #'
 #' @export
 kk_icc <- function(data, raters = NULL, conf.level = 0.95) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
               if (!requireNamespace("psych", quietly = TRUE)) {
                             stop("Package 'psych' is required for kk_icc().")
@@ -74,16 +76,18 @@ kk_icc <- function(data, raters = NULL, conf.level = 0.95) {
 #'   standardized alpha as the attribute `alpha` (a one-row tibble).
 #'
 #' @examples
-#' \dontrun{
 #' items <- data.frame(
 #'   q1 = c(4, 5, 3, 4, 5), q2 = c(4, 4, 3, 5, 5),
 #'   q3 = c(5, 5, 2, 4, 4), q4 = c(4, 5, 3, 4, 5)
 #' )
 #' kk_reliability(items)
-#' }
 #'
 #' @export
 kk_reliability <- function(data, items = NULL) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
               if (!requireNamespace("psych", quietly = TRUE)) {
                             stop("Package 'psych' is required for kk_reliability().")

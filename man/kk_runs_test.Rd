@@ -50,8 +50,8 @@ A tibble with the following columns:
 \item \code{alternative}: The alternative hypothesis.
 \item \code{n_obs}: The effective number of observations.
 \item \code{observed_runs}: The total number of runs ($r$).
-\item \code{expected_runs}: The expected number of runs under the null hypothesis ($\mu$).
-\item \code{variance_runs}: The variance of the number of runs ($\sigma^2$).
+\item \code{expected_runs}: The expected number of runs under the null hypothesis (\eqn{\mu}).
+\item \code{variance_runs}: The variance of the number of runs (\eqn{\sigma^2}).
 \item \code{z_statistic}: The standard normal $Z$-statistic.
 \item \code{p_value}: The p-value of the test.
 \item \code{tie_action}: (Only for \code{"up_down"}) The tie-handling action applied.

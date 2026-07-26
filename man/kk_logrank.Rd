@@ -28,9 +28,7 @@ Compares survival distributions across groups using the family of
 (more weight on early events).
 }
 \examples{
-\dontrun{
 library(survival)
 kk_logrank(lung, time, status, sex)
-}
 
 }

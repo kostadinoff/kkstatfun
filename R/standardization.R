@@ -20,6 +20,10 @@
 #' std_pop <- c(4000, 7000, 6000, 3000) # WHO standard or similar
 #' kk_std_rates(df, cases, pop, std_pop, multiplier = 1000)
 kk_std_rates <- function(data, count, pop, std_pop, conf.level = 0.95, multiplier = 1000) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               count_enquo <- rlang::enquo(count)
               pop_enquo <- rlang::enquo(pop)
 

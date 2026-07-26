@@ -35,10 +35,8 @@ alternative to the hazard ratio when the proportional-hazards assumption
 is in doubt.
 }
 \examples{
-\dontrun{
 library(survival)
 # Time-to-death by sex, restricted to 1 year
 kk_rmst(lung, time, status, sex, tau = 365)
-}
 
 }

@@ -404,7 +404,7 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                                                       test_name <- "Chi-square"
                                                                       if (!is.null(test_result)) {
                                                                                     overall_p <- test_result$p.value
-                                                                                    test_stat <- sprintf("χ²=%.2f", test_result$statistic)
+                                                                                    test_stat <- sprintf("\u03c7\u00b2=%.2f", test_result$statistic)
                                                                                     df_val <- as.character(test_result$parameter)
                                                                       }
                                                         }
@@ -414,7 +414,7 @@ kk_compare_groups_table <- function(data, group, variables = NULL,
                                                         if (nrow(tbl) >= 2 && ncol(tbl) == 1) {
                                                                       overall_p <- 1.0
                                                                       test_name <- "Chi-square"
-                                                                      test_stat <- "χ²=0.00"
+                                                                      test_stat <- "\u03c7\u00b2=0.00"
                                                                       df_val <- "0"
                                                                       effect_size_str <- "V=0.00"
                                                         }

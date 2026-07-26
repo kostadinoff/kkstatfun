@@ -23,12 +23,10 @@ including alpha-if-item-dropped, useful for scale and questionnaire
 validation.
 }
 \examples{
-\dontrun{
 items <- data.frame(
   q1 = c(4, 5, 3, 4, 5), q2 = c(4, 4, 3, 5, 5),
   q3 = c(5, 5, 2, 4, 4), q4 = c(4, 5, 3, 4, 5)
 )
 kk_reliability(items)
-}
 
 }

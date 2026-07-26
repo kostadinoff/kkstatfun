@@ -6,10 +6,13 @@
 #' @param method1 Vector of measurements from method 1, or a data frame. If a data frame is provided, the
 #'   column names representing the two methods must follow.
 #' @param method2 Vector of measurements from method 2, or column name/symbol if `method1` is a data frame.
-#' @param conf.level Confidence level for limits of agreement (default 0.95)
-#' @param plot Return a ggplot object? (default TRUE)
-#' @param title Plot title
-#' @param ... Additional arguments passed to methods.
+#' @param ... Additional arguments. In data-frame mode the two column names/symbols
+#'   are passed here. The following named options are also accepted:
+#'   \describe{
+#'     \item{`conf.level`}{Confidence level for the limits of agreement (default `0.95`).}
+#'     \item{`plot`}{Return a ggplot object? (default `TRUE`); `FALSE` returns the statistics tibble.}
+#'     \item{`title`}{Plot title.}
+#'   }
 #'
 #' @return If plot=TRUE, a ggplot object. If plot=FALSE, a tibble with stats.
 #' @export

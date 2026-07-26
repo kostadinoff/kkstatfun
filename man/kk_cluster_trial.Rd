@@ -19,6 +19,7 @@ kk_cluster_trial(data, outcome, treatment, cluster, alpha = 0.05)
 }
 \value{
 A tidy tibble of class \code{kk_cluster_trial} containing:
+\describe{
 \item{n_clusters}{Total number of clusters}
 \item{n_patients}{Total number of patients}
 \item{estimate}{Cluster-adjusted treatment effect}
@@ -31,6 +32,7 @@ A tidy tibble of class \code{kk_cluster_trial} containing:
 \item{deff}{Design effect multiplier}
 \item{effective_n}{Effective sample size accounting for clustering}
 \item{interpretation}{Human-readable interpretation of trial results}
+}
 }
 \description{
 Estimates treatment effects for cluster-randomized trials on patient-level data,

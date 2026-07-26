@@ -32,9 +32,7 @@ and returns a tidy hazard-ratio table together with the Schoenfeld residual
 test of the proportional-hazards assumption (\code{survival::cox.zph}).
 }
 \examples{
-\dontrun{
 library(survival)
 kk_coxph(lung, time, status, predictors = c("age", "sex", "ph.ecog"))
-}
 
 }

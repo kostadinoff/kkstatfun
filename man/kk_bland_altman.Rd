@@ -12,13 +12,13 @@ column names representing the two methods must follow.}
 
 \item{method2}{Vector of measurements from method 2, or column name/symbol if \code{method1} is a data frame.}
 
-\item{...}{Additional arguments passed to methods.}
-
-\item{conf.level}{Confidence level for limits of agreement (default 0.95)}
-
-\item{plot}{Return a ggplot object? (default TRUE)}
-
-\item{title}{Plot title}
+\item{...}{Additional arguments. In data-frame mode the two column names/symbols
+are passed here. The following named options are also accepted:
+\describe{
+\item{\code{conf.level}}{Confidence level for the limits of agreement (default \code{0.95}).}
+\item{\code{plot}}{Return a ggplot object? (default \code{TRUE}); \code{FALSE} returns the statistics tibble.}
+\item{\code{title}}{Plot title.}
+}}
 }
 \value{
 If plot=TRUE, a ggplot object. If plot=FALSE, a tibble with stats.

@@ -27,9 +27,12 @@ ggplot object
 Visualizes the output of \code{compare_proportions} or \code{compare_proportions_kk_glm} using a forest plot.
 }
 \examples{
-\dontrun{
-# Assuming results from compare_proportions
+counts <- data.frame(
+  group = c("A", "B", "C"),
+  x = c(20, 35, 50),
+  n = c(100, 100, 100)
+)
+results <- compare_proportions_kk_glm(counts, group, x, n)
 plot_proportion_comparisons(results)
-}
 
 }

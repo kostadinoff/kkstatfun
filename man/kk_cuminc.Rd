@@ -35,7 +35,6 @@ package is installed, Gray's test for equality of CIFs across groups is
 also reported.
 }
 \examples{
-\dontrun{
 # 0 = censored, 1 = relapse (of interest), 2 = death without relapse
 df <- data.frame(
   time = rexp(200, 0.1),
@@ -43,6 +42,5 @@ df <- data.frame(
   arm = rep(c("A", "B"), each = 100)
 )
 kk_cuminc(df, time, status, arm, cause = 1)
-}
 
 }

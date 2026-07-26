@@ -2,14 +2,18 @@
 # MODEL VALIDATION & CAUSAL WEIGHTING
 # ============================================================
 
-#' Calibration of a Risk Model (KK)
+#' Calibration Table of a Risk Model (KK)
 #'
 #' @description Assesses how well predicted probabilities from a binary risk
-#'   model agree with observed event rates. Returns the Brier score, the
-#'   Hosmer-Lemeshow goodness-of-fit test, and a grouped calibration table
-#'   (mean predicted vs. observed risk within equal-count risk deciles) suitable
-#'   for a calibration plot. This complements discrimination measures such as
-#'   `kk_roc`.
+#'   model agree with observed event rates. Returns the grouped calibration
+#'   table (mean predicted vs. observed risk within equal-count risk groups)
+#'   suitable for plotting a calibration curve, carrying the Brier score and the
+#'   Hosmer-Lemeshow goodness-of-fit test as attributes. This complements
+#'   discrimination measures such as [kk_roc()].
+#'
+#'   For a one-row summary of calibration statistics (Hosmer-Lemeshow, O/E
+#'   ratio, calibration slope and intercept) rather than the per-group table,
+#'   use [kk_calibration()].
 #'
 #' @param data Data frame.
 #' @param truth Binary outcome column (bare name or string); coerced to 0/1.
@@ -22,15 +26,19 @@
 #'   `hosmer_lemeshow` (a one-row tibble with the chi-square statistic, degrees
 #'   of freedom, and p-value).
 #'
+#' @seealso [kk_calibration()] for the one-row summary form.
+#'
 #' @examples
-#' \dontrun{
+#' set.seed(42)
 #' df <- data.frame(y = rbinom(500, 1, 0.3))
 #' df$p <- plogis(qlogis(0.3) + 0.5 * scale(df$y) + rnorm(500))
-#' kk_calibration(df, y, p)
-#' }
+#' cal <- kk_calibration_table(df, y, p)
+#' cal
+#' attr(cal, "brier")
+#' attr(cal, "hosmer_lemeshow")
 #'
 #' @export
-kk_calibration <- function(data, truth, predicted, groups = 10) {
+kk_calibration_table <- function(data, truth, predicted, groups = 10) {
               validate_data_frame(data)
 
               truth_name <- .kk_colname(rlang::enquo(truth))
@@ -103,7 +111,6 @@ kk_calibration <- function(data, truth, predicted, groups = 10) {
 #'   the attributes `weights` and `propensity`.
 #'
 #' @examples
-#' \dontrun{
 #' df <- data.frame(
 #'   trt = rbinom(500, 1, 0.5),
 #'   age = rnorm(500, 50, 10),
@@ -111,12 +118,15 @@ kk_calibration <- function(data, truth, predicted, groups = 10) {
 #' )
 #' df$out <- rbinom(500, 1, plogis(-1 + 0.5 * df$trt + 0.02 * df$age))
 #' kk_iptw(df, trt, out, covariates = c("age", "sex"))
-#' }
 #'
 #' @export
 kk_iptw <- function(data, treatment, outcome, covariates,
                     estimand = c("ATE", "ATT"), stabilize = TRUE,
                     conf.level = 0.95) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               validate_data_frame(data)
               estimand <- match.arg(estimand)
               if (!requireNamespace("sandwich", quietly = TRUE)) {

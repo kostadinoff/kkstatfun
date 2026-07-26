@@ -2,9 +2,12 @@
 % Please edit documentation in R/one_hot.R
 \name{kkonehot}
 \alias{kkonehot}
+\alias{one_hot_encode}
 \title{One-Hot Encoding (KK One Hot)}
 \usage{
 kkonehot(data, column)
+
+one_hot_encode(data, column)
 }
 \arguments{
 \item{data}{Tibble or data frame}

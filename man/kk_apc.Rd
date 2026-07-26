@@ -35,7 +35,6 @@ nested Poisson models whose deviances isolate the \emph{non-linear} (curvature)
 contributions of period and cohort, which \emph{are} identifiable.
 }
 \examples{
-\dontrun{
 d <- expand.grid(age = seq(30, 70, 10), period = seq(1980, 2010, 10))
 d$pop <- 100000
 d$count <- rpois(nrow(d),
@@ -43,6 +42,5 @@ d$count <- rpois(nrow(d),
 fit <- kk_apc(d, age, period, count, pop)
 fit$net_drift
 fit$models
-}
 
 }

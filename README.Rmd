@@ -8,23 +8,53 @@ knitr::opts_chunk$set(
   out.width = '75%',
   dpi = 110,
   message = FALSE,
-  warning = FALSE
+  warning = FALSE,
+  # AGG renders the Roboto Condensed set below without showtext.
+  dev = if (requireNamespace('ragg', quietly = TRUE)) 'ragg_png' else 'png'
 )
 options(width = 90, tibble.print_min = 8, tibble.print_max = 20)
 set.seed(1)
 pkgload::load_all('.', quiet = TRUE)
+# Roboto Condensed resolves via systemfonts, so the AGG/ragg device renders it
+# directly -- no showtext needed.
 suppressWarnings(suppressMessages(
-  set_plot_font(font = 'sans', size = 12, search_sources = 'system')
+  set_plot_font(font = 'Roboto Condensed', size = 12)
 ))
 ```
 
 # kkstatfun
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21475840.svg)](https://doi.org/10.5281/zenodo.21475840)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18936019.svg)](https://doi.org/10.5281/zenodo.18936019)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
 
 **R Statistical Analysis Toolkit for Medical and Epidemiology**
 
-A comprehensive R package designed for medical statistics, epidemiology, and general clinical data analysis. It provides a suite of tidyverse-friendly tools with full support for piping (`%>%` / `|>`) and grouping (`group_by()`).
+A comprehensive R package designed for medical statistics, epidemiology, and general clinical data analysis. It provides a suite of tidyverse-friendly tools that take individual-level data as their first argument, support piping (`%>%` / `|>`), and return tidy tibbles.
+
+**Grouped input.** The analysis functions honour `dplyr::group_by()`: pipe a grouped
+data frame in and the analysis is run once per group, with the grouping columns
+prefixed to the result. This is genuinely stratified — not a pooled estimate:
+
+```{r ex-groupby}
+library(dplyr)
+set.seed(7)
+# Strong exposure effect at site A, none at site B.
+strat <- tibble(
+  site = rep(c("A", "B"), each = 200),
+  expo = c(rbinom(200, 1, .6), rbinom(200, 1, .2))
+) %>%
+  mutate(out = rbinom(400, 1, ifelse(site == "A" & expo == 1, .5,
+                              ifelse(site == "A", .1, .2))))
+
+# Pooled: one confounded odds ratio
+strat %>% kk_twobytwo(expo, out) %>% filter(Metric == "Odds Ratio")
+
+# Stratified: the effect modification is visible
+strat %>% group_by(site) %>% kk_twobytwo(expo, out) %>% filter(Metric == "Odds Ratio")
+```
+
+Plotting helpers and column-wise utilities (`kkonehot()`, `mutate_round()`,
+`format_tibble()`) are group-agnostic by design.
 
 ---
 
@@ -183,6 +213,23 @@ df_treatment %>% kk_nnt(statin, event)
 ```
 
 > **Interpretation.** The statin cut the event rate from 7% to 3% — an absolute risk reduction of 4% (ARR 0.04) and a 57% relative reduction (RRR). You would need to treat 25 patients (NNT, 95% CI 15–76) to prevent one cardiovascular event; the CI excludes infinity, consistent with a significant benefit.
+
+#### `kk_survival_nnt(data, time, status, group, times)`
+
+Computes **time-varying Absolute Risk Reduction (ARR)** and **Number Needed to Treat (NNT)** or Harm (NNH) from Kaplan-Meier survival curves at specified time points, with Greenwood-based confidence intervals.
+
+*   **Clinical Example**: Assessing the time-varying NNT for survival benefit from a new oncology therapy across 10, 20, and 30 time units of follow-up.
+```{r ex-survival-nnt}
+set.seed(42)
+df_surv_nnt <- data.frame(
+  time = rexp(200, rate = rep(c(0.05, 0.02), each = 100)),
+  status = rbinom(200, 1, 0.8),
+  rx = rep(c("Control", "Treated"), each = 100)
+)
+kk_survival_nnt(df_surv_nnt, time, status, rx, times = c(10, 20, 30))
+```
+
+> **Interpretation.** At 20 units of follow-up, survival is 73.8% in treated vs 45.7% in controls ($\Delta = 28.1\%$). The time-varying NNT is 3.56 (95% CI 2.40–6.90), indicating ~4 patients need treatment to prevent 1 mortality event by time 20.
 
 #### `kk_sensitivity_analysis(or_observed, p_bias)`
 
@@ -351,6 +398,23 @@ kk_std_rates(df_std, cases, pop, std_pop, multiplier = 1000)
 ```
 
 > **Interpretation.** The crude rate (8.04 per 1000) is what you observe; the age-standardized rate (7.74, 95% CI 6.62–8.87) is what the population *would* experience under the reference age structure. Standardizing removes age as a confounder so regions or periods can be compared fairly. The small drop from crude to adjusted shows this population is slightly older than the standard.
+
+#### `kk_std_rates_ci(data, count, pop, std_pop, method)`
+
+Calculates **directly age-standardized rates with exact Gamma confidence intervals** (Tiwari et al. 2006 / Fay-Feuer 1997 NCI SEER standard), overcoming undercoverage of normal CIs when age-specific event counts are small or zero.
+
+*   **Epidemiological Example**: Computing age-adjusted rare cancer incidence rates with exact SEER modified gamma confidence intervals.
+```{r ex-std-rates-ci}
+df_std_ci <- tibble::tibble(
+  age_group = c("0-14", "15-64", "65+"),
+  cases = c(2, 45, 120),
+  pop = c(10000, 50000, 15000),
+  std_pop = c(12000, 60000, 20000)
+)
+kk_std_rates_ci(df_std_ci, cases, pop, std_pop, method = "tiwari")
+```
+
+> **Interpretation.** Crude rate is 222.7 per 100,000; directly age-adjusted rate is 235.1 per 100,000. Tiwari's exact modified gamma 95% CI is 201.2 to 273.7 per 100,000, providing exact coverage even with sparse counts in young age groups.
 
 #### `kk_smr(data, observed, pop, ref_rate)`
 
@@ -882,6 +946,22 @@ kk_trend_nonlinearity(df_dose_resp, pack_years, bronchitis, family = "binomial")
 ```
 
 > **Interpretation.** Linear trend $\chi^2(1) = 39.51$ (p < 0.001); departure from linearity $\chi^2(3) = 1.34$ (p = 0.72). The association follows a significant linear dose-response trend with no evidence of non-linear departure.
+
+#### `kk_dose_response(data, exposure, outcome, family, ref_value)`
+
+Fits continuous exposure-outcome associations using **Restricted Cubic Splines (RCS)**, returning predicted Odds Ratios, Risk Ratios, or linear effects relative to a reference exposure level $x_{\text{ref}}$, along with formal Likelihood Ratio Tests for non-linearity.
+
+*   **Epidemiological Example**: Evaluating non-linear dose-response curves for BMI and cardiovascular risk relative to a reference BMI of 22 $\text{kg/m}^2$.
+```{r ex-dose-response}
+set.seed(42)
+df_dr <- tibble::tibble(
+  bmi = runif(300, 18, 38),
+  disease = rbinom(300, 1, plogis(-4 + 0.15 * (bmi - 25) + 0.01 * (bmi - 25)^2))
+)
+kk_dose_response(df_dr, bmi, disease, family = "binomial", ref_value = 22)
+```
+
+> **Interpretation.** Predicts odds ratios across a 100-point exposure grid relative to reference BMI = 22. The non-linearity attribute (`attr(res, "nonlinearity_test")`) contains the LRT comparing spline vs linear model ($p_{\text{nonlinearity}}$).
 
 #### `plot_proportion_comparisons(results)`
 
@@ -1548,11 +1628,16 @@ If you use this package in your research, please cite it as follows:
   title = {kkstatfun: R Statistical Analysis Toolkit for Medical Statistics and Epidemiology},
   author = {Kostadinov, Kostadin},
   year = {2026},
-  version = {0.2.8},
+  version = {1.0.0},
   url = {https://github.com/kostadinoff/kkstatfun},
-  doi = {10.5281/zenodo.21475840},
+  doi = {10.5281/zenodo.18936019},
 }
 ```
+
+The DOI above is the Zenodo *concept* DOI: it always resolves to the most recent
+release. To cite the exact version you used, take the version-specific DOI from
+[the Zenodo record](https://doi.org/10.5281/zenodo.18936019), or run
+`citation("kkstatfun")`.
 
 ## Credits
 

@@ -28,12 +28,21 @@ Assumes the model contains two binary exposures and their interaction.
 Model formula should be roughly: outcome ~ exp1 * exp2 + covariates
 }
 \examples{
-\dontrun{
+set.seed(42)
+df <- data.frame(
+  exp1 = rbinom(400, 1, 0.4),
+  exp2 = rbinom(400, 1, 0.3),
+  age = rnorm(400, 60, 10)
+)
+df$outcome <- rbinom(
+  400, 1,
+  plogis(-3 + 0.7 * df$exp1 + 0.6 * df$exp2 + 0.8 * df$exp1 * df$exp2)
+)
+
 # Using a fitted glm model
 model <- glm(outcome ~ exp1 * exp2 + age, family = binomial, data = df)
 kk_reri(model, "exp1", "exp2")
 
 # Using a data frame directly
 kk_reri(df, exp1, exp2, outcome)
-}
 }

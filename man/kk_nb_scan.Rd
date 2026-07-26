@@ -64,7 +64,6 @@ Statistical significance is obtained by Monte-Carlo simulation from the
 fitted null, which corrects for the multiplicity of overlapping windows.
 }
 \examples{
-\dontrun{
 # 4x4 grid of regions over 12 weeks, with a planted outbreak
 grid <- expand.grid(x = 1:4, y = 1:4)
 grid$region <- seq_len(nrow(grid))
@@ -77,6 +76,5 @@ d$count <- rnbinom(nrow(d), size = 5, mu = d$expected)
 hot <- d$region \%in\% c(1, 2, 5, 6) & d$time >= 9      # outbreak cluster
 d$count[hot] <- rnbinom(sum(hot), size = 5, mu = 30)
 kk_nb_scan(d, region, time, count, expected, n_sim = 499)
-}
 
 }

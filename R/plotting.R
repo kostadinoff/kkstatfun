@@ -4,17 +4,35 @@
 
 #' Set Plot Font
 #'
-#' @description Sets the font for ggplot2 plots, searching Google Fonts, system fonts, and local directories.
+#' @description Sets the font for ggplot2 plots, searching installed system
+#'   fonts, local font directories, and Google Fonts.
+#'
+#' @details
+#' Two font registries exist and they are not interchangeable. The AGG (`ragg`)
+#' and cairo devices resolve families through **systemfonts**; `showtext`
+#' resolves them through **sysfonts**. `search_sources` is ordered
+#' `"system"`, `"local"`, `"google"` by default because the first two yield
+#' fonts that AGG can use directly, which is what you want when rendering
+#' without `showtext`.
+#'
+#' Whatever the source, a resolved family is registered with **both**
+#' registries where possible, so the same call works on AGG, cairo, and
+#' showtext devices. If a Google font cannot be mirrored into systemfonts, the
+#' function says so rather than reporting success for a font AGG would silently
+#' replace with a default face.
 #'
 #' @param font Font family name (default: "Roboto Condensed")
 #' @param size Base font size (default: 18)
-#' @param search_sources Sources to search: "google", "system", "local"
+#' @param search_sources Sources to search, in order. Any of `"system"`
+#'   (installed OS fonts), `"local"` (font files on disk), and `"google"`
+#'   (Google Fonts). Default `c("system", "local", "google")`.
 #' @param fallbacks Fallback fonts
 #' @param update_theme Whether to update the current ggplot theme
 #' @param enable_showtext Whether to enable showtext for font rendering (default: FALSE)
 #' @param force_ragg Whether to attempt to force AGG (ragg) for rendering on Windows (default: FALSE)
 #'
-#' @return List with font details
+#' @return Invisibly, a list with the requested and resolved font, whether it
+#'   was found, the source used, and the per-source search results.
 #'
 #' @examples
 #' \dontrun{
@@ -25,7 +43,7 @@
 #' @import ggtext
 #' @export
 set_plot_font <- function(font = "Roboto Condensed", size = 18,
-                          search_sources = c("google", "system", "local"),
+                          search_sources = c("system", "local", "google"),
                           fallbacks = c("Arial", "Helvetica", "sans"),
                           update_theme = TRUE,
                           enable_showtext = FALSE,
@@ -46,29 +64,120 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             tolower(gsub("[\\s-]", "", name))
               }
 
-              # Helper function to test if font family is available
+              # Is the family registered with sysfonts? This is the registry that
+              # showtext draws from, and it is NOT what AGG/ragg consults.
               test_font <- function(family) {
                             families <- sysfonts::font_families()
                             return(family %in% families)
               }
 
-              # Helper function to add font from Google Fonts
+              # Is the family visible to the AGG/ragg and cairo devices? These read
+              # the systemfonts registry (installed OS fonts plus anything
+              # registered via systemfonts::register_font()), which is a different
+              # registry from sysfonts. Checking sysfonts::font_families() here --
+              # as this function used to -- can never see an installed OS font,
+              # because that list only holds sans/serif/mono plus explicit adds.
+              test_font_agg <- function(family) {
+                            if (!requireNamespace("systemfonts", quietly = TRUE)) {
+                                          return(FALSE)
+                            }
+                            fams <- tryCatch(systemfonts::system_fonts()$family,
+                                             error = function(e) character())
+                            if (family %in% fams) return(TRUE)
+                            # Fonts added with register_font() are not in system_fonts().
+                            reg <- tryCatch(systemfonts::registry_fonts()$family,
+                                            error = function(e) character())
+                            family %in% reg
+              }
+
+              # Available to whichever device the user will actually render with.
+              font_available <- function(family) {
+                            test_font_agg(family) || test_font(family)
+              }
+
+              # Add a font from Google Fonts. sysfonts::font_add_google() registers
+              # the download with sysfonts only, so showtext can use it but AGG
+              # cannot. Register the downloaded files with systemfonts as well so
+              # the family resolves on the AGG/cairo devices too -- otherwise this
+              # reported success while AGG silently substituted a default face.
               add_google_font <- function(family) {
                             tryCatch(
                                           {
+                                                        # font_add_google() downloads into tempdir() under a random
+                                                        # name and does not report the path, so diff the directory to
+                                                        # find the files it just fetched.
+                                                        pat <- "[.](ttf|otf)$"
+                                                        before <- list.files(tempdir(), pattern = pat,
+                                                                             recursive = TRUE, full.names = TRUE)
                                                         sysfonts::font_add_google(name = family, family = family, db_cache = FALSE)
-                                                        return(test_font(family))
+                                                        if (!test_font(family)) return(FALSE)
+                                                        after <- list.files(tempdir(), pattern = pat,
+                                                                            recursive = TRUE, full.names = TRUE)
+                                                        register_with_systemfonts(family, setdiff(after, before))
+                                                        return(TRUE)
                                           },
                                           error = function(e) {
-                                                        message(" ✗ Google Fonts: ", e$message)
+                                                        message(" \u2717 Google Fonts: ", e$message)
                                                         return(FALSE)
                                           }
                             )
               }
 
-              # Helper function to check system fonts
+              # Mirror a sysfonts-registered family into the systemfonts registry
+              # so AGG/ragg and cairo can resolve it by name.
+              register_with_systemfonts <- function(family, paths = character()) {
+                            if (!requireNamespace("systemfonts", quietly = TRUE)) {
+                                          message(" \u26a0 Package 'systemfonts' not installed; '", family,
+                                                  "' will only render on showtext devices.")
+                                          return(invisible(FALSE))
+                            }
+                            if (test_font_agg(family)) return(invisible(TRUE))
+
+                            paths <- unique(paths[file.exists(paths)])
+                            if (!length(paths)) {
+                                          message(" \u26a0 Could not locate font files for '", family,
+                                                  "'; it may not render on AGG/ragg devices. ",
+                                                  "Install the font system-wide, or call ",
+                                                  "set_plot_font(..., enable_showtext = TRUE).")
+                                          return(invisible(FALSE))
+                            }
+
+                            plain <- paths[1]
+                            pick <- function(pattern) {
+                                          hit <- grep(pattern, basename(paths), ignore.case = TRUE, value = FALSE)
+                                          if (length(hit)) paths[hit[1]] else plain
+                            }
+                            ok <- tryCatch(
+                                          {
+                                                        systemfonts::register_font(
+                                                                      name = family,
+                                                                      plain = plain,
+                                                                      bold = pick("bold"),
+                                                                      italic = pick("italic|oblique"),
+                                                                      bolditalic = pick("bold ?(italic|oblique)")
+                                                        )
+                                                        TRUE
+                                          },
+                                          error = function(e) {
+                                                        message(" \u26a0 Could not register '", family,
+                                                                "' with systemfonts: ", conditionMessage(e))
+                                                        FALSE
+                                          }
+                            )
+                            invisible(ok)
+              }
+
+              # Check installed OS fonts. Must consult systemfonts, not sysfonts.
               check_system_font <- function(family) {
-                            return(test_font(family))
+                            if (test_font_agg(family)) {
+                                          # Also mirror into sysfonts so showtext works if the user
+                                          # later enables it.
+                                          if (!test_font(family)) {
+                                                        try(sysfonts::font_add(family = family, regular = family), silent = TRUE)
+                                          }
+                                          return(TRUE)
+                            }
+                            test_font(family)
               }
 
               # Helper function to get OS-specific font directories
@@ -148,21 +257,21 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             font_dirs <- get_font_directories()
 
                             if (length(font_dirs) == 0) {
-                                          message(" ✗ No font directories found")
+                                          message(" \u2717 No font directories found")
                                           return(FALSE)
                             }
 
-                            message(" → Searching in ", length(font_dirs), " directories...")
+                            message(" \u2192 Searching in ", length(font_dirs), " directories...")
 
                             # Search for matching font files
                             matched_fonts <- search_font_files(font_dirs, family)
 
                             if (length(matched_fonts) == 0) {
-                                          message(" ✗ No matching font files found")
+                                          message(" \u2717 No matching font files found")
                                           return(FALSE)
                             }
 
-                            message(" → Found ", length(matched_fonts), " matching font file(s)")
+                            message(" \u2192 Found ", length(matched_fonts), " matching font file(s)")
 
                             # Try to add the first regular font (prioritize "regular" in filename)
                             regular_fonts <- matched_fonts[grepl("regular", basename(matched_fonts), ignore.case = TRUE)]
@@ -181,22 +290,24 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                                         sysfonts::font_add(family = family, regular = font_to_add)
 
                                                         if (test_font(family)) {
-                                                                      message(" ✓ Added '", family, "' from: ", basename(font_to_add))
+                                                                      # Mirror into systemfonts so AGG/ragg can resolve it too.
+                                                                      register_with_systemfonts(family, matched_fonts)
+                                                                      message(" \u2713 Added '", family, "' from: ", basename(font_to_add))
                                                                       return(TRUE)
                                                         } else {
-                                                                      message(" ✗ Font added but not available in family list")
+                                                                      message(" \u2717 Font added but not available in family list")
                                                                       return(FALSE)
                                                         }
                                           },
                                           error = function(e) {
-                                                        message(" ✗ Failed to add font: ", e$message)
+                                                        message(" \u2717 Failed to add font: ", e$message)
                                                         return(FALSE)
                                           }
                             )
               }
 
               # Main search process
-              cat("🔍 Searching for font:", font, "\n")
+              cat("\U0001f50d Searching for font:", font, "\n")
 
               # Search in specified order
               for (source in search_sources) {
@@ -222,7 +333,7 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
 
                             if (result) {
                                           font_loaded <- TRUE
-                                          message(" ✓ Found in ", source, " source!")
+                                          message(" \u2713 Found in ", source, " source!")
                                           break
                             }
               }
@@ -237,7 +348,7 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                           if (check_system_font(fb)) {
                                                         font_family <- fb
                                                         font_loaded <- TRUE
-                                                        message(" ✓ Using fallback: ", fb)
+                                                        message(" \u2713 Using fallback: ", fb)
                                                         break
                                           }
 
@@ -245,7 +356,7 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                           if (search_local_fonts(fb)) {
                                                         font_family <- fb
                                                         font_loaded <- TRUE
-                                                        message(" ✓ Using fallback: ", fb, " (from local)")
+                                                        message(" \u2713 Using fallback: ", fb, " (from local)")
                                                         break
                                           }
                             }
@@ -254,13 +365,13 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
               # Final fallback to system default
               if (!font_loaded) {
                             font_family <- "sans"
-                            message(" ⚠ Using system default 'sans'")
+                            message(" \u26a0 Using system default 'sans'")
               }
 
               # Enable showtext for consistent font rendering
               if (enable_showtext) {
                             showtext::showtext_auto(enable = TRUE)
-                            message(" ✓ Enabled showtext for font rendering")
+                            message(" \u2713 Enabled showtext for font rendering")
               } else {
                             if (requireNamespace("showtext", quietly = TRUE)) {
                                           showtext::showtext_auto(enable = FALSE)
@@ -274,13 +385,13 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                                           if (requireNamespace("knitr", quietly = TRUE)) {
                                                         knitr::opts_chunk$set(dev = "ragg_png")
                                           }
-                                          message(" ✓ Set default graphics device to ragg::agg_png")
+                                          message(" \u2713 Set default graphics device to ragg::agg_png")
                                           
                                           if (Sys.info()["sysname"] == "Windows") {
-                                                        message(" ℹ Note: To use AGG in RStudio plot pane, ensure Tools -> Global Options -> General -> Graphics -> Graphic Device is set to AGG")
+                                                        message(" \u2139 Note: To use AGG in RStudio plot pane, ensure Tools -> Global Options -> General -> Graphics -> Graphic Device is set to AGG")
                                           }
                             } else {
-                                          message(" ⚠ `ragg` package not installed. Cannot force AGG rendering.")
+                                          message(" \u26a0 `ragg` package not installed. Cannot force AGG rendering.")
                             }
               }
 
@@ -339,7 +450,7 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             }
 
                             theme_set(theme_nice)
-                            message("✓ Updated ggplot2 theme with font '", font_family, "'")
+                            message("\u2713 Updated ggplot2 theme with font '", font_family, "'")
               }
 
               # Return comprehensive results
@@ -354,7 +465,7 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
                             theme_updated = update_theme
               )
 
-              message("✅ Font setup complete. Using: ", font_family)
+              message("\u2705 Font setup complete. Using: ", font_family)
               return(invisible(result))
 }
 
@@ -427,13 +538,11 @@ kkplot <- function(..., rangeframe = FALSE, minor_ticks = FALSE, cap = "both") {
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' labs <- data.frame(
 #'   age = rnorm(80, 60, 10), bmi = rnorm(80, 27, 4),
 #'   sbp = rnorm(80, 135, 15), chol = rnorm(80, 5, 1)
 #' )
 #' kk_fullcorplot(labs)
-#' }
 kk_fullcorplot <- function(data, method = "kendall", adjust = "none", font_size = 12) {
               # 1. Automatic numeric conversion
               analysis_numeric <- data %>%
@@ -665,6 +774,8 @@ univariate_cat_plot <- function(data, variable, group = NULL, label_size = 3.5, 
 #' @param variable Variable to plot
 #' @param group Optional grouping variable
 #' @param label_size Size for text labels (default: 3.5)
+#' @param stats Summary statistic annotated on the plot: `"mean"` (default) or
+#'   `"median"`.
 #'
 #' @examples
 #' patients <- data.frame(
@@ -874,6 +985,8 @@ univariate_cont_plot <- function(data, variable, group = NULL, label_size = 3.5,
 #' @param ncol Number of columns for layout
 #' @param nrow Number of rows for layout
 #' @param force_100 Whether to force categorical x-axis to 100% (default: TRUE)
+#' @param stats Summary statistic annotated on continuous panels: `"mean"`
+#'   (default) or `"median"`.
 #'
 #' @examples
 #' patients <- data.frame(
@@ -969,10 +1082,13 @@ univariate_continuous_plot <- univariate_cont_plot
 #' @return ggplot object
 #'
 #' @examples
-#' \dontrun{
-#' # Assuming results from compare_proportions
+#' counts <- data.frame(
+#'   group = c("A", "B", "C"),
+#'   x = c(20, 35, 50),
+#'   n = c(100, 100, 100)
+#' )
+#' results <- compare_proportions_kk_glm(counts, group, x, n)
 #' plot_proportion_comparisons(results)
-#' }
 #'
 #' @export
 plot_proportion_comparisons <- function(results,

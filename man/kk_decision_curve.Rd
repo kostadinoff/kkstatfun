@@ -44,10 +44,8 @@ and treating no one; the model is worth using over the range of thresholds
 where its net benefit is highest.
 }
 \examples{
-\dontrun{
 df <- data.frame(disease = rbinom(500, 1, 0.3))
 df$risk <- plogis(qlogis(0.3) + 0.9 * df$disease + rnorm(500))
 kk_decision_curve(df, disease, risk)
-}
 
 }

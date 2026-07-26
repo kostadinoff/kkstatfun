@@ -11,17 +11,19 @@
 #' @param continuity_correction Logical. Apply 0.5 continuity correction to the test statistic (default TRUE).
 #'
 #' @return A tidy \code{tibble} with columns:
-#'   \item{j_stat}{Jonckheere-Terpstra $J$ statistic (sum of pairwise Mann-Whitney U statistics)}
-#'   \item{expect_j}{Expected value of $J$ under the null hypothesis}
-#'   \item{var_j}{Variance of $J$ (adjusted for ties)}
-#'   \item{z_stat}{Standardized $Z$ score}
-#'   \item{p_value}{$p$-value for the requested alternative hypothesis}
-#'   \item{alternative}{Alternative hypothesis tested}
-#'   \item{n_obs}{Total number of observations}
-#'   \item{n_groups}{Number of ordered groups}
+#'   \describe{
+#'     \item{j_stat}{Jonckheere-Terpstra $J$ statistic (sum of pairwise Mann-Whitney U statistics)}
+#'     \item{expect_j}{Expected value of $J$ under the null hypothesis}
+#'     \item{var_j}{Variance of $J$ (adjusted for ties)}
+#'     \item{z_stat}{Standardized $Z$ score}
+#'     \item{p_value}{$p$-value for the requested alternative hypothesis}
+#'     \item{alternative}{Alternative hypothesis tested}
+#'     \item{n_obs}{Total number of observations}
+#'     \item{n_groups}{Number of ordered groups}
+#'   }
 #'
 #' @details
-#' The Jonckheere-Terpstra test is a non-parametric test for ordered alternatives ($H_0: \theta_1 = \theta_2 = \dots = \theta_k$ vs $H_1: \theta_1 \le \theta_2 \le \dots \le \theta_k$ with at least one strict inequality).
+#' The Jonckheere-Terpstra test is a non-parametric test for ordered alternatives (\eqn{H_0: \theta_1 = \theta_2 = \dots = \theta_k} vs \eqn{H_1: \theta_1 \le \theta_2 \le \dots \le \theta_k} with at least one strict inequality).
 #' It evaluates pairwise Mann-Whitney $U$ count statistics $U_{ij}$ for all ordered group pairs $i < j$:
 #' \deqn{J = \sum_{i=1}^{k-1} \sum_{j=i+1}^k U_{ij}}
 #' Variance calculation includes exact adjustment for tied observation ranks across the full sample (Sheskin, 2000; Zar, 2010).
@@ -45,6 +47,10 @@
 #' # Test for increasing dose-response trend
 #' kk_jonckheere_test(dat, outcome = "response", group = "dose", alternative = "increasing")
 kk_jonckheere_test <- function(data, outcome, group, alternative = c("two.sided", "increasing", "decreasing"), continuity_correction = TRUE) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   
   alternative <- match.arg(alternative)
   df <- as.data.frame(data)

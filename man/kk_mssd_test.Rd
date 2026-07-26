@@ -25,7 +25,7 @@ A tibble with the following columns:
 \item \code{alternative}: The alternative hypothesis.
 \item \code{n_obs}: The number of observations.
 \item \code{statistic_C}: The C statistic value ($C = 1 - s_{ms}^2 / s^2$).
-\item \code{s_variance}: The standard sample variance ($s^2$).
+\item \code{s_variance}: The standard sample variance (\eqn{s^2}).
 \item \code{s_ms_difference}: The mean square successive difference ($s_{ms}^2$).
 \item \code{z_statistic}: The large sample normal Z-statistic.
 \item \code{p_value}: The p-value of the test.

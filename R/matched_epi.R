@@ -12,15 +12,17 @@
 #' @param alpha Significance level for confidence intervals (default `0.05`).
 #'
 #' @return A tidy tibble of class `kk_matched_case_control` containing:
-#'   \item{matched_sets}{Total number of valid matched sets}
-#'   \item{n_cases}{Total number of cases}
-#'   \item{n_controls}{Total number of controls}
-#'   \item{odds_ratio}{Point estimate of conditional odds ratio}
-#'   \item{conf.low}{Lower bound of confidence interval}
-#'   \item{conf.high}{Upper bound of confidence interval}
-#'   \item{p.value}{Two-sided p-value from conditional likelihood ratio test}
-#'   \item{method}{Statistical method used}
-#'   \item{interpretation}{Human-readable summary of association}
+#'   \describe{
+#'     \item{matched_sets}{Total number of valid matched sets}
+#'     \item{n_cases}{Total number of cases}
+#'     \item{n_controls}{Total number of controls}
+#'     \item{odds_ratio}{Point estimate of conditional odds ratio}
+#'     \item{conf.low}{Lower bound of confidence interval}
+#'     \item{conf.high}{Upper bound of confidence interval}
+#'     \item{p.value}{Two-sided p-value from conditional likelihood ratio test}
+#'     \item{method}{Statistical method used}
+#'     \item{interpretation}{Human-readable summary of association}
+#'   }
 #'
 #' @details
 #' Follows Woodward (2014) *Epidemiology: Study Design and Data Analysis*, 3rd Edition, Chapter 6,
@@ -38,6 +40,10 @@
 #' )
 #' kk_matched_case_control(patient_data, set_id, case, exposure)
 kk_matched_case_control <- function(data, set_id, case, exposure, ratio = "1:m", alpha = 0.05) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   set_col <- rlang::as_name(rlang::enquo(set_id))
   case_col <- rlang::as_name(rlang::enquo(case))
   exp_col <- rlang::as_name(rlang::enquo(exposure))
@@ -118,14 +124,16 @@ kk_matched_case_control <- function(data, set_id, case, exposure, ratio = "1:m",
 #' @param alpha Significance level for confidence intervals (default `0.05`).
 #'
 #' @return A tidy tibble of class `kk_case_crossover` containing:
-#'   \item{n_patients}{Total number of case patients}
-#'   \item{n_windows}{Total number of evaluated time windows}
-#'   \item{odds_ratio}{Self-controlled exposure odds ratio}
-#'   \item{conf.low}{Lower bound of confidence interval}
-#'   \item{conf.high}{Upper bound of confidence interval}
-#'   \item{p.value}{Two-sided p-value}
-#'   \item{method}{Statistical method description}
-#'   \item{interpretation}{Human-readable interpretation}
+#'   \describe{
+#'     \item{n_patients}{Total number of case patients}
+#'     \item{n_windows}{Total number of evaluated time windows}
+#'     \item{odds_ratio}{Self-controlled exposure odds ratio}
+#'     \item{conf.low}{Lower bound of confidence interval}
+#'     \item{conf.high}{Upper bound of confidence interval}
+#'     \item{p.value}{Two-sided p-value}
+#'     \item{method}{Statistical method description}
+#'     \item{interpretation}{Human-readable interpretation}
+#'   }
 #'
 #' @details
 #' Described in Woodward (2014), Chapter 6.9, and Maclure (1991). By comparing time windows
@@ -143,6 +151,10 @@ kk_matched_case_control <- function(data, set_id, case, exposure, ratio = "1:m",
 #' )
 #' kk_case_crossover(case_crossover_df, patient_id, event, exposure)
 kk_case_crossover <- function(data, id, event, exposure, alpha = 0.05) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   id_col <- rlang::as_name(rlang::enquo(id))
   evt_col <- rlang::as_name(rlang::enquo(event))
   exp_col <- rlang::as_name(rlang::enquo(exposure))

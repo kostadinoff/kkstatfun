@@ -11,9 +11,11 @@
 #' @param alpha Significance level for confidence intervals (default `0.05`).
 #'
 #' @return An S3 object of class `kk_reclassification` containing:
-#'   \item{summary}{Tidy tibble with NRI_events, NRI_nonevents, NRI_overall, IDI, 95% CIs, and p-values}
-#'   \item{reclass_events}{Reclassification cross-tabulation table for event cases}
-#'   \item{reclass_nonevents}{Reclassification cross-tabulation table for non-event controls}
+#'   \describe{
+#'     \item{summary}{Tidy tibble with NRI_events, NRI_nonevents, NRI_overall, IDI, 95% CIs, and p-values}
+#'     \item{reclass_events}{Reclassification cross-tabulation table for event cases}
+#'     \item{reclass_nonevents}{Reclassification cross-tabulation table for non-event controls}
+#'   }
 #'
 #' @details
 #' Implements methods described by Pencina et al. (2008, 2011) and Woodward (2014), Chapter 13.
@@ -31,6 +33,10 @@
 #'
 #' kk_reclassification(patient_df, outcome, p_old, p_new, risk_thresholds = c(0.15, 0.30))
 kk_reclassification <- function(data, outcome, p_old, p_new, risk_thresholds = NULL, alpha = 0.05) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   out_col <- rlang::as_name(rlang::enquo(outcome))
   old_col <- rlang::as_name(rlang::enquo(p_old))
   new_col <- rlang::as_name(rlang::enquo(p_new))
@@ -159,6 +165,9 @@ kk_reclassification <- function(data, outcome, p_old, p_new, risk_thresholds = N
 #'
 #' @return A tidy tibble of class `kk_calibration` containing calibration statistics and slope/intercept estimates.
 #'
+#' @seealso [kk_calibration_table()] for the per-group calibration table (with
+#'   Brier score) used to draw a calibration curve.
+#'
 #' @export
 #' @examples
 #' library(dplyr)
@@ -169,6 +178,10 @@ kk_reclassification <- function(data, outcome, p_old, p_new, risk_thresholds = N
 #' )
 #' kk_calibration(calib_df, outcome, pred_prob, g = 10)
 kk_calibration <- function(data, outcome, pred_prob, g = 10, method = c("hosmer_lemeshow", "greenwood_nam"), alpha = 0.05) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   method <- match.arg(method)
   out_col <- rlang::as_name(rlang::enquo(outcome))
   pred_col <- rlang::as_name(rlang::enquo(pred_prob))

@@ -24,6 +24,10 @@
 #'
 #' @export
 kk_time_series <- function(data, value_col = NULL, date_col = "date", group_cols = NULL, wide_format = FALSE, skip_advanced = FALSE, round_digits = 4) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               # Validate data input
               if (missing(data)) {
                             stop("Argument 'data' is missing, with no default")
@@ -178,7 +182,7 @@ kk_time_series <- function(data, value_col = NULL, date_col = "date", group_cols
                                           }
                                           geom_mean_growth_pct <- if (!is.na(geom_mean_growth)) (geom_mean_growth - 1) * 100 else NA
 
-                                          # Mean rate of increase (T̅′)
+                                          # Mean rate of increase (T')
                                           mean_incrate <- if (!is.na(geom_mean_growth)) geom_mean_growth - 1 else NA
                                           mean_incrate_pct <- if (!is.na(geom_mean_growth)) geom_mean_growth_pct else NA
 
@@ -433,7 +437,7 @@ kk_time_series <- function(data, value_col = NULL, date_col = "date", group_cols
                                                                       "Mean Abs Increase (Fixed)", "Mean Growth Rate (Fixed, Coeff)", "Mean Rate of Increase (Fixed, %)",
                                                                       "SD Abs Increase (Chain)", "SD Growth Rate (Chain, Coeff)", "SD Rate of Increase (Chain, %)",
                                                                       "SD Abs Increase (Fixed)", "SD Growth Rate (Fixed, Coeff)", "SD Rate of Increase (Fixed, %)",
-                                                                      "Geometric Mean Growth Rate (Coeff)", "Geometric Mean Growth Rate (%)", "Mean Rate of Increase (T̅′, Coeff)", "Mean Rate of Increase (T̅′, %)",
+                                                                      "Geometric Mean Growth Rate (Coeff)", "Geometric Mean Growth Rate (%)", "Mean Rate of Increase (T\u0305\u2032, Coeff)", "Mean Rate of Increase (T\u0305\u2032, %)",
                                                                       "Mean Rate of Change (%)", "SD Rate of Change (%)", "Min ROC (%)", "Max ROC (%)",
                                                                       "Trend Slope", "Trend Strength", "ADF p-value", "ADF statistic",
                                                                       "KPSS p-value", "KPSS statistic", "ACF Lag 1", "PACF Lag 1", "Ljung-Box p-value",
@@ -505,6 +509,10 @@ kk_time_series <- function(data, value_col = NULL, date_col = "date", group_cols
 #'
 #' @export
 kk_time_metrics <- function(data, value_col = NULL, date_col = "date", group_cols = NULL) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               # Validate data input
               if (missing(data)) {
                             stop("Argument 'data' is missing, with no default")
@@ -621,7 +629,7 @@ kk_time_metrics <- function(data, value_col = NULL, date_col = "date", group_col
                                           }
                                           t_y_chain_sd_pct <- t_y_chain_sd * 100 # Percentage form
 
-                                          # Mean rate of increase (T̅′) based on geometric mean growth rate
+                                          # Mean rate of increase (T') based on geometric mean growth rate
                                           mean_incrate <- geom_mean_growth - 1 # Coefficient form
                                           mean_incrate_pct <- geom_mean_growth_pct # Percentage form
 

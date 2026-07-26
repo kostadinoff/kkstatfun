@@ -45,7 +45,6 @@ parameter is a built-in numerical check.)
 }
 \examples{
 # SEIR: how informative is each week for estimating beta vs gamma?
-\dontrun{
 obs_times <- 0:120
 seir_I <- function(theta) {
   out <- kk_seir(beta = theta[1], gamma = theta[2], sigma = 0.2,
@@ -53,7 +52,6 @@ seir_I <- function(theta) {
   out$I
 }
 kk_gsf(seir_I, theta = c(beta = 0.6, gamma = 0.2), times = obs_times)
-}
 
 # Simple check on a linear model f(t) = a + b t (GSFs end at 1)
 f_lin <- function(theta) theta[1] + theta[2] * (1:20)

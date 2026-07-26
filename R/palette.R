@@ -33,7 +33,7 @@ kk_pal <- function(n, colors = getOption("kkstatfun.colors")) {
 #' Set the Default Discrete Plot Palette
 #'
 #' @description Registers a set of anchor ("flag") colours and makes every
-#'   discrete `ggplot2` colour and fill scale draw from them by default — so
+#'   discrete `ggplot2` colour and fill scale draw from them by default -- so
 #'   [kkplot()] (and any `ggplot()`) automatically uses your chosen colours for
 #'   grouped bars, points, lines, etc. Continuous colour/fill scales (e.g.
 #'   heatmaps) are left untouched. Fewer groups than anchors use the anchor
@@ -46,7 +46,7 @@ kk_pal <- function(n, colors = getOption("kkstatfun.colors")) {
 #' @param colors Character vector of **1 to 12** anchor colours (hex codes or R
 #'   colour names), e.g. three flag colours.
 #' @param scheme Optional name of a derived palette to build from `colors` with
-#'   [kk_gen_palettes()] before registering — one of `"custom"`, `"sequential"`,
+#'   [kk_gen_palettes()] before registering -- one of `"custom"`, `"sequential"`,
 #'   `"monochromatic"`, `"tints"`, `"shades"`, `"analogous"`, `"complementary"`,
 #'   `"split_complementary"`, `"triadic"`, `"tetradic"`, `"spectral"`. When
 #'   `NULL` (default) `colors` are registered as-is.
@@ -69,7 +69,6 @@ kk_pal <- function(n, colors = getOption("kkstatfun.colors")) {
 #'   [kk_show_palettes()] to preview them.
 #'
 #' @examples
-#' \dontrun{
 #' set_plot_colors(c("#D62828", "#003049", "#F77F00"))
 #' # now discrete fills/colours use the flag palette automatically
 #' kkplot(mtcars, ggplot2::aes(factor(cyl), fill = factor(cyl))) +
@@ -80,7 +79,6 @@ kk_pal <- function(n, colors = getOption("kkstatfun.colors")) {
 #'
 #' # opt in to the gradient for heatmaps too
 #' set_plot_colors(c("#D62828", "#003049", "#F77F00"), continuous = TRUE)
-#' }
 #'
 #' @export
 set_plot_colors <- function(colors, scheme = NULL, n = NULL, n_max = 24,
@@ -109,7 +107,7 @@ set_plot_colors <- function(colors, scheme = NULL, n = NULL, n_max = 24,
       ggplot2.discrete.colour = pal_list,
       ggplot2.discrete.fill = pal_list
     )
-    message(sprintf("✓ Default discrete palette set from %d anchor colour(s): %s",
+    message(sprintf("\u2713 Default discrete palette set from %d anchor colour(s): %s",
       length(colors), paste(colors, collapse = ", ")))
   }
 
@@ -123,7 +121,7 @@ set_plot_colors <- function(colors, scheme = NULL, n = NULL, n_max = 24,
         ggplot2::scale_colour_gradientn(colours = anchors, ...)
       }
     )
-    message("✓ Default continuous gradient set from the same anchors.")
+    message("\u2713 Default continuous gradient set from the same anchors.")
   }
   invisible(unname(colors))
 }
@@ -165,7 +163,7 @@ scale_fill_kk <- function(..., aesthetics = "fill") {
 #'
 #' @description ggplot2 *continuous* scales that build a gradient from the
 #'   registered [set_plot_colors()] anchors (via [ggplot2::scale_fill_gradientn()]
-#'   / [ggplot2::scale_colour_gradientn()]) — the continuous counterpart to
+#'   / [ggplot2::scale_colour_gradientn()]) -- the continuous counterpart to
 #'   [scale_fill_kk()], for heatmaps and other continuously-mapped fills/colours.
 #'
 #' @param ... Passed to the underlying `gradientn` scale.
@@ -174,10 +172,8 @@ scale_fill_kk <- function(..., aesthetics = "fill") {
 #' @return A ggplot2 continuous scale.
 #'
 #' @examples
-#' \dontrun{
 #' kkplot(faithfuld, ggplot2::aes(waiting, eruptions, fill = density)) +
 #'   ggplot2::geom_raster() + scale_fill_kk_c()
-#' }
 #'
 #' @rdname scale_kk_c
 #' @export
@@ -198,12 +194,12 @@ scale_colour_kk_c <- function(..., colors = getOption("kkstatfun.colors")) {
 scale_color_kk_c <- scale_colour_kk_c
 
 # ============================================================
-# PALETTE GENERATORS  (derive scheme palettes from 1–12 seeds)
+# PALETTE GENERATORS  (derive scheme palettes from 1-12 seeds)
 # ============================================================
 
 # ---- internal colour helpers (base grDevices only) --------
 
-# Validate 1–12 usable colours; return them unnamed.
+# Validate 1-12 usable colours; return them unnamed.
 .kk_validate_colors <- function(colors, max_n = 12L) {
   if (!is.character(colors) || length(colors) < 1) {
     stop("`colors` must be a non-empty character vector of colours.")
@@ -262,8 +258,8 @@ scale_color_kk_c <- scale_colour_kk_c
 #' Generate Colour-Theory Palettes from Seed Colours
 #'
 #' @description From **1 to 12** seed colours, derive a named catalogue of
-#'   palettes — sequential/monochromatic ramps and qualitative colour-theory
-#'   schemes (analogous, complementary, triadic, tetradic, …) — each returned as
+#'   palettes -- sequential/monochromatic ramps and qualitative colour-theory
+#'   schemes (analogous, complementary, triadic, tetradic, ...) -- each returned as
 #'   exactly `n` hex colours ready for [kkplot()] / [scale_fill_kk()]. Schemes are
 #'   built in HSV space from the **first** seed; the `sequential` ramp (and the
 #'   `custom` entry, present only when more than one seed is given) use all seeds
@@ -273,7 +269,7 @@ scale_color_kk_c <- scale_colour_kk_c
 #'   coolors.co: pick a scheme you like, then make it the plotting default with
 #'   `set_plot_colors(seed, scheme = "...")`.
 #'
-#' @param colors Character vector of 1–12 seed colours (hex or R colour names).
+#' @param colors Character vector of 1-12 seed colours (hex or R colour names).
 #' @param n Number of colours per palette (default 6).
 #' @param plot If TRUE, also draw the swatches via [kk_show_palettes()]
 #'   (default FALSE).
@@ -286,9 +282,7 @@ scale_color_kk_c <- scale_colour_kk_c
 #' @examples
 #' pals <- kk_gen_palettes("#D62828", n = 6)
 #' pals$triadic
-#' \dontrun{
 #' kk_gen_palettes(c("#D62828", "#003049", "#F77F00"), n = 8, plot = TRUE)
-#' }
 #'
 #' @seealso [kk_show_palettes()], [set_plot_colors()], [kk_pal()].
 #' @export
@@ -354,7 +348,7 @@ kk_gen_palettes <- function(colors, n = 6, plot = FALSE) {
 #' Preview Generated Palettes as Swatches
 #'
 #' @description Draws each palette from [kk_gen_palettes()] (or any named list of
-#'   colour vectors) as a row of swatches, hex codes annotated — a quick way to
+#'   colour vectors) as a row of swatches, hex codes annotated -- a quick way to
 #'   choose a scheme before calling [set_plot_colors()].
 #'
 #' @param palettes A `kk_palettes` list from [kk_gen_palettes()], or any named
@@ -364,9 +358,7 @@ kk_gen_palettes <- function(colors, n = 6, plot = FALSE) {
 #' @return A ggplot object.
 #'
 #' @examples
-#' \dontrun{
 #' kk_show_palettes(kk_gen_palettes("#003049", n = 6))
-#' }
 #'
 #' @seealso [kk_gen_palettes()], [set_plot_colors()].
 #' @export

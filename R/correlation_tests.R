@@ -44,7 +44,7 @@
 #' kk_compare_independent_correlations(r_three, n_three)
 #'
 #' @export
-kk_compare_independent_correlations <- function(data, x = NULL, y = NULL, group = NULL,
+kk_compare_independent_correlations <- function(data = NULL, x = NULL, y = NULL, group = NULL,
                                                 r = NULL, n = NULL,
                                                 alternative = c("two.sided", "less", "greater"),
                                                 conf.level = 0.95) {

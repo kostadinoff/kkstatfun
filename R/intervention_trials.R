@@ -11,18 +11,20 @@
 #' @param alpha Significance level for confidence intervals (default `0.05`).
 #'
 #' @return A tidy tibble of class `kk_cluster_trial` containing:
-#'   \item{n_clusters}{Total number of clusters}
-#'   \item{n_patients}{Total number of patients}
-#'   \item{estimate}{Cluster-adjusted treatment effect}
-#'   \item{se_unadjusted}{Standard error ignoring clustering}
-#'   \item{se_cluster}{Cluster-robust standard error}
-#'   \item{conf.low}{Lower 95% confidence limit}
-#'   \item{conf.high}{Upper 95% confidence limit}
-#'   \item{p.value}{Cluster-adjusted two-sided p-value}
-#'   \item{icc}{Intra-cluster correlation coefficient}
-#'   \item{deff}{Design effect multiplier}
-#'   \item{effective_n}{Effective sample size accounting for clustering}
-#'   \item{interpretation}{Human-readable interpretation of trial results}
+#'   \describe{
+#'     \item{n_clusters}{Total number of clusters}
+#'     \item{n_patients}{Total number of patients}
+#'     \item{estimate}{Cluster-adjusted treatment effect}
+#'     \item{se_unadjusted}{Standard error ignoring clustering}
+#'     \item{se_cluster}{Cluster-robust standard error}
+#'     \item{conf.low}{Lower 95% confidence limit}
+#'     \item{conf.high}{Upper 95% confidence limit}
+#'     \item{p.value}{Cluster-adjusted two-sided p-value}
+#'     \item{icc}{Intra-cluster correlation coefficient}
+#'     \item{deff}{Design effect multiplier}
+#'     \item{effective_n}{Effective sample size accounting for clustering}
+#'     \item{interpretation}{Human-readable interpretation of trial results}
+#'   }
 #'
 #' @details
 #' Described in Woodward (2014) *Epidemiology: Study Design and Data Analysis*, 3rd Edition, Chapter 7.4.2.
@@ -40,6 +42,10 @@
 #' )
 #' kk_cluster_trial(cluster_df, outcome, treatment, cluster_id)
 kk_cluster_trial <- function(data, outcome, treatment, cluster, alpha = 0.05) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   out_col <- rlang::as_name(rlang::enquo(outcome))
   trt_col <- rlang::as_name(rlang::enquo(treatment))
   cls_col <- rlang::as_name(rlang::enquo(cluster))
@@ -154,6 +160,10 @@ kk_cluster_trial <- function(data, outcome, treatment, cluster, alpha = 0.05) {
 #' )
 #' kk_crossover_trial(crossover_df, patient_id, sequence, period1, period2)
 kk_crossover_trial <- function(data, id, sequence, period1, period2, alpha = 0.05) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   id_col <- rlang::as_name(rlang::enquo(id))
   seq_col <- rlang::as_name(rlang::enquo(sequence))
   p1_col <- rlang::as_name(rlang::enquo(period1))

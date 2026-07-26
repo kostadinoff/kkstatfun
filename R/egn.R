@@ -174,7 +174,7 @@ extract_age_from_egn <- function(egn, admission_date = Sys.Date()) {
                                                         }
                                           }
 
-                                          # Birth order (по област и пол): the 7th-9th digits form a
+                                          # Birth order (po oblast i pol): the 7th-9th digits form a
                                           # sequential number within the region, alternating male (even)
                                           # / female (odd). Order = how many same-sex births preceded + 1.
                                           output$birth_order <- floor((three_digit_code - region_start) / 2) + 1
@@ -189,5 +189,6 @@ extract_age_from_egn <- function(egn, admission_date = Sys.Date()) {
               return(result)
 }
 
+#' @rdname extract_age_from_egn
 #' @export
 extract_egn_info <- extract_age_from_egn

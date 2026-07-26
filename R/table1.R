@@ -15,17 +15,19 @@
 #' @return Tibble containing summary statistics
 #'
 #' @examples
-#' \dontrun{
 #' library(gtsummary)
 #' trial <- data.frame(
 #'   arm = sample(c("Control", "Treatment"), 100, replace = TRUE),
 #'   age = rnorm(100, 60, 10), bmi = rnorm(100, 27, 4), sbp = rnorm(100, 135, 15)
 #' )
 #' table1_summary(trial, by = "arm", variables = c("age", "bmi", "sbp"))
-#' }
 #'
 #' @export
 table1_summary <- function(data, by = NULL, variables = NULL, label_list = NULL) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
         validate_data_frame(data)
 
         if (!requireNamespace("gtsummary", quietly = TRUE)) {
@@ -56,19 +58,32 @@ table1_summary <- function(data, by = NULL, variables = NULL, label_list = NULL)
 #' Wrapper for Table 1 Generation
 #'
 #' @description A wrapper around `table1_summary` to generate a publication-ready descriptive table
-#'   returned as a standard tibble.
+#'   returned as a standard tibble. Supports `group_by()` for stratified tables.
+#'
+#' @param data Data frame.
+#' @param by Grouping variable (character column name) to stratify columns by.
+#' @param variables Character vector of variables to include (optional; defaults to all
+#'   columns other than `by`).
+#' @param label_list Optional named list of display labels for variables.
+#' @param digits Number of digits for rounding summary statistics (default `2`).
+#' @param p_value Logical; include a p-value column comparing groups (default `TRUE`).
+#'
+#' @return Tibble containing the formatted Table 1.
 #'
 #' @examples
-#' \dontrun{
 #' trial <- data.frame(
 #'   arm = sample(c("Control", "Treatment"), 100, replace = TRUE),
 #'   age = rnorm(100, 60, 10), bmi = rnorm(100, 27, 4)
 #' )
 #' kk_table1(trial, by = "arm", variables = c("age", "bmi"))
-#' }
+#'
 #' @export
 kk_table1 <- function(data, by = NULL, variables = NULL, label_list = NULL,
                       digits = 2, p_value = TRUE) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
         # Ensure data is a data frame
         if (!is.data.frame(data)) stop("Input must be a data frame")
 

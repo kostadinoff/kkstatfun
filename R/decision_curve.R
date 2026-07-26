@@ -29,16 +29,18 @@
 #'   decision curve. The event prevalence is attached as attribute `prevalence`.
 #'
 #' @examples
-#' \dontrun{
 #' df <- data.frame(disease = rbinom(500, 1, 0.3))
 #' df$risk <- plogis(qlogis(0.3) + 0.9 * df$disease + rnorm(500))
 #' kk_decision_curve(df, disease, risk)
-#' }
 #'
 #' @export
 kk_decision_curve <- function(data, truth, predictor,
                               thresholds = seq(0.01, 0.99, by = 0.01),
                               harm = 0) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   validate_data_frame(data)
 
   truth_name <- .kk_colname(rlang::enquo(truth))

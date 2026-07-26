@@ -17,13 +17,11 @@ A ggplot object.
 }
 \description{
 Draws each palette from \code{\link[=kk_gen_palettes]{kk_gen_palettes()}} (or any named list of
-colour vectors) as a row of swatches, hex codes annotated — a quick way to
+colour vectors) as a row of swatches, hex codes annotated -- a quick way to
 choose a scheme before calling \code{\link[=set_plot_colors]{set_plot_colors()}}.
 }
 \examples{
-\dontrun{
 kk_show_palettes(kk_gen_palettes("#003049", n = 6))
-}
 
 }
 \seealso{

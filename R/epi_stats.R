@@ -26,6 +26,10 @@
 #'
 #' @export
 kk_epi_stats <- function(data = NULL, exposure, outcome, conf.level = 0.95) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               if (!is.null(data)) {
                             validate_data_frame(data)
                             exposure_col <- rlang::as_string(rlang::ensym(exposure))
@@ -121,6 +125,10 @@ kk_epi_stats <- function(data = NULL, exposure, outcome, conf.level = 0.95) {
 #'
 #' @export
 kk_twobytwo <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95, method = "wald") {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               # Handle input types
               exposure_enquo <- rlang::enquo(exposure)
               outcome_enquo <- rlang::enquo(outcome)
@@ -348,6 +356,10 @@ kk_twobytwo <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95
 #'
 #' @export
 kk_diagnostic <- function(data, truth, prediction, cutoff = 0.5, positive = NULL) {
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
               truth_enquo <- rlang::enquo(truth)
               pred_enquo <- rlang::enquo(prediction)
 
@@ -474,7 +486,13 @@ kk_risk_plot <- function(data, title = "Risk Estimates") {
 #'
 #' @export
 risk_ratio <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95) {
-              res <- kk_twobytwo(data, exposure, outcome, conf.level)
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
+              # Forward the captured expressions so bare column names work here
+              # exactly as they do in kk_twobytwo().
+              res <- kk_twobytwo(data, !!rlang::enquo(exposure), !!rlang::enquo(outcome), conf.level)
               res %>%
                             dplyr::filter(.data$Metric == "Relative Risk") %>%
                             dplyr::select("Metric", "Estimate", "Lower", "Upper", "P_Value", "Conf_Level")
@@ -497,7 +515,13 @@ risk_ratio <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95)
 #'
 #' @export
 odds_ratio <- function(data, exposure = NULL, outcome = NULL, conf.level = 0.95) {
-              res <- kk_twobytwo(data, exposure, outcome, conf.level)
+              if (dplyr::is_grouped_df(data)) {
+                            return(.kk_by_group(data, match.call(), parent.frame()))
+              }
+
+              # Forward the captured expressions so bare column names work here
+              # exactly as they do in kk_twobytwo().
+              res <- kk_twobytwo(data, !!rlang::enquo(exposure), !!rlang::enquo(outcome), conf.level)
               res %>%
                             dplyr::filter(.data$Metric == "Odds Ratio") %>%
                             dplyr::select("Metric", "Estimate", "Lower", "Upper", "P_Value", "Conf_Level")

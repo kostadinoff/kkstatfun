@@ -39,7 +39,6 @@
 #'   The Monte-Carlo null maxima are attached as attribute `null_distribution`.
 #'
 #' @examples
-#' \dontrun{
 #' # 4x4 grid of regions over 12 weeks, with a planted outbreak
 #' grid <- expand.grid(x = 1:4, y = 1:4)
 #' grid$region <- seq_len(nrow(grid))
@@ -52,13 +51,16 @@
 #' hot <- d$region %in% c(1, 2, 5, 6) & d$time >= 9      # outbreak cluster
 #' d$count[hot] <- rnbinom(sum(hot), size = 5, mu = 30)
 #' kk_nb_scan(d, region, time, count, expected, n_sim = 499)
-#' }
 #'
 #' @export
 kk_nb_scan <- function(data, region, time, count, expected,
                        coords = c("x", "y"), type = c("elevated", "trend"),
                        max_radius = Inf, max_temporal = Inf, size = NULL,
                        n_sim = 999, seed = NULL) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   validate_data_frame(data)
   type <- match.arg(type)
   if (!is.null(seed)) set.seed(seed)

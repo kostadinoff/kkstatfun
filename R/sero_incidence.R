@@ -73,6 +73,10 @@ kk_sero_incidence <- function(data, age, positive, year = NULL, total = NULL,
                               method = c("cohort", "catalytic"),
                               age_breaks = NULL,
                               conf.level = 0.95) {
+  if (dplyr::is_grouped_df(data)) {
+    return(.kk_by_group(data, match.call(), parent.frame()))
+  }
+
   validate_data_frame(data)
   method <- match.arg(method)
 
