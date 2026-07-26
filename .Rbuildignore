@@ -11,5 +11,6 @@
 ^examples/.*$
 ^.*\.tar\.gz$
 ^CITATION\.bib$
+^\.zenodo\.json$
 ^\.git$
 ^\.gitignore$

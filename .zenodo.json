@@ -1,0 +1,35 @@
+{
+  "title": "kkstatfun: R Statistical Analysis Toolkit for Medical Statistics and Epidemiology",
+  "description": "<p>A comprehensive R toolkit for medical statistics and epidemiology. Provides tidy, group-aware functions for measures of association, standardisation, diagnostic accuracy, agreement, survival and competing risks, causal inference, infectious-disease models, health-economic evaluation, time series, and Bulgarian EGN parsing. Every analysis function takes individual-level data as its first argument, honours <code>dplyr::group_by()</code>, and returns a tibble.</p>",
+  "upload_type": "software",
+  "license": {
+    "id": "MIT"
+  },
+  "creators": [
+    {
+      "name": "Kostadinov, Kostadin",
+      "affiliation": "Medical University of Plovdiv"
+    }
+  ],
+  "keywords": [
+    "R",
+    "epidemiology",
+    "biostatistics",
+    "medical statistics",
+    "public health",
+    "survival analysis",
+    "competing risks",
+    "causal inference",
+    "diagnostic accuracy",
+    "health economics",
+    "infectious disease modelling",
+    "tidyverse"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/kostadinoff/kkstatfun",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}
