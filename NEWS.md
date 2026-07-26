@@ -1,5 +1,9 @@
 # kkstatfun 1.0.0
 
+Zenodo DOI for this exact version: [10.5281/zenodo.21599314](https://doi.org/10.5281/zenodo.21599314).
+The concept DOI [10.5281/zenodo.18936019](https://doi.org/10.5281/zenodo.18936019) always
+resolves to the newest release.
+
 First stable release. This version makes `group_by()` support real across the
 package, fixes eight bugs, and brings the package to a clean `R CMD check`
 (0 errors, 0 warnings) with the test suite wired into `check`.
