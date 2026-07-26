@@ -3,7 +3,7 @@
 
 # kkstatfun
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18936019.svg)](https://doi.org/10.5281/zenodo.18936019)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21599749.svg)](https://doi.org/10.5281/zenodo.21599749)
 [![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
 
 **R Statistical Analysis Toolkit for Medical and Epidemiology**
