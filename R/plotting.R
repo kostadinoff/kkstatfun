@@ -491,6 +491,7 @@ set_plot_font <- function(font = "Roboto Condensed", size = 18,
 #' @return A ggplot object.
 #'
 #' @examples
+#' library(ggplot2)
 #' patients <- data.frame(age = round(rnorm(50, 60, 10)), sbp = round(rnorm(50, 135, 15)))
 #' kkplot(patients, aes(x = age, y = sbp)) + geom_point()
 #'

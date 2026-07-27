@@ -172,6 +172,7 @@ scale_fill_kk <- function(..., aesthetics = "fill") {
 #' @return A ggplot2 continuous scale.
 #'
 #' @examples
+#' library(ggplot2)  # for the faithfuld dataset
 #' kkplot(faithfuld, ggplot2::aes(waiting, eruptions, fill = density)) +
 #'   ggplot2::geom_raster() + scale_fill_kk_c()
 #'

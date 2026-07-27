@@ -1,3 +1,94 @@
+# kkstatfun 1.1.0
+
+`R CMD check` now passes with **0 errors, 0 warnings and 0 notes**.
+
+## Breaking change
+
+**`library(kkstatfun)` no longer attaches the tidyverse.** The 19 packages
+previously listed under `Depends:` moved to `Imports:` (those the package
+actually uses) or `Suggests:` (those it never did). Attach what your scripts
+need, as usual:
+
+```r
+library(kkstatfun)
+library(dplyr)     # and ggplot2, survival, ... as needed
+```
+
+`%>%` is still re-exported by kkstatfun, so the pipe keeps working on its own.
+
+This also fixes a latent bug rather than being pure tidying. `Depends:` only
+attaches on `library()`, but a namespace can be *loaded without being attached*
+— which is exactly what `kkstatfun::kk_coxph(...)` does. On that path nothing
+was attached, so the package's own bare calls had nothing to resolve against.
+It happened to work only when the caller had already attached those packages.
+Verified: every exported function now runs from a completely bare search path.
+
+Two consequences of the move, both fixed here:
+
+* `survival::clogit()` builds a `coxph()`/`Surv()` call and evaluates it in the
+  caller's namespace, so `kk_matched_case_control()` and `kk_case_crossover()`
+  need those names imported. Results are numerically unchanged (verified
+  against `clogit()` directly).
+* Examples that used `aes()` and the `faithfuld` dataset bare now attach
+  ggplot2 explicitly.
+
+Packages moved to `Suggests:` because the package never called them:
+`easystats`, `haven`, `marginaleffects`, `modelsummary`, `readxl`, `rstatix`,
+`tidymodels`. Install them yourself if your scripts use them.
+
+## New features — emmeans support
+
+The modelling functions previously discarded the model they fitted, so
+estimated marginal means meant refitting by hand. They now keep it.
+
+* **`kk_model(x)`** returns the fitted model from `kk_reg()`, `kk_coxph()`,
+  `kk_rr_reg()`, `kk_rate_reg()` and `kk_firth()`. Because these are ordinary
+  `lm`/`glm`/`coxph`/`brglmFit` objects, every `emmeans` verb works unchanged
+  — as do `anova()`, `predict()`, `plot()` and `marginaleffects`.
+
+  ```r
+  fit <- kk_reg(d, sbp, c("age", "arm"))
+  emmeans::emmeans(kk_model(fit), ~ arm)
+  emmeans::joint_tests(kk_model(fit))
+  emmeans::emtrends(kk_model(fit), ~ arm, var = "age")
+  ```
+
+  `kk_model(fit, "univariate", "age")` gets a single-predictor model;
+  `kk_model(fit, "all")` the full named list. For results built from grouped
+  data there is one model per group: `kk_model(fit, group = "A")`.
+
+* **`kk_emmeans(x, specs)`** is a tidy wrapper: it runs `emmeans` on the stored
+  model and returns a **tibble**, keeping the package's tidy-out contract.
+  `contrast = "pairwise"` (or any `emmeans` method) computes contrasts in the
+  same call. Confidence limits are always named `conf.low`/`conf.high`,
+  normalising over `emmeans`' own `lower.CL` vs `asymp.LCL` split. The
+  underlying `emmGrid` is kept as `attr(x, "emmGrid")`.
+
+* **`kk_model_data(x)`** returns the data the models were fitted to, for the
+  rare case where `emmeans` needs it passed explicitly.
+
+No `recover_data()`/`emm_basis()` methods were needed: kkstatfun wraps model
+classes `emmeans` already supports rather than defining new ones. Estimated
+marginal means are verified identical to those from a hand-fitted model.
+
+## Bug fix
+
+* Results built from grouped data silently inherited the **first group's**
+  fitted model through `bind_rows()`, so it could masquerade as an overall fit.
+  Per-group models are now kept separately under `attr(x, "group_models")` and
+  reached with `kk_model(x, group = )`. The root cause was `attr()`'s default
+  *partial* matching: `attr(x, "models")` was resolving to `models_by_group`.
+  All internal attribute reads now use `exact = TRUE`, and the attribute was
+  renamed so the prefix cannot collide for users either.
+
+## Testing
+
+* Coverage holds at **100% of exported functions** (129 of 129, up from 126),
+  now **323 assertions** across 6 files.
+* New `test-emmeans.R`: model retrieval for all five modelling families,
+  `emmeans` on each, downstream verbs, tidy-output and CI-name normalisation,
+  per-group models, and the leak regression above.
+
 # kkstatfun 1.0.1
 
 Zenodo DOI for this exact version: [10.5281/zenodo.21599749](https://doi.org/10.5281/zenodo.21599749).

@@ -193,10 +193,13 @@ kk_reg <- function(data, outcome, predictors, log_outcome = FALSE, custom_formul
                             results %>% dplyr::bind_cols(diagnostics)
               }
 
-              # Fit univariate models
+              # Fit univariate models, keeping the fitted objects so they can be
+              # handed to emmeans() later (see .kk_attach_models).
+              univariate_models <- list()
               univariate_results <- purrr::map_dfr(predictors, function(predictor) {
                             formula <- stats::as.formula(paste(outcome_name, "~", predictor))
                             model <- fit_model(formula)
+                            univariate_models[[predictor]] <<- model
                             process_results(model, "univariate") %>% dplyr::mutate(predictor = predictor)
               })
 
@@ -210,7 +213,8 @@ kk_reg <- function(data, outcome, predictors, log_outcome = FALSE, custom_formul
               multivariate_results <- process_results(multivariate_model, "multivariate")
 
               # Combine results
-              dplyr::bind_rows(univariate_results, multivariate_results)
+              out <- dplyr::bind_rows(univariate_results, multivariate_results)
+              .kk_attach_models(out, multivariate_model, univariate_models, data)
 }
 
 #' @rdname kk_reg

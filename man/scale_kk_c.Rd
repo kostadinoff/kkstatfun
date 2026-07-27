@@ -27,6 +27,7 @@ registered \code{\link[=set_plot_colors]{set_plot_colors()}} anchors (via \code{
 \code{\link[=scale_fill_kk]{scale_fill_kk()}}, for heatmaps and other continuously-mapped fills/colours.
 }
 \examples{
+library(ggplot2)  # for the faithfuld dataset
 kkplot(faithfuld, ggplot2::aes(waiting, eruptions, fill = density)) +
   ggplot2::geom_raster() + scale_fill_kk_c()
 

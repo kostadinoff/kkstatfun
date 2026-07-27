@@ -32,6 +32,7 @@ data range) and subtle \strong{minor ticks} (for precise value reading) can be
 enabled.
 }
 \examples{
+library(ggplot2)
 patients <- data.frame(age = round(rnorm(50, 60, 10)), sbp = round(rnorm(50, 135, 15)))
 kkplot(patients, aes(x = age, y = sbp)) + geom_point()
 

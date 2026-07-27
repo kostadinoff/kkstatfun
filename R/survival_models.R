@@ -68,9 +68,12 @@ kk_coxph <- function(data, time, status, predictors, conf.level = 0.95, ...) {
               lhs <- sprintf("survival::Surv(%s, %s)", time_name, status_name)
               z_mult <- conf.level
 
-              fit_one <- function(rhs, model_type) {
+              fitted_models <- list()
+
+              fit_one <- function(rhs, model_type, keep_as = NULL) {
                             fml <- stats::as.formula(paste(lhs, "~", rhs))
                             model <- survival::coxph(fml, data = data, ...)
+                            if (!is.null(keep_as)) fitted_models[[keep_as]] <<- model
 
                             res <- broom::tidy(model, exponentiate = TRUE, conf.int = TRUE, conf.level = z_mult)
 
@@ -104,10 +107,14 @@ kk_coxph <- function(data, time, status, predictors, conf.level = 0.95, ...) {
                                           )
               }
 
-              univariate <- purrr::map_dfr(predictors, function(p) fit_one(p, "univariate"))
-              multivariable <- fit_one(paste(predictors, collapse = " + "), "multivariable")
+              univariate <- purrr::map_dfr(predictors, function(p) fit_one(p, "univariate", keep_as = p))
+              multivariable <- fit_one(paste(predictors, collapse = " + "), "multivariable",
+                                       keep_as = ".multivariable")
 
-              dplyr::bind_rows(univariate, multivariable)
+              out <- dplyr::bind_rows(univariate, multivariable)
+              .kk_attach_models(out, fitted_models[[".multivariable"]],
+                                fitted_models[setdiff(names(fitted_models), ".multivariable")],
+                                data)
 }
 
 #' Log-Rank and Related Survival Tests (KK)

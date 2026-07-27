@@ -2,6 +2,10 @@
 #' @importFrom rlang .data :=
 #' @importFrom stats coef complete.cases family median quantile setNames
 #' @importFrom grDevices col2rgb rgb
+# survival::clogit() builds a coxph()/Surv() call and evaluates it in the
+# caller's namespace, so these names must be visible here even though the
+# package's own calls are fully qualified.
+#' @importFrom survival coxph Surv strata
 #' @export
 dplyr::`%>%`
 

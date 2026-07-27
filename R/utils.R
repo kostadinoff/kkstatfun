@@ -65,6 +65,7 @@ validate_data_frame <- function(data, var_name = "data") {
                                           parent = env
                             )
                             res <- eval(sub_call, eval_env)
+                            mods <- attr(res, "models", exact = TRUE)
 
                             if (!is.data.frame(res)) {
                                           res <- tibble::tibble(result = list(res))
@@ -77,10 +78,184 @@ validate_data_frame <- function(data, var_name = "data") {
                             # Drop any same-named column the callee produced so the
                             # grouping keys are unambiguous.
                             res <- res[, setdiff(names(res), group_cols), drop = FALSE]
-                            dplyr::bind_cols(tibble::as_tibble(key_row), tibble::as_tibble(res))
+                            combined <- dplyr::bind_cols(tibble::as_tibble(key_row),
+                                                         tibble::as_tibble(res))
+                            # Strip any model attributes that rode along from the callee:
+                            # left in place, the first group's model would survive the
+                            # bind and masquerade as an overall fit.
+                            attr(combined, "model") <- NULL
+                            attr(combined, "models") <- NULL
+                            attr(combined, "model_data") <- NULL
+                            # Carry the fitted models out separately, keyed by group label.
+                            attr(combined, ".kk_group_models") <- mods
+                            combined
               })
 
-              dplyr::bind_rows(out)
+              labels <- apply(as.data.frame(keys), 1L, paste, collapse = " | ")
+              per_group <- lapply(out, function(z) attr(z, ".kk_group_models"))
+              names(per_group) <- labels[seq_along(per_group)]
+              per_group <- per_group[!vapply(per_group, is.null, logical(1))]
+
+              final <- dplyr::bind_rows(lapply(out, function(z) {
+                            attr(z, ".kk_group_models") <- NULL
+                            z
+              }))
+              attr(final, "model") <- NULL
+              attr(final, "models") <- NULL
+              attr(final, "model_data") <- NULL
+              if (length(per_group)) {
+                            attr(final, "group_models") <- per_group
+              }
+              final
+}
+
+#' Attach Fitted Models to a Results Tibble
+#'
+#' @description Stores the fitted model objects on a results tibble so callers
+#'   can reach them with [kk_model()] and pass them to `emmeans`, `marginaleffects`,
+#'   `anova()`, `plot()` and friends. Attaching costs nothing: the model already
+#'   retains the fitting environment, so the data is referenced either way.
+#'
+#' @param x The results tibble to annotate.
+#' @param multivariable The adjusted/full model (may be `NULL`).
+#' @param univariate Named list of single-predictor models (may be empty).
+#' @param data The data frame the models were fitted to.
+#'
+#' @return `x`, with `model`, `models` and `model_data` attributes.
+#' @noRd
+.kk_attach_models <- function(x, multivariable = NULL, univariate = list(), data = NULL) {
+              attr(x, "model") <- multivariable
+              attr(x, "models") <- list(
+                            multivariable = multivariable,
+                            univariate = univariate
+              )
+              attr(x, "model_data") <- data
+              x
+}
+
+#' Extract a Fitted Model from a kkstatfun Result
+#'
+#' @description The modelling functions ([kk_reg()], [kk_coxph()], [kk_rr_reg()],
+#'   [kk_rate_reg()], [kk_firth()]) return a tidy tibble of coefficients, but
+#'   also keep the underlying fitted model. `kk_model()` retrieves it so you can
+#'   continue with the wider modelling ecosystem -- most usefully `emmeans` for
+#'   estimated marginal means, contrasts and trends.
+#'
+#' @param x A tibble returned by a kkstatfun modelling function.
+#' @param which Which model to return: `"multivariable"` (default, the adjusted
+#'   model), `"univariate"` (requires `predictor`), or `"all"` for the full
+#'   named list.
+#' @param predictor Predictor name, when `which = "univariate"`.
+#' @param group For a result produced from grouped data, the group label whose
+#'   model you want (see `names(attr(x, "group_models"))`). `NULL` (default)
+#'   for ungrouped results.
+#'
+#' @return The fitted model object (`lm`, `glm`, `coxph`, `polr`, ...), or a
+#'   named list when `which = "all"`.
+#'
+#' @details
+#' `emmeans` recovers the model frame from the fitted object, so the returned
+#' model works directly:
+#'
+#' ```
+#' fit <- kk_reg(d, sbp, c("age", "arm"))
+#' emmeans::emmeans(kk_model(fit), ~ arm)
+#' ```
+#'
+#' If a model is ever moved between sessions and `emmeans` cannot recover the
+#' data, pass it explicitly with `data = kk_model_data(fit)`.
+#'
+#' @seealso [kk_model_data()], [kk_emmeans()]
+#'
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(
+#'   age = rnorm(100, 60, 10),
+#'   arm = factor(sample(c("Control", "Treatment"), 100, TRUE))
+#' )
+#' d$sbp <- 100 + 0.4 * d$age - 6 * (d$arm == "Treatment") + rnorm(100, 0, 8)
+#'
+#' fit <- kk_reg(d, sbp, c("age", "arm"))
+#' summary(kk_model(fit))
+#' names(kk_model(fit, "all")$univariate)
+#'
+#' @export
+kk_model <- function(x, which = c("multivariable", "univariate", "all"),
+                     predictor = NULL, group = NULL) {
+              which <- match.arg(which)
+              # exact = TRUE throughout: attr() partial-matches by default, so
+              # attr(x, "models") would otherwise silently return
+              # "group_models" on a grouped result.
+              by_group <- attr(x, "group_models", exact = TRUE)
+
+              if (!is.null(group)) {
+                            if (is.null(by_group)) {
+                                          stop("This result was not produced from grouped data, ",
+                                               "so `group` does not apply.", call. = FALSE)
+                            }
+                            if (!group %in% names(by_group)) {
+                                          stop("No models for group '", group, "'. Available: ",
+                                               paste(names(by_group), collapse = ", "), call. = FALSE)
+                            }
+                            models <- by_group[[group]]
+              } else {
+                            models <- attr(x, "models", exact = TRUE)
+              }
+
+              if (is.null(models)) {
+                            if (!is.null(by_group)) {
+                                          stop("This result came from grouped data, so there is one model per ",
+                                               "group. Pass group = one of: ",
+                                               paste(names(by_group), collapse = ", "),
+                                               call. = FALSE)
+                            }
+                            stop("No fitted model attached to this object. ",
+                                 "kk_model() works on results from kk_reg(), kk_coxph(), ",
+                                 "kk_rr_reg(), kk_rate_reg() and kk_firth().",
+                                 call. = FALSE)
+              }
+              if (which == "all") {
+                            return(models)
+              }
+              if (which == "multivariable") {
+                            if (is.null(models$multivariable)) {
+                                          stop("No multivariable model was fitted for this result.", call. = FALSE)
+                            }
+                            return(models$multivariable)
+              }
+              uni <- models$univariate
+              if (is.null(predictor)) {
+                            stop("`predictor` is required when which = \"univariate\". Available: ",
+                                 paste(names(uni), collapse = ", "), call. = FALSE)
+              }
+              if (!predictor %in% names(uni)) {
+                            stop("No univariate model for predictor '", predictor, "'. Available: ",
+                                 paste(names(uni), collapse = ", "), call. = FALSE)
+              }
+              uni[[predictor]]
+}
+
+#' Extract the Model-Fitting Data from a kkstatfun Result
+#'
+#' @description Returns the data frame the models in `x` were fitted to. Useful
+#'   as the `data =` argument to `emmeans` in the rare case where automatic
+#'   recovery fails (typically after saving and reloading a model).
+#'
+#' @param x A tibble returned by a kkstatfun modelling function.
+#'
+#' @return The data frame used for fitting, or `NULL` if none was recorded.
+#'
+#' @seealso [kk_model()], [kk_emmeans()]
+#'
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(y = rnorm(50), g = factor(rep(c("a", "b"), 25)))
+#' fit <- kk_reg(d, y, "g")
+#' nrow(kk_model_data(fit))
+#'
+#' @export
+kk_model_data <- function(x) {
+              attr(x, "model_data", exact = TRUE)
 }
 
 #' Extract Confidence Limits from an emmeans Summary

@@ -132,10 +132,13 @@ kk_firth <- function(data, outcome, predictors, conf.level = 0.95) {
                                   else if (is.logical(y_raw)) as.integer(y_raw)
                                   else as.numeric(y_raw)
 
-              fit_one <- function(rhs, model_type) {
+              fitted_models <- list()
+
+              fit_one <- function(rhs, model_type, keep_as = NULL) {
                             fml <- stats::as.formula(paste(out_name, "~", rhs))
                             model <- stats::glm(fml, data = data, family = stats::binomial(),
                                                 method = brglm2::brglmFit, type = "AS_mean")
+                            if (!is.null(keep_as)) fitted_models[[keep_as]] <<- model
                             broom::tidy(model, conf.int = TRUE, conf.level = conf.level) %>%
                                           dplyr::transmute(
                                                         term = .data$term,
@@ -151,11 +154,15 @@ kk_firth <- function(data, outcome, predictors, conf.level = 0.95) {
                                           dplyr::filter(.data$term != "(Intercept)")
               }
 
-              univariate <- purrr::map_dfr(predictors, function(p) fit_one(p, "univariate"))
+              univariate <- purrr::map_dfr(predictors, function(p) fit_one(p, "univariate", keep_as = p))
               multivariable_formula_str <- paste(predictors, collapse = " + ")
-              multivariable <- fit_one(multivariable_formula_str, "multivariable")
+              multivariable <- fit_one(multivariable_formula_str, "multivariable",
+                                       keep_as = ".multivariable")
 
               res <- dplyr::bind_rows(univariate, multivariable)
+              res <- .kk_attach_models(res, fitted_models[[".multivariable"]],
+                                       fitted_models[setdiff(names(fitted_models), ".multivariable")],
+                                       data)
 
               # Detect separation (pass the fitter as a function, since the
               # package is loaded via requireNamespace and not attached)

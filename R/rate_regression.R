@@ -57,7 +57,9 @@ kk_rate_reg <- function(data, outcome, predictors, person_time = NULL,
 
               offset_term <- if (has_offset) sprintf(" + offset(log(%s))", pt_name) else ""
 
-              fit_one <- function(rhs, model_type) {
+              fitted_models <- list()
+
+              fit_one <- function(rhs, model_type, keep_as = NULL) {
                             fml <- stats::as.formula(paste0(outcome_name, " ~ ", rhs, offset_term))
                             pois <- stats::glm(fml, data = data, family = stats::poisson(), ...)
 
@@ -77,6 +79,7 @@ kk_rate_reg <- function(data, outcome, predictors, person_time = NULL,
                                           model <- pois
                                           family_used <- "poisson"
                             }
+                            if (!is.null(keep_as)) fitted_models[[keep_as]] <<- model
 
                             broom::tidy(model, exponentiate = TRUE, conf.int = TRUE,
                                         conf.level = conf.level) %>%
@@ -96,11 +99,15 @@ kk_rate_reg <- function(data, outcome, predictors, person_time = NULL,
                                           )
               }
 
-              univariate <- purrr::map_dfr(predictors, function(p) fit_one(p, "univariate"))
-              multivariable <- fit_one(paste(predictors, collapse = " + "), "multivariable")
+              univariate <- purrr::map_dfr(predictors, function(p) fit_one(p, "univariate", keep_as = p))
+              multivariable <- fit_one(paste(predictors, collapse = " + "), "multivariable",
+                                       keep_as = ".multivariable")
 
-              dplyr::bind_rows(univariate, multivariable) %>%
+              out <- dplyr::bind_rows(univariate, multivariable) %>%
                             dplyr::filter(.data$term != "(Intercept)")
+              .kk_attach_models(out, fitted_models[[".multivariable"]],
+                                fitted_models[setdiff(names(fitted_models), ".multivariable")],
+                                data)
 }
 
 #' @rdname kk_rate_reg
@@ -171,10 +178,13 @@ kk_rr_reg <- function(data, outcome, predictors, conf.level = 0.95,
 
               z <- stats::qnorm(1 - (1 - conf.level) / 2)
 
-              fit_one <- function(rhs, model_type) {
+              fitted_models <- list()
+
+              fit_one <- function(rhs, model_type, keep_as = NULL) {
                             fml <- stats::as.formula(paste(outcome_name, "~", rhs))
                             model <- stats::glm(fml, data = data,
                                                 family = stats::poisson(link = "log"))
+                            if (!is.null(keep_as)) fitted_models[[keep_as]] <<- model
 
                             rob_vcov <- sandwich::vcovHC(model, type = vcov_type)
                             rob_se <- sqrt(diag(rob_vcov))
@@ -193,9 +203,13 @@ kk_rr_reg <- function(data, outcome, predictors, conf.level = 0.95,
                             )
               }
 
-              univariate <- purrr::map_dfr(predictors, function(p) fit_one(p, "univariate"))
-              multivariable <- fit_one(paste(predictors, collapse = " + "), "multivariable")
+              univariate <- purrr::map_dfr(predictors, function(p) fit_one(p, "univariate", keep_as = p))
+              multivariable <- fit_one(paste(predictors, collapse = " + "), "multivariable",
+                                       keep_as = ".multivariable")
 
-              dplyr::bind_rows(univariate, multivariable) %>%
+              out <- dplyr::bind_rows(univariate, multivariable) %>%
                             dplyr::filter(.data$term != "(Intercept)")
+              .kk_attach_models(out, fitted_models[[".multivariable"]],
+                                fitted_models[setdiff(names(fitted_models), ".multivariable")],
+                                data)
 }

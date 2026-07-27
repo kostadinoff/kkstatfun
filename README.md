@@ -4,7 +4,7 @@
 # kkstatfun
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21599749.svg)](https://doi.org/10.5281/zenodo.21599749)
-[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
 
 **R Statistical Analysis Toolkit for Medical and Epidemiology**
 
@@ -64,6 +64,20 @@ if (!require("devtools")) install.packages("devtools")
 # Install kkstatfun from GitHub
 devtools::install_github("kostadinoff/kkstatfun")
 ```
+
+`library(kkstatfun)` attaches **only** kkstatfun (the pipe `%>%` comes
+with it). Attach whatever else your script uses, as usual:
+
+``` r
+library(kkstatfun)
+library(dplyr)     # and ggplot2, survival, ... as needed
+```
+
+Before 1.1.0 the package listed 19 packages under `Depends:`, so
+`library(kkstatfun)` silently attached the whole tidyverse. That also
+meant `kkstatfun::kk_coxph(...)` could fail in a clean session, because
+the `::` form loads the namespace without attaching anything. Both are
+fixed.
 
 ------------------------------------------------------------------------
 
@@ -1682,6 +1696,81 @@ regression_analysis(cohort, outcome = "event", predictors = c("age", "smoker", "
 > 0.3–1.6). For a continuous outcome the wrapper would instead fit
 > linear regression with model-check diagnostics.
 
+#### `kk_model(x)` / `kk_model_data(x)` / `kk_emmeans(x, specs)`
+
+The modelling functions (`kk_reg()`, `kk_coxph()`, `kk_rr_reg()`,
+`kk_rate_reg()`, `kk_firth()`) keep the fitted model alongside the tidy
+coefficient table. `kk_model()` retrieves it, so the whole downstream
+modelling ecosystem — above all **`emmeans`** — is available without
+refitting anything.
+
+- **Clinical Example**: Reporting adjusted (model-based) mean systolic
+  BP per treatment arm, and the contrast between arms, from the same
+  model that produced the coefficient table.
+
+``` r
+fit <- kk_reg(cohort, sbp, c("age", "bmi", "arm"))
+
+# Adjusted marginal means by arm, as a tibble
+kk_emmeans(fit, ~ arm)
+#> # A tibble: 2 × 9
+#>   arm       emmean    SE    df conf.low conf.high t.ratio   p.value conf.level
+#>   <fct>      <dbl> <dbl> <dbl>    <dbl>     <dbl>   <dbl>     <dbl>      <dbl>
+#> 1 Control     139. 0.788   296     138.      141.    177. 4.32e-302       0.95
+#> 2 Treatment   130. 0.815   296     128.      131.    159. 7.70e-289       0.95
+```
+
+``` r
+
+# The contrast between arms
+kk_emmeans(fit, ~ arm, contrast = "pairwise")
+#> # A tibble: 1 × 9
+#>   contrast            estimate    SE    df conf.low conf.high t.ratio  p.value conf.level
+#>   <chr>                  <dbl> <dbl> <dbl>    <dbl>     <dbl>   <dbl>    <dbl>      <dbl>
+#> 1 Control - Treatment     9.52  1.13   296     7.29      11.8    8.40 1.94e-15       0.95
+```
+
+> **Interpretation.** `kk_emmeans()` reports the **model-adjusted** mean
+> outcome per group — the mean each arm would have at common covariate
+> values — which is what belongs in a results table, rather than the raw
+> group means. The `pairwise` contrast is the adjusted between-arm
+> difference with its CI and p-value: 9.5 mmHg lower on treatment (95%
+> CI 7.3–11.8), comfortably covering the 8 mmHg effect built into the
+> simulated cohort. Confidence limits are always named
+> `conf.low`/`conf.high`, smoothing over the fact that `emmeans` itself
+> switches between `lower.CL` and `asymp.LCL` depending on the model.
+
+For anything beyond means and contrasts, take the model and use
+`emmeans` directly:
+
+``` r
+library(emmeans)
+mod <- kk_model(fit)                       # the underlying lm/glm/coxph
+joint_tests(mod)                           # type-III style joint tests
+#>  model term df1 df2 F.ratio p.value
+#>  age          1 296  86.686  <.0001
+#>  bmi          1 296  11.839  0.0007
+#>  arm          1 296  70.497  <.0001
+```
+
+``` r
+emtrends(mod, ~ arm, var = "age")          # per-arm slope in age
+#>  arm       age.trend     SE  df lower.CL upper.CL
+#>  Control       0.488 0.0524 296    0.385    0.591
+#>  Treatment     0.488 0.0524 296    0.385    0.591
+#> 
+#> Confidence level used: 0.95
+```
+
+> **Interpretation.** `kk_model()` returns an ordinary
+> `lm`/`glm`/`coxph`, so every `emmeans` verb works unchanged — as do
+> `anova()`, `plot()`, `predict()` and packages such as
+> `marginaleffects`. Use `kk_model(fit, "univariate", "age")` for a
+> single-predictor model, and on grouped input
+> `kk_model(fit, group = "A")` for one group’s model.
+> `kk_model_data(fit)` returns the fitting data if `emmeans` ever needs
+> it passed explicitly.
+
 #### `compare_proportions(data)` / `compare_proportions_by()`
 
 Pairwise comparison of proportions utilizing normal approximations with
@@ -3281,7 +3370,7 @@ If you use this package in your research, please cite it as follows:
   title = {kkstatfun: R Statistical Analysis Toolkit for Medical Statistics and Epidemiology},
   author = {Kostadinov, Kostadin},
   year = {2026},
-  version = {1.0.1},
+  version = {1.1.0},
   url = {https://github.com/kostadinoff/kkstatfun},
   doi = {10.5281/zenodo.21599749},
 }

@@ -72,7 +72,7 @@ kk_matched_case_control <- function(data, set_id, case, exposure, ratio = "1:m",
     stop("No valid matched sets found with at least one case and one control.")
   }
 
-  form <- stats::as.formula(paste0(case_col, " ~ ", exp_col, " + strata(", set_col, ")"))
+  form <- stats::as.formula(paste0(case_col, " ~ ", exp_col, " + survival::strata(", set_col, ")"))
   fit <- survival::clogit(form, data = df_valid)
   sum_fit <- summary(fit)
 
@@ -183,7 +183,7 @@ kk_case_crossover <- function(data, id, event, exposure, alpha = 0.05) {
     stop("No valid patient records found with both hazard (event = 1) and control (event = 0) windows.")
   }
 
-  form <- stats::as.formula(paste0(evt_col, " ~ ", exp_col, " + strata(", id_col, ")"))
+  form <- stats::as.formula(paste0(evt_col, " ~ ", exp_col, " + survival::strata(", id_col, ")"))
   fit <- survival::clogit(form, data = df_valid)
   sum_fit <- summary(fit)
 
