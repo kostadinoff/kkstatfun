@@ -1,5 +1,7 @@
 # kkstatfun 1.1.0
 
+Zenodo DOI for this exact version: [10.5281/zenodo.21629660](https://doi.org/10.5281/zenodo.21629660).
+
 `R CMD check` now passes with **0 errors, 0 warnings and 0 notes**.
 
 ## Breaking change
