@@ -36,6 +36,8 @@ not optional:
 ```r
 # devtools::install_github("kostadinoff/kkstatfun")   # if missing / to update
 library(kkstatfun)
+library(dplyr)                                         # 1.1.0+: attach what you use
+library(ggplot2)                                       # (kkstatfun no longer does it)
 kk_setup()                                             # cores, backend, scipen off
 
 myfont = "Roboto Condensed"
@@ -68,14 +70,20 @@ these, more groups interpolate between them. Roboto Condensed is the **current d
 a constraint** — the font is flexible: any Google Fonts family works by changing `myfont`,
 and the package fetches it, so feel free to switch when a project calls for it.
 
-**Check the installed version before relying on the palette API or on `group_by()`
-support.** `set_plot_colors()`, `kk_pal()`, `scale_fill_kk()` and `scale_colour_kk()` were
-added in 0.2.x; real `group_by()` support and the eight bug fixes below landed in **1.0.0**.
-Installed builds are often older, and the failure is either a confusing
-`could not find function` mid-script or — worse, pre-1.0.0 — a silently **pooled** estimate
-where you expected a stratified one. Pin the requirement at the top of any analysis script:
+**`library(kkstatfun)` attaches only kkstatfun (1.1.0+).** The 19 packages that used to
+sit in `Depends:` moved to `Imports:`/`Suggests:`, so dplyr, ggplot2, survival and friends
+are no longer attached as a side effect. `%>%` still comes with kkstatfun. Every script
+needs its own `library()` lines — the symptom otherwise is `could not find function
+"mutate"` in a script that worked last month.
+
+**Check the installed version before relying on the palette API, on `group_by()`, or on
+`kk_model()`.** `set_plot_colors()`/`kk_pal()`/`scale_fill_kk()` arrived in 0.2.x; real
+`group_by()` support and eight bug fixes in **1.0.0**; `kk_model()`/`kk_emmeans()` and the
+`Depends` move in **1.1.0**. Installed builds are often older, and the failure is either a
+confusing `could not find function` mid-script or — worse, pre-1.0.0 — a silently **pooled**
+estimate where you expected a stratified one. Pin it:
 ```r
-stopifnot(packageVersion("kkstatfun") >= "1.0.0")
+stopifnot(packageVersion("kkstatfun") >= "1.1.0")
 ```
 
 **The package is the user's own and changes often — assume the installed copy may be
@@ -129,6 +137,22 @@ rather than inventing a different palette —
   `kk_cuminc` → `attr(x, "gray_test")` (columns `cause`/`stat`/`pv`/`df`, not broom names),
   `kk_iptw` → `attr(x, "weights")`, `kk_dose_response` → `attr(x, "nonlinearity_test")`,
   `prop_trend_test` → `attr(x, "htest")`).
+- **The modelling functions keep their fitted model (1.1.0+).** `kk_reg()`, `kk_coxph()`,
+  `kk_rr_reg()`, `kk_rate_reg()` and `kk_firth()` stash the `lm`/`glm`/`coxph`/`brglmFit`
+  they fitted; `kk_model()` gets it back. Never refit a model by hand to run `emmeans`,
+  `anova()`, `predict()` or `marginaleffects` — pull it out instead:
+  ```r
+  fit <- kk_reg(d, sbp, c("age", "arm"))
+  kk_emmeans(fit, ~ arm)                        # tidy tibble of adjusted means
+  kk_emmeans(fit, ~ arm, contrast = "pairwise") # and the contrast
+  emmeans::joint_tests(kk_model(fit))           # anything emmeans can do
+  emmeans::emtrends(kk_model(fit), ~ arm, var = "age")
+  ```
+  `kk_model(fit, "univariate", "age")` for a single-predictor model,
+  `kk_model(fit, group = "A")` when the fit came from grouped data, and
+  `kk_model_data(fit)` if `emmeans` ever needs `data =` passed explicitly.
+  Report **model-adjusted** marginal means in results tables rather than raw group means;
+  that is the whole point of reaching for `emmeans` here.
 - A handful return a **named list of tibbles** rather than one tibble:
   `kk_stratified_2x2()` (`pooled_or`, `pooled_rr`, `breslow_day`, `homogeneity_test`,
   `stratum_specific`), `kk_reclassification()` (`summary`, `reclass_events`, ...),
@@ -172,7 +196,13 @@ predicted =)` describe the shadowed version — use `kk_calibration_table()` for
 `type` argument; `ggsave()` already goes through AGG, which is the RStudio default device
 and renders the registered families correctly.
 
-**5. Grouping vs. pooling is now your explicit choice, so make it deliberately.** Pre-1.0.0
+**5. Read kkstatfun attributes with `exact = TRUE`.** `attr()` partial-matches by default,
+and several results carry attributes sharing a prefix (`model`, `models`, `model_data`,
+`group_models`). `attr(x, "models")` on a grouped result silently returns `group_models` —
+a list keyed by group, not the model list you asked for. Use
+`attr(x, "models", exact = TRUE)`, or just call `kk_model()`, which handles it.
+
+**6. Grouping vs. pooling is now your explicit choice, so make it deliberately.** Pre-1.0.0
 code that relied on grouped input being ignored will change its numbers on upgrade. If you
 want a single pooled estimate from stratified data, either don't group or use
 `kk_stratified_2x2()` for a proper Mantel-Haenszel pooled OR with a homogeneity test.
@@ -248,6 +278,8 @@ All are verified fixed; do **not** write workarounds for them:
 - `kk_reg(data, outcome, predictors)` / `regression_analysis()` (`krk_reg` alias) — auto linear/logistic/ordinal, uni + multivariable.
 - `kk_firth(data, outcome, predictors)` — Firth-penalized logistic for separation / rare events.
 - (see also `kk_rr_reg`, `kk_rate_reg` above for RR and rate models).
+- `kk_model(x, which=, predictor=, group=)` — retrieve the fitted model from any of the above.
+- `kk_emmeans(x, specs, contrast=, type=)` — tidy estimated marginal means / contrasts via `emmeans`; `type = "response"` back-transforms to ORs, RRs or probabilities. `kk_model_data(x)` — the fitting data.
 
 ### Survival & time-to-event
 - `kk_survival_plot(data, time, status, group)` / `survival_plot()` — Kaplan-Meier with risk table.
@@ -301,7 +333,9 @@ All are verified fixed; do **not** write workarounds for them:
 1. **Describe**: `kk_summary()` for continuous vars; `kk_table1()` for baseline by group.
 2. **Associate**: `kk_twobytwo()` / `kk_epi_stats()`; stratify with `kk_stratified_2x2()`.
 3. **Model**: `kk_reg()` (OR/coef), `kk_rr_reg()` (adjusted RR), `kk_rate_reg()` (IRR),
-   `kk_coxph()` (HR). For rare events / separation use `kk_firth()`.
+   `kk_coxph()` (HR). For rare events / separation use `kk_firth()`. Then report
+   **adjusted marginal means and contrasts** with `kk_emmeans(fit, ~ group)` rather than
+   raw group means — the fitted model is already stored, so nothing is refitted.
 4. **Validate a prediction model**: `kk_roc()` (discrimination) + `kk_calibration()`
    (calibration statistics) or `kk_calibration_table()` (curve) + `kk_decision_curve()`
    (net benefit). Compare two models with `kk_reclassification()` (NRI/IDI).
