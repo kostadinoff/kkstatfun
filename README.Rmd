@@ -29,7 +29,7 @@ suppressWarnings(suppressMessages(
 
 # kkstatfun
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21599749.svg)](https://doi.org/10.5281/zenodo.21599749)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21629660.svg)](https://doi.org/10.5281/zenodo.21629660)
 [![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
 
 **R Statistical Analysis Toolkit for Medical and Epidemiology**
