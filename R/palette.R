@@ -53,6 +53,9 @@ kk_pal <- function(n, colors = getOption("kkstatfun.colors")) {
 #' @param n Number of colours in the derived palette when `scheme` is supplied
 #'   (default: the larger of `length(colors)` and 6). Ignored when `scheme` is
 #'   `NULL`.
+#' @param space Colour space the derived `scheme` is built in, `"hsv"` (default)
+#'   or the perceptually uniform `"oklch"`; see [kk_gen_palettes()]. Ignored when
+#'   `scheme` is `NULL`.
 #' @param n_max Largest number of discrete levels to pre-build palettes for
 #'   (default 24).
 #' @param set_default Whether to register the palette as the global ggplot2
@@ -81,9 +84,10 @@ kk_pal <- function(n, colors = getOption("kkstatfun.colors")) {
 #' set_plot_colors(c("#D62828", "#003049", "#F77F00"), continuous = TRUE)
 #'
 #' @export
-set_plot_colors <- function(colors, scheme = NULL, n = NULL, n_max = 24,
-                            set_default = TRUE, continuous = FALSE) {
+set_plot_colors <- function(colors, scheme = NULL, n = NULL, space = c("hsv", "oklch"),
+                            n_max = 24, set_default = TRUE, continuous = FALSE) {
   colors <- .kk_validate_colors(colors)
+  space <- match.arg(space)
 
   # Optionally expand a seed (or seeds) into a derived colour-theory scheme.
   if (!is.null(scheme)) {
@@ -91,7 +95,7 @@ set_plot_colors <- function(colors, scheme = NULL, n = NULL, n_max = 24,
       stop("`scheme` must be a single scheme name (see ?kk_gen_palettes).")
     }
     if (is.null(n)) n <- max(length(colors), 6L)
-    pals <- kk_gen_palettes(colors, n = n)
+    pals <- kk_gen_palettes(colors, n = n, space = space)
     if (!scheme %in% names(pals)) {
       stop(sprintf("Unknown scheme '%s'. Available: %s.",
         scheme, paste(names(pals), collapse = ", ")))
@@ -234,6 +238,81 @@ scale_color_kk_c <- scale_colour_kk_c
   .kk_from_hsv(hsv["h", ] + deg / 360, hsv["s", ], hsv["v", ])
 }
 
+# --- OKLCh counterparts (see R/color_science.R for the conversions) ----
+
+# Interpolate between anchor colours in OKLab rather than sRGB, so that a
+# sequential ramp is perceptually even instead of bunching in the midtones.
+.kk_ramp_oklab <- function(cols, n) {
+  if (n == 1) return(.kk_as_hex(cols[1]))
+  if (length(cols) == 1) return(rep(.kk_as_hex(cols), n))
+  lab <- .kk_lin_to_oklab(.kk_to_linear(cols))
+  pos <- seq(0, 1, length.out = length(cols))
+  at <- seq(0, 1, length.out = n)
+  .kk_oklab_to_hex(rbind(
+    stats::approx(pos, lab[1, ], at)$y,
+    stats::approx(pos, lab[2, ], at)$y,
+    stats::approx(pos, lab[3, ], at)$y
+  ))
+}
+
+# Qualitative expansion in OKLCh: cycle the anchors, alternately darkening
+# and lightening, holding hue fixed.
+.kk_qual_expand_ok <- function(anchors, n) {
+  if (n <= length(anchors)) return(.kk_as_hex(anchors[seq_len(n)]))
+  lch <- .kk_lab_to_lch(.kk_lin_to_oklab(.kk_to_linear(anchors)))
+  out <- character(0)
+  cycle <- 0
+  while (length(out) < n) {
+    if (cycle %% 2 == 0) {
+      L <- lch[1, ] * (0.80^(cycle / 2))
+      C <- lch[2, ] * (0.92^(cycle / 2))
+    } else {
+      L <- pmin(1, lch[1, ] + (1 - lch[1, ]) * 0.55)
+      C <- lch[2, ] * 0.55
+    }
+    out <- c(out, .kk_lch_to_hex(L, C, lch[3, ]))
+    cycle <- cycle + 1
+  }
+  out[seq_len(n)]
+}
+
+# The scheme catalogue built in OKLCh (perceptually uniform).
+.kk_schemes_oklch <- function(colors, n) {
+  seed <- colors[1]
+  lch <- .kk_lab_to_lch(.kk_lin_to_oklab(.kk_to_linear(seed)))
+  L0 <- lch[1, 1]
+  C0 <- lch[2, 1]
+  h0 <- lch[3, 1]
+
+  rot <- function(deg) {
+    .kk_lch_to_hex(rep(L0, length(deg)), rep(C0, length(deg)), h0 + deg)
+  }
+  seed_light <- .kk_lch_to_hex(L0 + (1 - L0) * 0.55, C0 * 0.30, h0)
+  seed_dark <- .kk_lch_to_hex(L0 * 0.40, C0, h0)
+
+  list(
+    sequential = if (length(colors) > 1) {
+      .kk_ramp_oklab(colors, n)
+    } else {
+      .kk_ramp_oklab(c(seed_light, seed, seed_dark), n)
+    },
+    monochromatic = .kk_lch_to_hex(
+      seq(min(1, L0 + (1 - L0) * 0.45), max(0.20, L0 * 0.45), length.out = n),
+      rep(C0, n), rep(h0, n)
+    ),
+    tints = .kk_ramp_oklab(c(seed, "#FFFFFF"), n),
+    shades = .kk_ramp_oklab(c(seed, .kk_lch_to_hex(L0 * 0.18, C0, h0)), n),
+    analogous = rot(seq(-40, 40, length.out = n)),
+    complementary = .kk_qual_expand_ok(c(seed, rot(180)), n),
+    split_complementary = .kk_qual_expand_ok(c(seed, rot(150), rot(210)), n),
+    triadic = .kk_qual_expand_ok(c(seed, rot(120), rot(240)), n),
+    tetradic = .kk_qual_expand_ok(
+      c(seed, rot(90), rot(180), rot(270)), n
+    ),
+    spectral = rot(utils::head(seq(0, 360, length.out = n + 1), n))
+  )
+}
+
 # Expand qualitative anchors to exactly n by cycling with tint/shade variation.
 .kk_qual_expand <- function(anchors, n) {
   if (n <= length(anchors)) return(anchors[seq_len(n)])
@@ -272,6 +351,13 @@ scale_color_kk_c <- scale_colour_kk_c
 #'
 #' @param colors Character vector of 1-12 seed colours (hex or R colour names).
 #' @param n Number of colours per palette (default 6).
+#' @param space Colour space the schemes are built in. `"hsv"` (default) keeps
+#'   the classic behaviour; `"oklch"` works in the perceptually uniform OKLCh
+#'   space, so hue rotations preserve apparent lightness, lightness ramps are
+#'   evenly spaced to the eye, and out-of-gamut colours are mapped by reducing
+#'   chroma rather than clipping RGB (which shifts hue). `"oklch"` is the better
+#'   choice for new figures; the default is left at `"hsv"` so that palettes in
+#'   existing scripts do not change.
 #' @param plot If TRUE, also draw the swatches via [kk_show_palettes()]
 #'   (default FALSE).
 #'
@@ -285,14 +371,38 @@ scale_color_kk_c <- scale_colour_kk_c
 #' pals$triadic
 #' kk_gen_palettes(c("#D62828", "#003049", "#F77F00"), n = 8, plot = TRUE)
 #'
-#' @seealso [kk_show_palettes()], [set_plot_colors()], [kk_pal()].
+#' # perceptually uniform schemes
+#' kk_gen_palettes("#D62828", n = 6, space = "oklch")$triadic
+#'
+#' @seealso [kk_show_palettes()], [set_plot_colors()], [kk_pal()],
+#'   [kk_pal_check()] to audit the result for colour-blind readers.
 #' @export
-kk_gen_palettes <- function(colors, n = 6, plot = FALSE) {
+kk_gen_palettes <- function(colors, n = 6, space = c("hsv", "oklch"),
+                            plot = FALSE) {
   colors <- .kk_validate_colors(colors)
   if (!is.numeric(n) || length(n) != 1 || is.na(n) || n < 1) {
     stop("`n` must be a single positive integer.")
   }
   n <- as.integer(n)
+  space <- match.arg(space)
+
+  if (space == "oklch") {
+    pals <- .kk_schemes_oklch(colors, n)
+    if (length(colors) > 1) {
+      custom <- if (n <= length(colors)) {
+        .kk_as_hex(colors[seq_len(n)])
+      } else {
+        .kk_ramp_oklab(colors, n)
+      }
+      pals <- c(list(custom = custom), pals)
+    }
+    attr(pals, "seed") <- colors
+    attr(pals, "n") <- n
+    attr(pals, "space") <- space
+    class(pals) <- c("kk_palettes", "list")
+    if (isTRUE(plot)) print(kk_show_palettes(pals))
+    return(pals)
+  }
 
   seed <- colors[1]
   hsv0 <- .kk_to_hsv(seed)
@@ -340,6 +450,7 @@ kk_gen_palettes <- function(colors, n = 6, plot = FALSE) {
 
   attr(pals, "seed") <- colors
   attr(pals, "n") <- n
+  attr(pals, "space") <- space
   class(pals) <- c("kk_palettes", "list")
 
   if (isTRUE(plot)) print(kk_show_palettes(pals))

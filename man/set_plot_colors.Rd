@@ -8,6 +8,7 @@ set_plot_colors(
   colors,
   scheme = NULL,
   n = NULL,
+  space = c("hsv", "oklch"),
   n_max = 24,
   set_default = TRUE,
   continuous = FALSE
@@ -26,6 +27,10 @@ colour names), e.g. three flag colours.}
 \item{n}{Number of colours in the derived palette when \code{scheme} is supplied
 (default: the larger of \code{length(colors)} and 6). Ignored when \code{scheme} is
 \code{NULL}.}
+
+\item{space}{Colour space the derived \code{scheme} is built in, \code{"hsv"} (default)
+or the perceptually uniform \code{"oklch"}; see \code{\link[=kk_gen_palettes]{kk_gen_palettes()}}. Ignored when
+\code{scheme} is \code{NULL}.}
 
 \item{n_max}{Largest number of discrete levels to pre-build palettes for
 (default 24).}

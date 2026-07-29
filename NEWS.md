@@ -1,3 +1,40 @@
+# kkstatfun 1.2.0
+
+## Colour science for accessible figures (`R/color_science.R`)
+
+New functions for checking that a figure's colours survive print, greyscale and
+colour-blind readers — the checks journals and accessibility policies
+increasingly ask for.
+
+* `kk_cvd()` simulates colour vision deficiency (deuteranopia, protanopia,
+  tritanopia, achromatopsia) using the physiologically-based transforms of
+  Machado, Oliveira & Fernandes (2009), applied in linear-light RGB with
+  interpolated severity for anomalous trichromacy. Output is identical to
+  `colorspace::deutan()` and friends, without taking the extra dependency.
+* `kk_show_cvd()` previews a palette as a swatch grid, one row per vision type,
+  so categories that collapse into one another are obvious at a glance.
+* `kk_pal_check()` audits a whole palette: for each colour and each vision type
+  it reports the perceptual distance (OKLab delta-E) to the nearest other
+  colour, plus WCAG contrast against the plotting background.
+* `kk_pal_safe()` builds a categorical palette that stays distinguishable for
+  normal, deuteranopic, protanopic *and* tritanopic vision simultaneously, by
+  deterministic farthest-point sampling in OKLab. It can be anchored on your own
+  institutional colours via `seed_colors`.
+* `kk_contrast()` gives WCAG 2.1 contrast ratios with the AA/AAA flags, and
+  `kk_color_convert()` exposes OKLab/OKLCh coordinates and relative luminance.
+
+## Perceptually uniform palette generation
+
+* `kk_gen_palettes()` and `set_plot_colors()` gain `space = "oklch"`, which
+  builds the colour-theory schemes in the perceptually uniform OKLCh space
+  instead of HSV. Hue rotations then preserve apparent lightness (the HSV
+  triadic turns `#D62828` into a far brighter `#28D628`; the OKLCh one gives
+  `#008F33` at matched lightness), lightness ramps are evenly spaced to the eye,
+  and out-of-gamut colours are mapped by reducing chroma rather than clipping
+  RGB, which shifts hue.
+* The default remains `space = "hsv"`, so palettes in existing scripts and
+  published figures do not change. `"oklch"` is the better choice for new work.
+
 # kkstatfun 1.1.0
 
 Zenodo DOI for this exact version: [10.5281/zenodo.21629660](https://doi.org/10.5281/zenodo.21629660).

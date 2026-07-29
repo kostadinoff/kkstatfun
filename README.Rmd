@@ -30,7 +30,7 @@ suppressWarnings(suppressMessages(
 # kkstatfun
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21629660.svg)](https://doi.org/10.5281/zenodo.21629660)
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
 
 **R Statistical Analysis Toolkit for Medical and Epidemiology**
 
@@ -1340,7 +1340,7 @@ pals$analogous
 kk_show_palettes(pals)
 ```
 
-> **Interpretation.** Schemes are built in HSV space from the **first** seed; the `sequential` ramp — and the `custom` entry, present only when you pass more than one seed — uses all seeds as anchors. The ramps (`sequential`, `monochromatic`, `tints`, `shades`) suit ordered or continuous quantities, while the qualitative schemes (`analogous`, `complementary`, `split_complementary`, `triadic`, `tetradic`, `spectral`) suit unordered categories. Where `n` exceeds a scheme's natural anchor count (e.g. `triadic` has three base hues), the extra colours are lightened/darkened variants of those hues.
+> **Interpretation.** Schemes are built from the **first** seed — in HSV by default, or in the perceptually uniform OKLCh space with `space = "oklch"` (see below); the `sequential` ramp — and the `custom` entry, present only when you pass more than one seed — uses all seeds as anchors. The ramps (`sequential`, `monochromatic`, `tints`, `shades`) suit ordered or continuous quantities, while the qualitative schemes (`analogous`, `complementary`, `split_complementary`, `triadic`, `tetradic`, `spectral`) suit unordered categories. Where `n` exceeds a scheme's natural anchor count (e.g. `triadic` has three base hues), the extra colours are lightened/darkened variants of those hues.
 
 Pick a scheme and register it with `scheme =` — every discrete `kkplot` fill then draws from it:
 
@@ -1360,9 +1360,85 @@ set_plot_colors(c("#D62828", "#003049", "#F77F00"))
 
 > **Note.** `set_plot_colors()` accepts **1 to 12** colours and errors clearly beyond that. With `scheme = NULL` (the default) your colours are registered exactly as given — the original behaviour is unchanged.
 
+#### `space = "oklch"` — perceptually uniform schemes
+
+HSV treats every hue at a given "value" as equally light, but the eye does not: a pure yellow at `V = 0.84` looks far brighter than a pure blue at the same value. Rotating hue in HSV therefore produces palettes whose colours shout at different volumes. `space = "oklch"` builds the same schemes in **OKLCh**, where lightness is perceptual, so a hue rotation holds apparent lightness fixed. Colours that fall outside sRGB are brought back by reducing chroma rather than by clipping the RGB channels, which would shift the hue.
+
+```{r ex-oklch, fig.height=3}
+# same seed, same scheme, two colour spaces
+kk_gen_palettes("#D62828", n = 6)$triadic                    # HSV (default)
+kk_gen_palettes("#D62828", n = 6, space = "oklch")$triadic   # perceptual
+
+kk_show_palettes(kk_gen_palettes("#D62828", n = 6, space = "oklch"))
+```
+
+> **Interpretation.** The HSV triadic answers `#D62828` with a fluorescent `#28D628`; the OKLCh one gives `#008F33`, which carries the same visual weight as the seed. The default stays `space = "hsv"` so palettes in existing scripts and published figures do not change — use `"oklch"` for new work. `set_plot_colors()` accepts the same argument: `set_plot_colors("#D62828", scheme = "triadic", space = "oklch")`.
+
 ---
 
-### 11. Data Utilities & Setup
+### 11. Figure Accessibility & Colour Vision
+
+Roughly **8% of men and 0.5% of women** have a red–green colour vision deficiency, and journals increasingly require figures that survive greyscale printing. These functions check a palette *before* it reaches a manuscript.
+
+#### `kk_show_cvd(colors)` / `kk_cvd(colors, type, severity)`
+
+`kk_cvd()` renders colours as they are seen with deuteranopia, protanopia, tritanopia or achromatopsia, using the physiologically-based transforms of Machado, Oliveira & Fernandes (2009) applied in linear-light RGB. `severity` runs from 0 (normal trichromacy) to 1 (full dichromacy); intermediate values give *anomalous trichromacy*, the common mild form. `kk_show_cvd()` draws the result as a swatch grid.
+
+```{r ex-cvd, fig.height=3.5}
+kk_cvd(c("#D62828", "#003049", "#F77F00"), type = "deutan")
+
+kk_show_cvd(c("#D62828", "#003049", "#F77F00"))
+```
+
+> **Interpretation.** The flag palette's red (`#D62828`) and amber (`#F77F00`) both collapse towards olive for deuteranopes and protanopes — a grouped bar chart using those two colours is unreadable for about one man in twelve. Blue survives every deficiency, which is why blue–orange rather than red–green is the safe two-colour contrast.
+
+#### `kk_pal_check(colors, background)`
+
+Audits a whole palette at once. For every colour and every vision type it reports the perceptual distance (Euclidean distance in OKLab, "delta-E OK") to the **nearest other colour in the palette** as that reader sees it, plus the WCAG contrast against the plotting background. An empty result from the filter below means the palette passes.
+
+```{r ex-palcheck}
+chk <- kk_pal_check(c("#D62828", "#003049", "#F77F00"), background = "#FFFFFF")
+
+# anything that fails: colours too close, or too faint against white
+chk |> filter(!distinct | !graphic)
+```
+
+> **Interpretation.** `min_dist` below `min_dist =` (default 0.10) means two categories will read as one colour; `graphic = FALSE` means the colour falls under the 3:1 WCAG threshold for lines, points and other non-text objects. Here amber on white is the weak link at 2.6:1. Fix either by changing the palette or — often better in a scientific figure — by adding a redundant non-colour cue: `linetype`, point `shape`, or direct labels.
+
+#### `kk_pal_safe(n, seed_colors)`
+
+Builds a categorical palette whose colours stay far apart in OKLab **simultaneously** for normal, deuteranopic, protanopic and tritanopic vision, and that clear the WCAG non-text contrast threshold against the background. Selection is deterministic farthest-point sampling, so the same call always returns the same palette — figures stay reproducible. Anchor it on an institutional colour with `seed_colors`.
+
+```{r ex-palsafe, fig.height=3.5}
+pal <- kk_pal_safe(5, seed_colors = "#003049")
+pal
+
+# audit against the vision types it was built for: empty, so it passes
+kk_pal_check(pal, type = c("normal", "deutan", "protan", "tritan")) |>
+  filter(!distinct | !graphic)
+
+kk_show_cvd(pal)
+```
+
+> **Caveat.** `"achroma"` (greyscale) is deliberately **not** in the default `type`. Including it forces the categories to separate on lightness alone, which caps a usable palette at three or four colours. If the figure must survive photocopying, either ask for fewer categories with `type = c("normal", "deutan", "protan", "tritan", "achroma")` or keep more colours and add a non-colour cue.
+
+#### `kk_contrast(colors, background)` / `kk_color_convert(colors)`
+
+`kk_contrast()` gives WCAG 2.1 contrast ratios with the AA/AAA conformance flags — 4.5:1 for body text, 3:1 for large text and graphical objects, 7:1 for AAA. `kk_color_convert()` exposes the underlying OKLab/OKLCh coordinates and relative luminance.
+
+```{r ex-contrast}
+kk_contrast(c("#D62828", "#F77F00", "#003049"), background = "#FFFFFF")
+
+kk_color_convert(c("#D62828", "#003049", "#F77F00"))
+```
+
+> **Interpretation.** Use `kk_contrast()` for annotation text and thin lines drawn over a panel background, and `ok_l` from `kk_color_convert()` when you need to know whether two colours differ in lightness as well as hue — a difference that survives both colour blindness and greyscale printing.
+
+> **Sources.** OKLab: Ottosson (2020). CVD transforms: Machado, Oliveira & Fernandes, *IEEE TVCG* 15(6), 1291–1298 (2009) — output verified identical to `colorspace::deutan()`. Contrast: W3C WCAG 2.1, SC 1.4.3 and 1.4.11. Implemented with base `grDevices` only, so no extra dependencies.
+
+---
+
+### 12. Data Utilities & Setup
 
 #### `kkonehot(data, column)` / `one_hot_encode()`
 
@@ -1395,7 +1471,7 @@ kk_setup()
 
 ---
 
-### 12. Health Economics & HTA (Cost-Effectiveness)
+### 13. Health Economics & HTA (Cost-Effectiveness)
 
 Functions for the economic-evaluation side of health technology assessment: incremental cost-effectiveness analysis with dominance/frontier logic, net benefit at a willingness-to-pay threshold, acceptability curves from probabilistic sensitivity analysis, discounting, and a Markov cohort engine for cost-utility models.
 
@@ -1500,7 +1576,7 @@ kk_discount(rep(2000, 5), rate = 0.035)
 
 ---
 
-### 13. Infectious Disease Transmission Modeling
+### 14. Infectious Disease Transmission Modeling
 
 Deterministic compartmental models for epidemic dynamics, with a dependency-free Runge-Kutta solver, plus reproduction-number and final-size tools. Useful for teaching outbreak dynamics and for scenario analysis of interventions (vaccination, isolation).
 
@@ -1540,7 +1616,7 @@ kk_final_size(2.5)
 
 ---
 
-### 14. Advanced Methodological Suite
+### 15. Advanced Methodological Suite
 
 A tier of computationally intensive methods that go beyond standard parametric models: Fisherian randomization inference, overdispersed spatiotemporal surveillance, double-robust causal inference, and measurement-error / identifiability tools. All are permutation- or simulation-based and accept a `seed` for reproducibility.
 

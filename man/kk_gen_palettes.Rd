@@ -4,12 +4,20 @@
 \alias{kk_gen_palettes}
 \title{Generate Colour-Theory Palettes from Seed Colours}
 \usage{
-kk_gen_palettes(colors, n = 6, plot = FALSE)
+kk_gen_palettes(colors, n = 6, space = c("hsv", "oklch"), plot = FALSE)
 }
 \arguments{
 \item{colors}{Character vector of 1-12 seed colours (hex or R colour names).}
 
 \item{n}{Number of colours per palette (default 6).}
+
+\item{space}{Colour space the schemes are built in. \code{"hsv"} (default) keeps
+the classic behaviour; \code{"oklch"} works in the perceptually uniform OKLCh
+space, so hue rotations preserve apparent lightness, lightness ramps are
+evenly spaced to the eye, and out-of-gamut colours are mapped by reducing
+chroma rather than clipping RGB (which shifts hue). \code{"oklch"} is the better
+choice for new figures; the default is left at \code{"hsv"} so that palettes in
+existing scripts do not change.}
 
 \item{plot}{If TRUE, also draw the swatches via \code{\link[=kk_show_palettes]{kk_show_palettes()}}
 (default FALSE).}
@@ -38,7 +46,11 @@ pals <- kk_gen_palettes("#D62828", n = 6)
 pals$triadic
 kk_gen_palettes(c("#D62828", "#003049", "#F77F00"), n = 8, plot = TRUE)
 
+# perceptually uniform schemes
+kk_gen_palettes("#D62828", n = 6, space = "oklch")$triadic
+
 }
 \seealso{
-\code{\link[=kk_show_palettes]{kk_show_palettes()}}, \code{\link[=set_plot_colors]{set_plot_colors()}}, \code{\link[=kk_pal]{kk_pal()}}.
+\code{\link[=kk_show_palettes]{kk_show_palettes()}}, \code{\link[=set_plot_colors]{set_plot_colors()}}, \code{\link[=kk_pal]{kk_pal()}},
+\code{\link[=kk_pal_check]{kk_pal_check()}} to audit the result for colour-blind readers.
 }
