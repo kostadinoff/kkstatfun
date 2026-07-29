@@ -4,7 +4,7 @@
 
 # kkstatfun
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21629660.svg)](https://doi.org/10.5281/zenodo.21629660)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18936019.svg)](https://doi.org/10.5281/zenodo.18936019)
 [![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
 
 **R Statistical Analysis Toolkit for Medical and Epidemiology**
@@ -2779,15 +2779,15 @@ If you use this package in your research, please cite it as follows:
   title = {kkstatfun: R Statistical Analysis Toolkit for Medical Statistics and Epidemiology},
   author = {Kostadinov, Kostadin},
   year = {2026},
-  version = {1.1.0},
+  version = {1.2.0},
   url = {https://github.com/kostadinoff/kkstatfun},
-  doi = {10.5281/zenodo.21629660},
+  doi = {10.5281/zenodo.18936019},
 }
 ```
 
 The DOI above is the Zenodo *concept* DOI: it always resolves to the most recent
 release. To cite the exact version you used, take the version-specific DOI from
-[the Zenodo record](https://doi.org/10.5281/zenodo.21629660), or run
+[the Zenodo record](https://doi.org/10.5281/zenodo.18936019), or run
 `citation("kkstatfun")`.
 
 ## Credits
