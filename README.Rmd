@@ -30,7 +30,7 @@ suppressWarnings(suppressMessages(
 # kkstatfun
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18936019.svg)](https://doi.org/10.5281/zenodo.18936019)
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
 
 **R Statistical Analysis Toolkit for Medical and Epidemiology**
 
@@ -1725,6 +1725,164 @@ fit$models
 
 ---
 
+### 16. Quasi-Experimental Designs (Causal Inference)
+
+Everything in the causal tier so far — `kk_iptw()`, `kk_tmle()`, `kk_causal_mediation()` — buys identification by adjusting for measured confounders, and collapses if an important one is unmeasured. The designs below buy it a different way: from the *structure of how the intervention was assigned*. A threshold rule, a difference in timing, an instrument or a donor pool does the work that randomisation would have done, so the estimate can survive confounders nobody measured. What each design cannot survive is its own identifying assumption, and each function returns the diagnostic for it — pre-treatment leads, a manipulation test, a bandwidth-sensitivity table, a first-stage F, a placebo distribution.
+
+#### `kk_did(data, outcome, treated, post)` — difference-in-differences
+
+The change in the treated group net of the change in the control group. In its canonical 2x2 form the estimate is the interaction of `treated` and `post`; supplying `unit` and `time` fits the two-way fixed-effects version instead and clusters the standard errors on the panel identifier.
+
+```{r ex-qe-1}
+set.seed(1)
+n <- 400
+did_df <- data.frame(
+  unit    = rep(seq_len(n), each = 2),
+  post    = rep(c(0, 1), times = n),
+  treated = rep(rbinom(n, 1, 0.5), each = 2)
+)
+# True effect: −3 on the treated, after
+did_df$y <- 10 + 2 * did_df$post + 1.5 * did_df$treated -
+  3 * did_df$treated * did_df$post + rnorm(nrow(did_df))
+
+res_did <- kk_did(did_df, y, treated, post)
+res_did
+attr(res_did, "cells")
+```
+
+> **Interpretation.** The DiD estimate of −2.80 (95% CI −3.10 to −2.51) covers the simulated −3. Because there are no covariates, `estimate` and `unadjusted` are identical to machine precision — the regression is doing nothing the four cell means do not already say, which is exactly the transparency check to run before adding controls. The `cells` attribute holds those means: the treated group starts *higher* and the control group *rises* over time, so neither a simple before/after comparison nor a simple treated/control comparison would have found the right answer. Only the difference of the differences does.
+
+#### `kk_event_study(data, outcome, unit, time, treat_time)` — the parallel-trends check
+
+A 2x2 DiD cannot test its own identifying assumption. An event study can: it estimates one coefficient per period relative to adoption, with the last pre-treatment period as the baseline. Flat leads are the evidence that the groups were moving together before the intervention; a trend in the leads means the DiD estimate is measuring a divergence that had already started.
+
+```{r ex-qe-2}
+set.seed(2)
+units <- 60
+ev_df <- expand.grid(unit = seq_len(units), time = 1:8)
+ev_df$treat_time <- ifelse(ev_df$unit <= 30, 5, Inf)   # Inf = never treated
+ev_df$y <- 5 + 0.3 * ev_df$time + rnorm(nrow(ev_df), 0, 0.5) +
+  2 * (ev_df$time >= ev_df$treat_time)
+
+res_ev <- kk_event_study(ev_df, y, unit, time, treat_time)
+res_ev
+attr(res_ev, "pretrend")
+```
+
+> **Interpretation.** The three lead coefficients hug zero and the joint Wald test over them does not reject, so parallel trends is credible here. From `rel_time = 0` onward the effect jumps to ~2 and stays there — a level shift, not a gradually accumulating one, which is worth distinguishing because a DiD reports their average and a policy brief usually wants to know which it was. Note that a passing pre-trend test is evidence, not proof: it says the leads are too imprecise to detect a divergence, which is a weaker claim the smaller the sample.
+
+#### `kk_did_staggered(data, outcome, unit, time, treat_time)` — staggered adoption
+
+When units adopt at different times, the two-way fixed-effects coefficient uses *already-treated* units as controls for later adopters. If the effect grows over time, those controls are still moving, and the estimate can shrink towards zero or flip sign. This function estimates a clean 2x2 for every cohort–period cell against not-yet-treated units, then aggregates.
+
+```{r ex-qe-3}
+set.seed(3)
+units <- 90
+sg_df <- expand.grid(unit = seq_len(units), time = 1:6)
+sg_df$treat_time <- rep(c(3, 5, Inf), each = units / 3)[sg_df$unit]
+# Effect grows by 1.5 for every period since adoption
+sg_df$y <- 4 + 0.2 * sg_df$time + rnorm(nrow(sg_df), 0, 0.4) +
+  1.5 * pmax(0, sg_df$time - sg_df$treat_time + 1)
+
+res_sg <- kk_did_staggered(sg_df, y, unit, time, treat_time, n_boot = 200)
+res_sg$overall
+res_sg$dynamic
+res_sg$group
+```
+
+> **Interpretation.** The `dynamic` table recovers the simulated dose–response almost exactly — 1.5 in the adoption period, then 3.0, 4.5, 6.0 — and the pre-adoption cells are null. `overall` averages the post-treatment cells weighted by cohort size; with an effect this strongly time-varying that single number is a summary of a moving target, and the dynamic table is the honest result. The early cohort (`group = 3`) shows a larger average effect than the late one simply because it is observed for longer after adoption, not because it responded more strongly. `band.low`/`band.high` in `att_gt` are simultaneous over all cells, so the whole set of intervals covers at 95% jointly — the right band to use when reading a table of many estimates for the largest one.
+
+#### `kk_its(data, outcome, time, intervention_time)` — interrupted time series
+
+One series, one intervention, no control group. Segmented regression separates the immediate **level change** from the change in **trend**, and extrapolates the pre-intervention trend forward as the counterfactual.
+
+```{r ex-qe-4}
+set.seed(9)
+its_df <- data.frame(month = 1:60)
+# Intervention at month 37: level drop of 15 plus a −0.8/month trend change
+its_df$cases <- 100 - 0.5 * its_df$month - 15 * (its_df$month >= 37) -
+  0.8 * pmax(0, its_df$month - 36) + rnorm(60, 0, 4)
+
+res_its <- kk_its(its_df, cases, month, intervention_time = 37)
+res_its
+attr(res_its, "impact")
+attr(res_its, "diagnostics")
+```
+
+> **Interpretation.** Both components are recovered: a sharp drop at the intervention plus a steepening decline afterwards. The `impact` attribute converts that into the quantity a report actually needs — by the final month the series sits well below the counterfactual, and `cumulative_difference` totals the cases averted across the whole post-intervention period with an interval that propagates the counterfactual's own uncertainty. The Ljung-Box test does not reject, so the Newey-West correction is not being asked to do much here; when it does reject, ignoring it is what produces the implausibly narrow intervals that make ITS analyses look more decisive than they are. The design's real weakness is untestable from these numbers: nothing rules out something *else* having changed in month 37.
+
+#### `kk_rdd(data, outcome, running, cutoff)` — regression discontinuity
+
+Treatment assigned by a threshold on a running variable: a risk score, an age limit, an eligibility cut-off. Just either side of the threshold, units are comparable, so the jump in the outcome at the cutoff is causal.
+
+```{r ex-qe-5}
+set.seed(4)
+n <- 1500
+rd_df <- data.frame(x = runif(n, -1, 1))
+# Jump of 0.5 at the cutoff, on top of a trend that also curves upward above it
+rd_df$y <- 1 + 0.8 * rd_df$x + 1.2 * rd_df$x^2 * (rd_df$x >= 0) +
+  0.5 * (rd_df$x >= 0) + rnorm(n, 0, 0.3)
+
+res_rd <- kk_rdd(rd_df, y, x, cutoff = 0)
+res_rd
+attr(res_rd, "bw_sensitivity")
+```
+
+> **Interpretation.** The jump of 0.49 (95% CI 0.39–0.58) recovers the simulated 0.5, using the ~600 observations of 1500 that fall inside the Imbens–Kalyanaraman bandwidth of 0.41 — the rest of the sample contributes nothing, which is why RD designs need far more data than their effective sample size suggests. `bw_sensitivity` is the check that matters most in practice, and here it shows the trade-off directly: halving the bandwidth leaves the estimate alone but inflates the standard error, while doubling it drags the estimate down to 0.41 as the upward curve above the cutoff starts contaminating the straight line fitted through it. Stability across the middle of that table is the reassurance; a monotone slide across all of it is bias, not noise. Remember what is being estimated — the effect *at the cutoff*, for units near it. It licenses no claim about units far from the threshold.
+
+#### `kk_rd_density(data, running, cutoff)` — manipulation test
+
+A discontinuity design assumes units cannot precisely control which side of the threshold they land on. If they can — a score nudged to secure eligibility, a value reported just under a limit — comparability fails. Manipulation shows up as a jump in the *density* of the running variable.
+
+```{r ex-qe-6}
+set.seed(6)
+kk_rd_density(data.frame(x = rnorm(2000)), x, cutoff = 0)
+```
+
+> **Interpretation.** The log density discontinuity is indistinguishable from zero, which is what a valid design needs: no pile-up on either side of the cutoff. This test is the companion to every `kk_rdd()` call, and a non-significant result here is a precondition for reading the RD estimate causally — not a formality to skip. `kk_rkd()` handles the related case where the assignment rule *bends* at the threshold instead of jumping, identifying the effect from the change in slope.
+
+#### `kk_iv(data, outcome, treatment, instruments)` — instrumental variables
+
+An instrument moves treatment but affects the outcome through no other path — a randomised encouragement, a lottery, a distance to the nearest provider. Two-stage least squares then recovers the effect among the **compliers**, the units whose treatment the instrument actually changes.
+
+```{r ex-qe-7}
+set.seed(7)
+n <- 1200
+iv_df <- data.frame(z = rbinom(n, 1, 0.5))     # randomised encouragement
+u <- rnorm(n)                                  # unmeasured confounder
+iv_df$d <- rbinom(n, 1, plogis(-0.5 + 1.5 * iv_df$z + u))
+iv_df$y <- 1 + 2 * iv_df$d + u + rnorm(n)      # true effect: 2
+
+res_iv <- kk_iv(iv_df, y, d, instruments = "z")
+res_iv
+attr(res_iv, "diagnostics")
+```
+
+> **Interpretation.** The 2SLS estimate lands near the simulated 2, while the `ols` column — the naive regression of `y` on `d` — is biased upward by the confounder `u` that no adjustment could reach, since it is unmeasured. The first-stage F is far above the conventional threshold of 10, so the instrument is strong and the conventional interval is trustworthy; the Anderson–Rubin interval (`ar.low`, `ar.high`) agrees with it, as it should when the instrument is strong, and is the one to quote when it is not. Wu-Hausman rejects, confirming the endogeneity that motivated the design. The estimand is the complier effect: if compliers differ systematically from everyone else, it is not the population average treatment effect.
+
+#### `kk_synth(data, outcome, unit, time, treated_unit, intervention_time)` — synthetic control
+
+One treated region, several plausible comparators, and no reason to believe any single one of them follows a parallel trend. The synthetic control builds the comparator: a non-negative, sum-to-one weighted average of donor units chosen to track the treated unit *before* the intervention.
+
+```{r ex-qe-8}
+set.seed(10)
+regions <- paste0("region", 1:12)
+sc_df <- expand.grid(unit = regions, time = 1:20, stringsAsFactors = FALSE)
+sc_base <- setNames(runif(12, 8, 12), regions)
+sc_df$y <- sc_base[sc_df$unit] + 0.15 * sc_df$time + rnorm(nrow(sc_df), 0, 0.3)
+hit <- sc_df$unit == "region1" & sc_df$time >= 15      # true effect: −2
+sc_df$y[hit] <- sc_df$y[hit] - 2
+
+res_sc <- kk_synth(sc_df, y, unit, time, "region1", intervention_time = 15)
+res_sc
+head(attr(res_sc, "weights"), 4)
+tail(attr(res_sc, "path"), 3)
+```
+
+> **Interpretation.** The average post-intervention gap of −1.98 recovers the simulated −2, and `pre_rmspe` (0.29) sitting seven times below `post_rmspe` (1.99) is the evidence that the gap is the intervention rather than a synthetic unit that never fitted in the first place. Read the `weights` before the estimate: weights spread across several donors mean a genuine interpolation, whereas one donor at 0.9 is a two-unit comparison in disguise. The p-value is a placebo permutation — the treated unit's RMSPE ratio ranked against the same statistic computed for every donor in turn — so its resolution is limited by the size of the donor pool: with 11 donors the smallest attainable value is 1/12 ≈ 0.083, and no amount of effect size will push it lower.
+
+---
+
 ## Methodological References & Textbooks
 
 The statistical algorithms and epidemiological methods in `kkstatfun` are implemented according to standard theoretical frameworks from the following reference textbooks:
@@ -1751,7 +1909,7 @@ If you use this package in your research, please cite it as follows:
   title = {kkstatfun: R Statistical Analysis Toolkit for Medical Statistics and Epidemiology},
   author = {Kostadinov, Kostadin},
   year = {2026},
-  version = {1.2.0},
+  version = {1.3.0},
   url = {https://github.com/kostadinoff/kkstatfun},
   doi = {10.5281/zenodo.18936019},
 }

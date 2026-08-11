@@ -5,7 +5,7 @@
 # kkstatfun
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18936019.svg)](https://doi.org/10.5281/zenodo.18936019)
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
 
 **R Statistical Analysis Toolkit for Medical and Epidemiology**
 
@@ -33,9 +33,6 @@ strat %>% kk_twobytwo(expo, out) %>% filter(Metric == "Odds Ratio")
 #>   Metric     Estimate Lower Upper    P_Value Test           Conf_Level
 #>   <chr>         <dbl> <dbl> <dbl>      <dbl> <chr>               <dbl>
 #> 1 Odds Ratio     3.16  1.98  5.06 0.00000137 Fisher's Exact       0.95
-```
-
-``` r
 
 # Stratified: the effect modification is visible
 strat %>% group_by(site) %>% kk_twobytwo(expo, out) %>% filter(Metric == "Odds Ratio")
@@ -563,9 +560,6 @@ odds_ratio(df_or, exposure, outcome)
 #>   Metric     Estimate Lower Upper P_Value Conf_Level
 #>   <chr>         <dbl> <dbl> <dbl>   <dbl>      <dbl>
 #> 1 Odds Ratio        4 0.134  119.       1       0.95
-```
-
-``` r
 risk_ratio(df_or, exposure, outcome)
 #> # A tibble: 1 × 6
 #>   Metric        Estimate Lower Upper P_Value Conf_Level
@@ -1082,14 +1076,14 @@ Builds a standard, publication-ready "Table 1" summarizing baseline demographics
 ``` r
 kk_table1(cohort, by = "arm", variables = c("age", "bmi", "sex", "smoker"))
 #> # A tibble: 6 × 5
-#>   Characteristic N     `Control, N = 155`   `Treatment, N = 145` `p-value`
-#>   <chr>          <chr> <chr>                <chr>                <chr>    
-#> 1 __age__        300   62.00 (54.00, 68.50) 61.00 (56.00, 69.00) 0.8      
-#> 2 __bmi__        300   26.90 (24.10, 30.10) 26.30 (24.20, 29.90) 0.6      
-#> 3 __sex__        300   <NA>                 <NA>                 0.4      
-#> 4 Female         <NA>  73 (47%)             75 (52%)             <NA>     
-#> 5 Male           <NA>  82 (53%)             70 (48%)             <NA>     
-#> 6 __smoker__     300   61 (39%)             42 (29%)             0.058
+#>   Characteristic N     `Control   N = 155`  `Treatment   N = 145` `p-value`
+#>   <chr>          <chr> <chr>                <chr>                 <chr>    
+#> 1 __age__        300   62.00 (54.00, 69.00) 61.00 (56.00, 69.00)  0.8      
+#> 2 __bmi__        300   26.90 (24.00, 30.10) 26.30 (24.20, 29.90)  0.6      
+#> 3 __sex__        300   <NA>                 <NA>                  0.4      
+#> 4 Female         <NA>  73 (47%)             75 (52%)              <NA>     
+#> 5 Male           <NA>  82 (53%)             70 (48%)              <NA>     
+#> 6 __smoker__     300   61 (39%)             42 (29%)              0.058
 ```
 
 > **Interpretation.** Each cell is median (IQR) or n (%) by arm, with an automatically chosen test in the p-value column. Age, BMI, sex, and smoking are all statistically comparable between the Control and Treatment arms (every p > 0.05) — exactly what you want to see in a randomised trial's baseline table: the arms are **well balanced**, so any later outcome difference is unlikely to be confounded by these covariates.
@@ -1109,9 +1103,6 @@ kk_compare_groups_table(cohort, arm, c(sbp))
 #> 1 sbp            300     134.69 … 145         129.83 (… 155       139.24… -9.40      -11.…
 #> # ℹ 5 more variables: p_value <chr>, Test <chr>, Statistic <chr>, df <chr>,
 #> #   effect_size <chr>
-```
-
-``` r
 
 # Stratified by a third variable (sex)
 library(dplyr)
@@ -1137,11 +1128,11 @@ A `gtsummary`-backed "Table 1" builder returning a publication-styled summary ob
 ``` r
 table1_summary(cohort, by = "arm", variables = c("age", "bmi", "sbp"))
 #> # A tibble: 3 × 5
-#>   Characteristic N     `Control, N = 155` `Treatment, N = 145` `p-value`
-#>   <chr>          <chr> <chr>              <chr>                <chr>    
-#> 1 __age__        300   62 (54, 69)        61 (56, 69)          0.8      
-#> 2 __bmi__        300   26.9 (24.1, 30.1)  26.3 (24.2, 29.9)    0.6      
-#> 3 __sbp__        300   140 (133, 146)     131 (123, 138)       <0.001
+#>   Characteristic N     `Control   N = 155` `Treatment   N = 145` `p-value`
+#>   <chr>          <chr> <chr>               <chr>                 <chr>    
+#> 1 __age__        300   62 (54, 69)         61 (56, 69)           0.8      
+#> 2 __bmi__        300   26.9 (24.0, 30.1)   26.3 (24.2, 29.9)     0.6      
+#> 3 __sbp__        300   140 (132, 146)      131 (123, 138)        <0.001
 ```
 
 #### `kk_median_test(data, x, group)`
@@ -1312,9 +1303,6 @@ kk_emmeans(fit, ~ arm)
 #>   <fct>      <dbl> <dbl> <dbl>    <dbl>     <dbl>   <dbl>     <dbl>      <dbl>
 #> 1 Control     139. 0.788   296     138.      141.    177. 4.32e-302       0.95
 #> 2 Treatment   130. 0.815   296     128.      131.    159. 7.70e-289       0.95
-```
-
-``` r
 
 # The contrast between arms
 kk_emmeans(fit, ~ arm, contrast = "pairwise")
@@ -1334,12 +1322,9 @@ library(emmeans)
 mod <- kk_model(fit)                       # the underlying lm/glm/coxph
 joint_tests(mod)                           # type-III style joint tests
 #>  model term df1 df2 F.ratio p.value
-#>  age          1 296  86.686  <.0001
+#>  age          1 296  86.686 <0.0001
 #>  bmi          1 296  11.839  0.0007
-#>  arm          1 296  70.497  <.0001
-```
-
-``` r
+#>  arm          1 296  70.497 <0.0001
 emtrends(mod, ~ arm, var = "age")          # per-arm slope in age
 #>  arm       age.trend     SE  df lower.CL upper.CL
 #>  Control       0.488 0.0524 296    0.385    0.591
@@ -1418,9 +1403,6 @@ kk_sample_size_epi(design = "cohort", p0 = 0.12, rr_or = 1.5, power = 0.80)
 #>   <chr>  <dbl> <dbl>         <dbl> <dbl> <dbl>    <dbl>    <dbl>   <dbl>      <int>
 #> 1 cohort  0.12  0.18           1.5  0.05   0.8      555      555    1110         NA
 #> # ℹ 1 more variable: interpretation <chr>
-```
-
-``` r
 
 # Cluster RCT Sample Size with ICC = 0.04 and cluster size m = 20
 kk_sample_size_epi(design = "cluster_trial", p0 = 0.10, rr_or = 0.60, m = 20, icc = 0.04)
@@ -1805,9 +1787,6 @@ kk_summary(cohort, sbp)
 #> #   skewness <dbl>, kurtosis <dbl>, pct_5_95 <list>, ci_mean_low <dbl>, ci_mean_up <dbl>,
 #> #   shapiro_p <dbl>, shapiro_int <chr>, ks_p <lgl>, ks_int <chr>, n_outliers <int>,
 #> #   outlier_values <list>
-```
-
-``` r
 
 # Grouped and abbreviated
 library(dplyr)
@@ -2125,14 +2104,8 @@ names(pals)
 #>  [4] "shades"              "analogous"           "complementary"      
 #>  [7] "split_complementary" "triadic"             "tetradic"           
 #> [10] "spectral"
-```
-
-``` r
 pals$analogous
 #> [1] "#D6289C" "#D6286E" "#D6283F" "#D63F28" "#D66E28" "#D69C28"
-```
-
-``` r
 
 kk_show_palettes(pals)
 ```
@@ -2151,9 +2124,6 @@ Pick a scheme and register it with `scheme =` — every discrete `kkplot` fill t
 set_plot_colors("#D62828", scheme = "analogous", n = 6)
 kk_pal(3)
 #> [1] "#D6289C" "#D6286E" "#D6283F"
-```
-
-``` r
 
 kkplot(df_stage, aes(stage, fill = stage)) +
   geom_bar() +
@@ -2178,14 +2148,8 @@ HSV treats every hue at a given "value" as equally light, but the eye does not: 
 # same seed, same scheme, two colour spaces
 kk_gen_palettes("#D62828", n = 6)$triadic                    # HSV (default)
 #> [1] "#D62828" "#28D628" "#2828D6" "#ED8383" "#83ED83" "#8383ED"
-```
-
-``` r
 kk_gen_palettes("#D62828", n = 6, space = "oklch")$triadic   # perceptual
 #> [1] "#D62828" "#008F33" "#4068EF" "#FFA399" "#97D09D" "#A3BEFF"
-```
-
-``` r
 
 kk_show_palettes(kk_gen_palettes("#D62828", n = 6, space = "oklch"))
 ```
@@ -2216,9 +2180,6 @@ kk_cvd(c("#D62828", "#003049", "#F77F00"), type = "deutan")
 #> 1 #D62828 #D62828 deutan        1 #8C7D1F  
 #> 2 #003049 #003049 deutan        1 #1A2A49  
 #> 3 #F77F00 #F77F00 deutan        1 #C0AA00
-```
-
-``` r
 
 kk_show_cvd(c("#D62828", "#003049", "#F77F00"))
 ```
@@ -2262,9 +2223,6 @@ pal
 #> [1] "#003049" "#A88E00" "#3453D3" "#704E00" "#B53E7C"
 #> attr(,"min_dist")
 #> [1] 0.1431407
-```
-
-``` r
 
 # audit against the vision types it was built for: empty, so it passes
 kk_pal_check(pal, type = c("normal", "deutan", "protan", "tritan")) |>
@@ -2272,9 +2230,6 @@ kk_pal_check(pal, type = c("normal", "deutan", "protan", "tritan")) |>
 #> # A tibble: 0 × 8
 #> # ℹ 8 variables: color <chr>, vision <fct>, simulated <chr>, contrast <dbl>,
 #> #   graphic <lgl>, nearest <chr>, min_dist <dbl>, distinct <lgl>
-```
-
-``` r
 
 kk_show_cvd(pal)
 ```
@@ -2299,9 +2254,6 @@ kk_contrast(c("#D62828", "#F77F00", "#003049"), background = "#FFFFFF")
 #> 1 #D62828 #FFFFFF       0.160      5.01 TRUE    TRUE     FALSE    TRUE   
 #> 2 #F77F00 #FFFFFF       0.350      2.63 FALSE   FALSE    FALSE    FALSE  
 #> 3 #003049 #FFFFFF       0.0259    13.8  TRUE    TRUE     TRUE     TRUE
-```
-
-``` r
 
 kk_color_convert(c("#D62828", "#003049", "#F77F00"))
 #> # A tibble: 3 × 11
@@ -2544,9 +2496,6 @@ Simulates a deterministic **SIR** model, or an **SEIR** model when a latent rate
 sir <- kk_seir(beta = 0.5, gamma = 0.2, S0 = 999, I0 = 1, R0_init = 0)
 attr(sir, "R0")
 #> [1] 2.5
-```
-
-``` r
 head(sir[c("time", "S", "I", "R", "incidence")], 3)
 #> # A tibble: 3 × 5
 #>    time     S     I     R incidence
@@ -2668,7 +2617,7 @@ kk_gsf(seir_I, theta = c(beta = 0.6, gamma = 0.2), times = obs_times)[c(1, 60, 9
 #> 1     0 0      0    
 #> 2    59 0.0462 0.544
 #> 3    89 0.873  1.04 
-#> 4   120 1.00   1.00
+#> 4   120 1.000  1.000
 ```
 
 > **Interpretation.** Both curves end at 1 (a built-in identifiability check). Almost all of the information for estimating `gamma` (recovery rate) accrues by the epidemic peak (~0.54 by week 59), whereas `beta` (transmission rate) is informed later, over the decline phase (rising from 0.05 to 0.87 between weeks 59 and 89). Surveillance concentrated around the peak-to-decline window is therefore the most valuable for pinning down these parameters.
@@ -2735,9 +2684,6 @@ fit$net_drift
 #>   annual_pct_change lower upper
 #>               <dbl> <dbl> <dbl>
 #> 1             -2.50 -2.54 -2.46
-```
-
-``` r
 fit$models
 #> # A tibble: 5 × 5
 #>   model             resid_dev resid_df    AIC lrt_p_vs_drift
@@ -2750,6 +2696,291 @@ fit$models
 ```
 
 > **Interpretation.** The **net drift** of ~−2.5%/yr is the estimable overall annual change in rates (here recovering the simulated period slope). The `models` deviance table shows that neither the Age-Period nor Age-Cohort model improves meaningfully on the Age-drift model (large `lrt_p_vs_drift`), i.e. there is no significant period *or* cohort *curvature* — the trend is a simple drift. What cannot be answered, by design, is how much of that drift is "period" versus "cohort": that split is not identifiable without an external assumption.
+
+---
+
+### 16. Quasi-Experimental Designs (Causal Inference)
+
+Everything in the causal tier so far — `kk_iptw()`, `kk_tmle()`, `kk_causal_mediation()` — buys identification by adjusting for measured confounders, and collapses if an important one is unmeasured. The designs below buy it a different way: from the *structure of how the intervention was assigned*. A threshold rule, a difference in timing, an instrument or a donor pool does the work that randomisation would have done, so the estimate can survive confounders nobody measured. What each design cannot survive is its own identifying assumption, and each function returns the diagnostic for it — pre-treatment leads, a manipulation test, a bandwidth-sensitivity table, a first-stage F, a placebo distribution.
+
+#### `kk_did(data, outcome, treated, post)` — difference-in-differences
+
+The change in the treated group net of the change in the control group. In its canonical 2x2 form the estimate is the interaction of `treated` and `post`; supplying `unit` and `time` fits the two-way fixed-effects version instead and clusters the standard errors on the panel identifier.
+
+
+``` r
+set.seed(1)
+n <- 400
+did_df <- data.frame(
+  unit    = rep(seq_len(n), each = 2),
+  post    = rep(c(0, 1), times = n),
+  treated = rep(rbinom(n, 1, 0.5), each = 2)
+)
+# True effect: −3 on the treated, after
+did_df$y <- 10 + 2 * did_df$post + 1.5 * did_df$treated -
+  3 * did_df$treated * did_df$post + rnorm(nrow(did_df))
+
+res_did <- kk_did(did_df, y, treated, post)
+res_did
+#> # A tibble: 1 × 14
+#>   term  estimate std.error conf.low conf.high statistic  p.value unadjusted     n
+#>   <chr>    <dbl>     <dbl>    <dbl>     <dbl>     <dbl>    <dbl>      <dbl> <int>
+#> 1 did      -2.80     0.150    -3.10     -2.51     -18.6 1.76e-64      -2.80   800
+#> # ℹ 5 more variables: n_treated <int>, n_control <int>, n_clusters <int>, family <chr>,
+#> #   conf.level <dbl>
+attr(res_did, "cells")
+#> # A tibble: 4 × 4
+#>   treated  post  mean     n
+#>     <int> <int> <dbl> <int>
+#> 1       0     0  10.0   217
+#> 2       1     0  11.4   183
+#> 3       0     1  12.0   217
+#> 4       1     1  10.5   183
+```
+
+> **Interpretation.** The DiD estimate of −2.80 (95% CI −3.10 to −2.51) covers the simulated −3. Because there are no covariates, `estimate` and `unadjusted` are identical to machine precision — the regression is doing nothing the four cell means do not already say, which is exactly the transparency check to run before adding controls. The `cells` attribute holds those means: the treated group starts *higher* and the control group *rises* over time, so neither a simple before/after comparison nor a simple treated/control comparison would have found the right answer. Only the difference of the differences does.
+
+#### `kk_event_study(data, outcome, unit, time, treat_time)` — the parallel-trends check
+
+A 2x2 DiD cannot test its own identifying assumption. An event study can: it estimates one coefficient per period relative to adoption, with the last pre-treatment period as the baseline. Flat leads are the evidence that the groups were moving together before the intervention; a trend in the leads means the DiD estimate is measuring a divergence that had already started.
+
+
+``` r
+set.seed(2)
+units <- 60
+ev_df <- expand.grid(unit = seq_len(units), time = 1:8)
+ev_df$treat_time <- ifelse(ev_df$unit <= 30, 5, Inf)   # Inf = never treated
+ev_df$y <- 5 + 0.3 * ev_df$time + rnorm(nrow(ev_df), 0, 0.5) +
+  2 * (ev_df$time >= ev_df$treat_time)
+
+res_ev <- kk_event_study(ev_df, y, unit, time, treat_time)
+res_ev
+#> # A tibble: 8 × 10
+#>   rel_time period estimate std.error conf.low conf.high statistic   p.value n_treated
+#>      <dbl> <chr>     <dbl>     <dbl>    <dbl>     <dbl>     <dbl>     <dbl>     <int>
+#> 1       -4 pre       0.228     0.201   -0.175     0.631     1.13   2.63e- 1        30
+#> 2       -3 pre      -0.117     0.210   -0.538     0.303    -0.558  5.79e- 1        30
+#> 3       -2 pre       0.148     0.199   -0.251     0.546     0.740  4.62e- 1        30
+#> 4       -1 ref       0         0        0         0        NA     NA               30
+#> 5        0 post      2.12      0.222    1.67      2.56      9.51   1.62e-13        30
+#> 6        1 post      1.97      0.178    1.62      2.33     11.1    4.96e-16        30
+#> 7        2 post      2.22      0.223    1.77      2.67      9.96   2.95e-14        30
+#> 8        3 post      2.04      0.212    1.62      2.46      9.62   1.06e-13        30
+#> # ℹ 1 more variable: conf.level <dbl>
+attr(res_ev, "pretrend")
+#> # A tibble: 1 × 5
+#>   test                                   statistic    df p.value n_leads
+#>   <chr>                                      <dbl> <int>   <dbl>   <int>
+#> 1 Joint Wald test of pre-treatment leads      3.14     3   0.370       3
+```
+
+> **Interpretation.** The three lead coefficients hug zero and the joint Wald test over them does not reject, so parallel trends is credible here. From `rel_time = 0` onward the effect jumps to ~2 and stays there — a level shift, not a gradually accumulating one, which is worth distinguishing because a DiD reports their average and a policy brief usually wants to know which it was. Note that a passing pre-trend test is evidence, not proof: it says the leads are too imprecise to detect a divergence, which is a weaker claim the smaller the sample.
+
+#### `kk_did_staggered(data, outcome, unit, time, treat_time)` — staggered adoption
+
+When units adopt at different times, the two-way fixed-effects coefficient uses *already-treated* units as controls for later adopters. If the effect grows over time, those controls are still moving, and the estimate can shrink towards zero or flip sign. This function estimates a clean 2x2 for every cohort–period cell against not-yet-treated units, then aggregates.
+
+
+``` r
+set.seed(3)
+units <- 90
+sg_df <- expand.grid(unit = seq_len(units), time = 1:6)
+sg_df$treat_time <- rep(c(3, 5, Inf), each = units / 3)[sg_df$unit]
+# Effect grows by 1.5 for every period since adoption
+sg_df$y <- 4 + 0.2 * sg_df$time + rnorm(nrow(sg_df), 0, 0.4) +
+  1.5 * pmax(0, sg_df$time - sg_df$treat_time + 1)
+
+res_sg <- kk_did_staggered(sg_df, y, unit, time, treat_time, n_boot = 200)
+res_sg$overall
+#> # A tibble: 1 × 12
+#>   estimate std.error conf.low conf.high   p.value n_units n_periods n_cohorts
+#>      <dbl>     <dbl>    <dbl>     <dbl>     <dbl>   <int>     <int>     <int>
+#> 1     3.35     0.127     3.10      3.60 2.43e-152      90         6         2
+#> # ℹ 4 more variables: n_never_treated <int>, control <chr>, n_boot <int>,
+#> #   conf.level <dbl>
+res_sg$dynamic
+#> # A tibble: 7 × 8
+#>   rel_time estimate std.error conf.low conf.high   p.value conf.level period
+#>      <dbl>    <dbl>     <dbl>    <dbl>     <dbl>     <dbl>      <dbl> <chr> 
+#> 1       -4   0.0145    0.0844   -0.151    0.180  8.63e-  1       0.95 pre   
+#> 2       -3  -0.0506    0.0726   -0.193    0.0917 4.86e-  1       0.95 pre   
+#> 3       -2  -0.0325    0.0474   -0.125    0.0604 4.93e-  1       0.95 pre   
+#> 4        0   1.54      0.0962    1.35     1.73   1.01e- 57       0.95 post  
+#> 5        1   3.09      0.102     2.89     3.29   1.61e-202       0.95 post  
+#> 6        2   4.58      0.186     4.22     4.95   6.62e-134       0.95 post  
+#> 7        3   6.23      0.158     5.92     6.54   0               0.95 post
+res_sg$group
+#> # A tibble: 2 × 8
+#>   group estimate std.error conf.low conf.high   p.value conf.level n_units
+#>   <dbl>    <dbl>     <dbl>    <dbl>     <dbl>     <dbl>      <dbl>   <int>
+#> 1     3     3.81     0.128     3.56      4.06 3.11e-196       0.95      30
+#> 2     5     2.41     0.125     2.17      2.65 2.68e- 83       0.95      30
+```
+
+> **Interpretation.** The `dynamic` table recovers the simulated dose–response almost exactly — 1.5 in the adoption period, then 3.0, 4.5, 6.0 — and the pre-adoption cells are null. `overall` averages the post-treatment cells weighted by cohort size; with an effect this strongly time-varying that single number is a summary of a moving target, and the dynamic table is the honest result. The early cohort (`group = 3`) shows a larger average effect than the late one simply because it is observed for longer after adoption, not because it responded more strongly. `band.low`/`band.high` in `att_gt` are simultaneous over all cells, so the whole set of intervals covers at 95% jointly — the right band to use when reading a table of many estimates for the largest one.
+
+#### `kk_its(data, outcome, time, intervention_time)` — interrupted time series
+
+One series, one intervention, no control group. Segmented regression separates the immediate **level change** from the change in **trend**, and extrapolates the pre-intervention trend forward as the counterfactual.
+
+
+``` r
+set.seed(9)
+its_df <- data.frame(month = 1:60)
+# Intervention at month 37: level drop of 15 plus a −0.8/month trend change
+its_df$cases <- 100 - 0.5 * its_df$month - 15 * (its_df$month >= 37) -
+  0.8 * pmax(0, its_df$month - 36) + rnorm(60, 0, 4)
+
+res_its <- kk_its(its_df, cases, month, intervention_time = 37)
+res_its
+#> # A tibble: 4 × 8
+#>   term           estimate std.error conf.low conf.high statistic  p.value conf.level
+#>   <chr>             <dbl>     <dbl>    <dbl>     <dbl>     <dbl>    <dbl>      <dbl>
+#> 1 intercept        99.4      0.781    97.8     101.       127.   1.16e-70       0.95
+#> 2 baseline_trend   -0.461    0.0396   -0.540    -0.381    -11.6  1.48e-16       0.95
+#> 3 level_change    -18.3      1.97    -22.3     -14.3       -9.27 6.71e-13       0.95
+#> 4 trend_change     -0.669    0.127    -0.923    -0.415     -5.28 2.18e- 6       0.95
+attr(res_its, "impact")
+#> # A tibble: 1 × 10
+#>   final_observed final_counterfactual final_absolute final_relative cumulative_observed
+#>            <dbl>                <dbl>          <dbl>          <dbl>               <dbl>
+#> 1           37.4                 71.7          -34.4         -0.479               1209.
+#> # ℹ 5 more variables: cumulative_counterfactual <dbl>, cumulative_difference <dbl>,
+#> #   cumulative.low <dbl>, cumulative.high <dbl>, n_post <int>
+attr(res_its, "diagnostics")
+#> # A tibble: 2 × 4
+#>   test          statistic    df p.value
+#>   <chr>             <dbl> <dbl>   <dbl>
+#> 1 Durbin-Watson      2.22    NA  NA    
+#> 2 Ljung-Box         14.6     10   0.146
+```
+
+> **Interpretation.** Both components are recovered: a sharp drop at the intervention plus a steepening decline afterwards. The `impact` attribute converts that into the quantity a report actually needs — by the final month the series sits well below the counterfactual, and `cumulative_difference` totals the cases averted across the whole post-intervention period with an interval that propagates the counterfactual's own uncertainty. The Ljung-Box test does not reject, so the Newey-West correction is not being asked to do much here; when it does reject, ignoring it is what produces the implausibly narrow intervals that make ITS analyses look more decisive than they are. The design's real weakness is untestable from these numbers: nothing rules out something *else* having changed in month 37.
+
+#### `kk_rdd(data, outcome, running, cutoff)` — regression discontinuity
+
+Treatment assigned by a threshold on a running variable: a risk score, an age limit, an eligibility cut-off. Just either side of the threshold, units are comparable, so the jump in the outcome at the cutoff is causal.
+
+
+``` r
+set.seed(4)
+n <- 1500
+rd_df <- data.frame(x = runif(n, -1, 1))
+# Jump of 0.5 at the cutoff, on top of a trend that also curves upward above it
+rd_df$y <- 1 + 0.8 * rd_df$x + 1.2 * rd_df$x^2 * (rd_df$x >= 0) +
+  0.5 * (rd_df$x >= 0) + rnorm(n, 0, 0.3)
+
+res_rd <- kk_rdd(rd_df, y, x, cutoff = 0)
+res_rd
+#> # A tibble: 1 × 15
+#>   design estimate std.error conf.low conf.high statistic  p.value cutoff bandwidth
+#>   <chr>     <dbl>     <dbl>    <dbl>     <dbl>     <dbl>    <dbl>  <dbl>     <dbl>
+#> 1 sharp     0.486    0.0494    0.389     0.583      9.84 2.92e-21      0     0.408
+#> # ℹ 6 more variables: bandwidth_source <chr>, kernel <chr>, degree <int>, n_left <int>,
+#> #   n_right <int>, conf.level <dbl>
+attr(res_rd, "bw_sensitivity")
+#> # A tibble: 6 × 6
+#>   multiplier bandwidth estimate std.error conf.low conf.high
+#>        <dbl>     <dbl>    <dbl>     <dbl>    <dbl>     <dbl>
+#> 1       0.5      0.204    0.481    0.0701    0.343     0.618
+#> 2       0.75     0.306    0.495    0.0563    0.384     0.605
+#> 3       1        0.408    0.486    0.0494    0.389     0.583
+#> 4       1.25     0.510    0.468    0.0443    0.382     0.555
+#> 5       1.5      0.612    0.458    0.0406    0.378     0.538
+#> 6       2        0.816    0.415    0.0360    0.344     0.485
+```
+
+> **Interpretation.** The jump of 0.49 (95% CI 0.39–0.58) recovers the simulated 0.5, using the ~600 observations of 1500 that fall inside the Imbens–Kalyanaraman bandwidth of 0.41 — the rest of the sample contributes nothing, which is why RD designs need far more data than their effective sample size suggests. `bw_sensitivity` is the check that matters most in practice, and here it shows the trade-off directly: halving the bandwidth leaves the estimate alone but inflates the standard error, while doubling it drags the estimate down to 0.41 as the upward curve above the cutoff starts contaminating the straight line fitted through it. Stability across the middle of that table is the reassurance; a monotone slide across all of it is bias, not noise. Remember what is being estimated — the effect *at the cutoff*, for units near it. It licenses no claim about units far from the threshold.
+
+#### `kk_rd_density(data, running, cutoff)` — manipulation test
+
+A discontinuity design assumes units cannot precisely control which side of the threshold they land on. If they can — a score nudged to secure eligibility, a value reported just under a limit — comparability fails. Manipulation shows up as a jump in the *density* of the running variable.
+
+
+``` r
+set.seed(6)
+kk_rd_density(data.frame(x = rnorm(2000)), x, cutoff = 0)
+#> # A tibble: 1 × 14
+#>   test  estimate std.error conf.low conf.high statistic p.value density_left density_right
+#>   <chr>    <dbl>     <dbl>    <dbl>     <dbl>     <dbl>   <dbl>        <dbl>         <dbl>
+#> 1 McCr…  -0.0573     0.161   -0.373     0.259    -0.356   0.722        0.435         0.410
+#> # ℹ 5 more variables: cutoff <dbl>, bin_width <dbl>, bandwidth <dbl>, n <int>,
+#> #   conf.level <dbl>
+```
+
+> **Interpretation.** The log density discontinuity is indistinguishable from zero, which is what a valid design needs: no pile-up on either side of the cutoff. This test is the companion to every `kk_rdd()` call, and a non-significant result here is a precondition for reading the RD estimate causally — not a formality to skip. `kk_rkd()` handles the related case where the assignment rule *bends* at the threshold instead of jumping, identifying the effect from the change in slope.
+
+#### `kk_iv(data, outcome, treatment, instruments)` — instrumental variables
+
+An instrument moves treatment but affects the outcome through no other path — a randomised encouragement, a lottery, a distance to the nearest provider. Two-stage least squares then recovers the effect among the **compliers**, the units whose treatment the instrument actually changes.
+
+
+``` r
+set.seed(7)
+n <- 1200
+iv_df <- data.frame(z = rbinom(n, 1, 0.5))     # randomised encouragement
+u <- rnorm(n)                                  # unmeasured confounder
+iv_df$d <- rbinom(n, 1, plogis(-0.5 + 1.5 * iv_df$z + u))
+iv_df$y <- 1 + 2 * iv_df$d + u + rnorm(n)      # true effect: 2
+
+res_iv <- kk_iv(iv_df, y, d, instruments = "z")
+res_iv
+#> # A tibble: 1 × 15
+#>   term  estimate std.error conf.low conf.high statistic  p.value   ols first_stage_f
+#>   <chr>    <dbl>     <dbl>    <dbl>     <dbl>     <dbl>    <dbl> <dbl>         <dbl>
+#> 1 d         2.16     0.249     1.67      2.65      8.66 4.87e-18  2.86          137.
+#> # ℹ 6 more variables: weak_instrument <lgl>, ar.low <dbl>, ar.high <dbl>, n <int>,
+#> #   n_instruments <int>, conf.level <dbl>
+attr(res_iv, "diagnostics")
+#> # A tibble: 3 × 4
+#>   test                                 statistic    df   p.value
+#>   <chr>                                    <dbl> <int>     <dbl>
+#> 1 First-stage F (excluded instruments)    137.       1  1.18e-31
+#> 2 Sargan over-identification               NA        0 NA       
+#> 3 Wu-Hausman endogeneity                    3.08  1197  2.14e- 3
+```
+
+> **Interpretation.** The 2SLS estimate lands near the simulated 2, while the `ols` column — the naive regression of `y` on `d` — is biased upward by the confounder `u` that no adjustment could reach, since it is unmeasured. The first-stage F is far above the conventional threshold of 10, so the instrument is strong and the conventional interval is trustworthy; the Anderson–Rubin interval (`ar.low`, `ar.high`) agrees with it, as it should when the instrument is strong, and is the one to quote when it is not. Wu-Hausman rejects, confirming the endogeneity that motivated the design. The estimand is the complier effect: if compliers differ systematically from everyone else, it is not the population average treatment effect.
+
+#### `kk_synth(data, outcome, unit, time, treated_unit, intervention_time)` — synthetic control
+
+One treated region, several plausible comparators, and no reason to believe any single one of them follows a parallel trend. The synthetic control builds the comparator: a non-negative, sum-to-one weighted average of donor units chosen to track the treated unit *before* the intervention.
+
+
+``` r
+set.seed(10)
+regions <- paste0("region", 1:12)
+sc_df <- expand.grid(unit = regions, time = 1:20, stringsAsFactors = FALSE)
+sc_base <- setNames(runif(12, 8, 12), regions)
+sc_df$y <- sc_base[sc_df$unit] + 0.15 * sc_df$time + rnorm(nrow(sc_df), 0, 0.3)
+hit <- sc_df$unit == "region1" & sc_df$time >= 15      # true effect: −2
+sc_df$y[hit] <- sc_df$y[hit] - 2
+
+res_sc <- kk_synth(sc_df, y, unit, time, "region1", intervention_time = 15)
+res_sc
+#> # A tibble: 1 × 12
+#>   treated_unit   att att_pct pre_rmspe post_rmspe rmspe_ratio p.value intervention_time
+#>   <chr>        <dbl>   <dbl>     <dbl>      <dbl>       <dbl>   <dbl>             <dbl>
+#> 1 region1      -1.98  -0.157     0.293       1.99        6.82  0.0833                15
+#> # ℹ 4 more variables: n_pre <int>, n_post <int>, n_donors <int>, n_donors_used <int>
+head(attr(res_sc, "weights"), 4)
+#> # A tibble: 4 × 2
+#>   unit     weight
+#>   <chr>     <dbl>
+#> 1 region11 0.236 
+#> 2 region12 0.183 
+#> 3 region3  0.175 
+#> 4 region9  0.0966
+tail(attr(res_sc, "path"), 3)
+#> # A tibble: 3 × 5
+#>    time observed synthetic   gap period
+#>   <int>    <dbl>     <dbl> <dbl> <chr> 
+#> 1    18     10.8      12.6 -1.79 post  
+#> 2    19     11.0      12.8 -1.83 post  
+#> 3    20     11.1      12.9 -1.81 post
+```
+
+> **Interpretation.** The average post-intervention gap of −1.98 recovers the simulated −2, and `pre_rmspe` (0.29) sitting seven times below `post_rmspe` (1.99) is the evidence that the gap is the intervention rather than a synthetic unit that never fitted in the first place. Read the `weights` before the estimate: weights spread across several donors mean a genuine interpolation, whereas one donor at 0.9 is a two-unit comparison in disguise. The p-value is a placebo permutation — the treated unit's RMSPE ratio ranked against the same statistic computed for every donor in turn — so its resolution is limited by the size of the donor pool: with 11 donors the smallest attainable value is 1/12 ≈ 0.083, and no amount of effect size will push it lower.
 
 ---
 
@@ -2779,7 +3010,7 @@ If you use this package in your research, please cite it as follows:
   title = {kkstatfun: R Statistical Analysis Toolkit for Medical Statistics and Epidemiology},
   author = {Kostadinov, Kostadin},
   year = {2026},
-  version = {1.2.0},
+  version = {1.3.0},
   url = {https://github.com/kostadinoff/kkstatfun},
   doi = {10.5281/zenodo.18936019},
 }

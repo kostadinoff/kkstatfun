@@ -1,3 +1,67 @@
+# kkstatfun 1.3.0
+
+## Quasi-experimental designs for causal inference
+
+A new tier covering the designs that identify a causal effect from the way a
+policy or intervention was rolled out, rather than from covariate adjustment.
+The existing causal functions (`kk_tmle()`, `kk_iptw()`, `kk_causal_mediation()`)
+all assume no unmeasured confounding; these do not — they buy identification
+from a discontinuity, a timing difference or an instrument instead.
+
+### Difference-in-differences (`R/did.R`)
+
+* `kk_did()` estimates the canonical 2x2 difference-in-differences, or the
+  two-way fixed-effects version when `unit` and `time` are supplied. Standard
+  errors are cluster-robust on the panel identifier by default, count and
+  binary outcomes are supported, and the raw 2x2 cell means are returned
+  alongside the regression estimate so the arithmetic is visible.
+* `kk_event_study()` estimates one coefficient per period relative to adoption.
+  The leads are the parallel-trends check that a 2x2 design cannot provide;
+  the joint Wald test over them is attached as the `pretrend` attribute.
+* `kk_did_staggered()` implements Callaway & Sant'Anna (2021) group-time
+  average treatment effects for staggered adoption, where the two-way
+  fixed-effects estimator uses already-treated units as controls and can carry
+  the wrong sign entirely. Every ATT(g, t) is a clean 2x2 against not-yet-
+  treated units; the result carries `dynamic`, `group`, `calendar` and
+  `overall` aggregations, unit-level bootstrap standard errors and
+  simultaneous confidence bands.
+
+### Regression discontinuity (`R/rdd.R`)
+
+* `kk_rdd()` fits sharp and fuzzy designs by local polynomial regression with
+  kernel weights. The MSE-optimal bandwidth of Imbens & Kalyanaraman (2012) is
+  computed by default, the fuzzy case is estimated by two-stage least squares
+  with the cutoff indicator as the instrument, and every result carries a
+  bandwidth-sensitivity table and binned plotting data.
+* `kk_rkd()` estimates a regression kink design — a change in slope at the
+  threshold rather than a jump in level — sharp or fuzzy.
+* `kk_rd_density()` runs the McCrary (2008) manipulation test, the check that
+  units could not sort themselves across the cutoff.
+
+### Interrupted time series (`R/its.R`)
+
+* `kk_its()` fits a segmented regression separating the immediate level change
+  from the change in slope, with Newey-West standard errors (serial
+  correlation is the standard way an ITS analysis goes wrong), optional
+  Fourier seasonality, count families with an offset, and a wash-out window.
+  The counterfactual series, the cumulative impact with its interval, and
+  Durbin-Watson / Ljung-Box diagnostics are attached.
+
+### Synthetic control and instrumental variables
+
+* `kk_synth()` builds a synthetic comparison unit as a non-negative,
+  sum-to-one weighted average of donor units fitted to the pre-intervention
+  period, with placebo permutation inference and the donor weights reported.
+* `kk_iv()` estimates two-stage least squares with robust or cluster-robust
+  variance, the first-stage F for instrument strength, the Sargan
+  over-identification and Wu-Hausman endogeneity tests, and an Anderson-Rubin
+  confidence interval that stays valid when the instrument is weak.
+* `kk_ancova()` estimates a pretest-posttest treatment effect by baseline
+  adjustment, reporting the change-score and posttest-only estimates beside it.
+
+All of them take individual-level or long panel data as the first argument,
+honour `dplyr::group_by()`, and return tibbles.
+
 # kkstatfun 1.2.0
 
 ## Colour science for accessible figures (`R/color_science.R`)
