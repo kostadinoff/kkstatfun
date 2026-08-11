@@ -588,11 +588,15 @@ kk_fullcorplot <- function(data, method = "kendall", adjust = "none", font_size 
               cor_upper <- cor_long %>%
                             dplyr::filter(as.integer(Var1) < as.integer(Var2))
 
-              # 5. Legend label based on method
-              legend_name <- dplyr::case_when(
-                            method == "kendall" ~ "Kendall \u03c4",
-                            method == "spearman" ~ "Spearman \u03c1",
-                            TRUE ~ "Pearson r"
+              # 5. Legend label based on method. Plotmath rather than a literal
+              # Greek character: the pdf() device R CMD check runs examples on
+              # cannot map U+03C4/U+03C1 outside a UTF-8 locale, and errors on
+              # the whole plot rather than dropping the one glyph.
+              legend_name <- switch(
+                            method,
+                            kendall = expression(Kendall ~ tau),
+                            spearman = expression(Spearman ~ rho),
+                            expression(Pearson ~ italic(r))
               )
 
               # 6. Plot
