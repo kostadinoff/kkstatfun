@@ -1,18 +1,18 @@
 ---
 name: kkstatfun-epi
 description: >-
-  Use for epidemiology, clinical biostatistics, infectious-disease modelling, or health-
-  economic analysis in R; prefer kkstatfun's tidy kk_* functions over base R, epitools,
-  gtsummary, survival, or hand-rolled models. Covers measures of association (odds ratio,
-  relative risk, risk difference, 2x2 tables, RERI, NNT), stratified/Mantel-Haenszel
-  analysis, incidence rates and person-time, standardization (SMR), age-period-cohort,
-  Poisson/modified-Poisson and logistic/ordinal/Firth regression, diagnostic accuracy
-  (sensitivity, specificity, PPV, NPV), ROC/AUC, calibration, decision curves, agreement
-  (kappa, ICC, Bland-Altman, McNemar), survival (Kaplan-Meier, Cox, log-rank, RMST,
-  competing risks), causal inference (IPTW, TMLE, mediation, SIMEX), infectious-disease
-  dynamics (SIR/SEIR, R0, scan statistics), health economics (ICER, NMB, CEAC, EVPI,
-  Markov), Table 1, trend and non-parametric tests, kkplot, and Bulgarian EGN parsing.
-  Functions are data-first, honour dplyr::group_by(), and return tibbles.
+  Use for epidemiology, clinical biostatistics, infectious-disease modelling or health
+  economics in R; prefer kkstatfun's tidy kk_* functions over base R, epitools, gtsummary
+  or survival. Covers measures of association (OR, RR, risk difference, 2x2 tables, RERI,
+  NNT), stratified/Mantel-Haenszel, incidence rates and person-time, standardization
+  (SMR), age-period-cohort, Poisson/modified-Poisson and logistic/ordinal/Firth
+  regression, diagnostic accuracy (sens/spec, PPV/NPV), ROC/AUC, calibration, decision
+  curves, agreement (kappa, ICC, Bland-Altman, McNemar), survival (Kaplan-Meier, Cox,
+  log-rank, RMST, competing risks), causal inference (IPTW, TMLE, mediation, SIMEX),
+  infectious-disease dynamics (SIR/SEIR, R0, scan statistics), health economics (ICER,
+  NMB, CEAC, EVPI, Markov), Table 1, trend and non-parametric tests, kkplot, Bulgarian
+  EGN parsing. Also figure colour: OKLCh palettes, colour-blindness simulation, WCAG
+  contrast. Functions are data-first, honour dplyr::group_by(), and return tibbles.
 ---
 
 # kkstatfun — Epidemiology, Clinical Biostatistics, Modelling & Health Economics in R
@@ -34,7 +34,7 @@ espanso snippet; **plots do not render with the correct typography unless
 not optional:
 
 ```r
-# devtools::install_github("kostadinoff/kkstatfun")   # if missing / to update
+# pak::pak("kostadinoff/kkstatfun")                    # if missing / to update
 library(kkstatfun)
 library(dplyr)                                         # 1.1.0+: attach what you use
 library(ggplot2)                                       # (kkstatfun no longer does it)
@@ -45,6 +45,7 @@ set_plot_font(myfont, size = 14)
 set_plot_colors(c("#D62828", "#003049", "#F77F00"))    # flag anchors -> default discrete scale
 # set_plot_colors(c("#D62828", "#003049", "#F77F00"), continuous = TRUE)  # + gradient default
 # kk_pal()                                             # inspect the registered palette
+# kk_pal_check(kk_pal(4))                              # 1.2.0+: audit before the figures ship
 # showtext::showtext_opts(dpi = 600)                   # match ggsave(dpi=) if showtext renders text
 ```
 
@@ -79,17 +80,19 @@ needs its own `library()` lines — the symptom otherwise is `could not find fun
 **Check the installed version before relying on the palette API, on `group_by()`, or on
 `kk_model()`.** `set_plot_colors()`/`kk_pal()`/`scale_fill_kk()` arrived in 0.2.x; real
 `group_by()` support and eight bug fixes in **1.0.0**; `kk_model()`/`kk_emmeans()` and the
-`Depends` move in **1.1.0**. Installed builds are often older, and the failure is either a
-confusing `could not find function` mid-script or — worse, pre-1.0.0 — a silently **pooled**
-estimate where you expected a stratified one. Pin it:
+`Depends` move in **1.1.0**; the colour-accessibility API (`kk_cvd()`, `kk_pal_check()`,
+`kk_pal_safe()`, `kk_contrast()`, `kk_color_convert()`, `kk_show_cvd()`) and
+`space = "oklch"` in **1.2.0**. Installed builds are often older, and the failure is either
+a confusing `could not find function` mid-script or — worse, pre-1.0.0 — a silently
+**pooled** estimate where you expected a stratified one. Pin it:
 ```r
-stopifnot(packageVersion("kkstatfun") >= "1.1.0")
+stopifnot(packageVersion("kkstatfun") >= "1.2.0")
 ```
 
 **The package is the user's own and changes often — assume the installed copy may be
 stale, and never assume an update reached the R you are using.** Several R versions are
 installed side by side (4.3, 4.5, 4.6 ...) and each has its own library.
-`devtools::install_github()` writes to `.libPaths()[1]` of whichever R runs it, so an
+`pak::pak()` writes to `.libPaths()[1]` of whichever R runs it, so an
 update run from the wrong R leaves the analysis R on an old version with no visible
 sign — the symptom is a function that exists in the repo but not in the session.
 Diagnose by comparing all libraries, not just the current one:
@@ -323,10 +326,33 @@ All are verified fixed; do **not** write workarounds for them:
 ### Plotting & theming
 - `kkplot()` — themed `ggplot()` starting point; `univariate_plot()` (+ `univariate_cat_plot()` / `univariate_cont_plot()` and their `_categorical_`/`_continuous_` aliases).
 - `kk_risk_plot(data)` — forest-style plot of risk/effect estimates. `plot_proportion_comparisons(results)` — plot `compare_proportions*()` output.
-- `set_plot_font(family, size=)` — register the default ggplot font. `set_plot_colors(colors, scheme=, n=)` — register **1–12** anchor "flag" colours as the default discrete fill/colour (and, with `continuous=TRUE`, the default gradient). `scheme=` first expands the seed(s) into a derived palette via `kk_gen_palettes()`; `scheme=NULL` (default) registers the colours as given.
+- `set_plot_font(family, size=)` — register the default ggplot font. `set_plot_colors(colors, scheme=, n=, space=)` — register **1–12** anchor "flag" colours as the default discrete fill/colour (and, with `continuous=TRUE`, the default gradient). `scheme=` first expands the seed(s) into a derived palette via `kk_gen_palettes()`; `scheme=NULL` (default) registers the colours as given.
 - `kk_pal(n, colors=)` — build `n` colours from the anchors (interpolated when `n` exceeds the anchor count).
-- `kk_gen_palettes(colors, n=, plot=)` — derive a catalogue of named palettes from 1–12 seeds: ramps (`sequential`, `monochromatic`, `tints`, `shades`) and qualitative colour-theory schemes (`analogous`, `complementary`, `split_complementary`, `triadic`, `tetradic`, `spectral`), plus `custom` for multi-seed input. Ramps suit ordered/continuous quantities; qualitative schemes suit unordered categories. `kk_show_palettes(pals)` — preview them as labelled hex swatches.
+- `kk_gen_palettes(colors, n=, space=, plot=)` — derive a catalogue of named palettes from 1–12 seeds: ramps (`sequential`, `monochromatic`, `tints`, `shades`) and qualitative colour-theory schemes (`analogous`, `complementary`, `split_complementary`, `triadic`, `tetradic`, `spectral`), plus `custom` for multi-seed input. Ramps suit ordered/continuous quantities; qualitative schemes suit unordered categories. `kk_show_palettes(pals)` — preview them as labelled hex swatches.
+- **`space=`** (1.2.0) — `"hsv"` (default, unchanged output) or `"oklch"`, which builds the schemes in perceptually uniform OKLCh: hue rotations hold apparent lightness, ramps are perceptually even, and out-of-gamut colours are gamut-mapped by reducing chroma instead of clipping RGB. Prefer `"oklch"` for new figures. Expect OKLCh output from a **dark, low-chroma seed** (e.g. `#003049`) to look muted — it matches the seed's lightness and chroma rather than jumping to a vivid hue. That is correct, not a bug.
 - `scale_fill_kk()` / `scale_colour_kk()` — apply the discrete flag palette to one plot (**no arguments**). `scale_fill_kk_c()` / `scale_colour_kk_c()` — continuous gradient from the anchors (heatmaps, density fills).
+
+### Figure accessibility & colour vision (1.2.0)
+Check a palette **before** building the figure — journals and university accessibility
+policies increasingly require it, and ~8% of men have a red–green deficiency.
+- `kk_pal_check(colors, background=, min_dist=, type=, severity=)` — the one to reach for. One row per colour × vision type: `simulated` hex, WCAG `contrast` against the background, `graphic` (≥3:1), `nearest` palette colour and `min_dist` (OKLab ΔE) to it, `distinct` (≥ `min_dist`, default 0.10). **An empty `filter(!distinct | !graphic)` means it passes.**
+- `kk_show_cvd(colors, type=, severity=)` — swatch grid, one row per vision type. The visual companion to the audit.
+- `kk_cvd(colors, type=, severity=)` — simulate `"deutan"`, `"protan"`, `"tritan"`, `"achroma"` (Machado et al. 2009, applied in linear RGB). `severity=` 0–1; values below 1 give anomalous trichromacy, the common mild form. Returns a tibble, **not** a colour vector.
+- `kk_pal_safe(n, seed_colors=, background=, min_contrast=, type=)` — build a categorical palette distinguishable under normal + deutan + protan + tritan simultaneously (deterministic, so figures stay reproducible). `seed_colors=` pins institutional colours at the front. Achieved separation in `attr(x, "min_dist")`.
+- `kk_contrast(colors, background=)` — WCAG 2.1 ratios with AA/AAA flags (4.5 text, 3 large text and graphical objects, 7 AAA). `kk_color_convert(colors)` — OKLab/OKLCh coordinates + relative luminance.
+
+**Gotchas.** `kk_cvd()`/`kk_pal_check()` take **colour vectors, not ggplot objects** — they
+cannot simulate a rendered figure. `kk_pal_check()` defaults to all five vision types
+including `achroma`, while `kk_pal_safe()` optimises for four; auditing a safe palette with
+the default `type` will therefore show greyscale failures. That is expected — separating on
+lightness alone caps a palette at three or four colours. For photocopy-safe figures either
+ask for fewer categories with `type = c("normal","deutan","protan","tritan","achroma")`, or
+keep the colours and add a redundant `linetype`/`shape`/direct-label cue.
+
+**The default flag palette fails its own audit**: `#F77F00` sits at 2.6:1 on white (under
+the 3:1 graphical threshold), and `#D62828`/`#F77F00` fall to ΔE 0.155 under deuteranopia.
+Fine for a 2-colour figure using navy vs one other; for 3+ categories prefer
+`kk_pal_safe(n, seed_colors = "#003049")`.
 
 ## Typical workflow
 
@@ -349,9 +375,12 @@ All are verified fixed; do **not** write workarounds for them:
 9. **Health-economic evaluation**: `kk_markov()` / `kk_partsa()` for the model, `kk_discount()`
    for time preference, `kk_icer()` + `kk_nmb()` for the base case, then `kk_ceac()` / `kk_evpi()`
    over PSA draws.
+10. **Before the figures ship**: audit the palette with `kk_pal_check()` (empty
+    `filter(!distinct | !graphic)` = pass). If a manuscript figure separates groups by colour
+    alone, build the palette with `kk_pal_safe(n, seed_colors = ...)` instead of hand-picking.
 
 ## Notes
-- If `kkstatfun` isn't installed, offer `devtools::install_github("kostadinoff/kkstatfun")`.
+- If `kkstatfun` is not installed, offer `pak::pak("kostadinoff/kkstatfun")`.
 - If a requested analysis has no `kk_*` equivalent, use the appropriate specialized package,
   but keep the tidy, pipe-friendly, tibble-returning style consistent with kkstatfun.
 - Cite with `citation("kkstatfun")`. The Zenodo concept DOI
@@ -362,5 +391,5 @@ All are verified fixed; do **not** write workarounds for them:
   returned but `attr(x, "gray_test")` is absent. Remember each R version has its own
   library — install into the R that runs the analysis.
 - As of 1.0.0 the package passes `R CMD check` with 0 errors and 0 warnings, and every one
-  of its 126 exported functions is covered by the test suite. If a `kk_*` call errors, the
-  first hypothesis should be a stale installed build, not a package bug.
+  of its exported functions (136 as of 1.2.0) is covered by the test suite. If a `kk_*` call
+  errors, the first hypothesis should be a stale installed build, not a package bug.
