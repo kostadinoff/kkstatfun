@@ -54,11 +54,11 @@ You can install the package directly from GitHub:
 
 
 ``` r
-# Install devtools if not already installed
-if (!require("devtools")) install.packages("devtools")
+# Install pak if not already installed
+if (!requireNamespace("pak", quietly = TRUE)) install.packages("pak")
 
 # Install kkstatfun from GitHub
-devtools::install_github("kostadinoff/kkstatfun")
+pak::pak("kostadinoff/kkstatfun")
 ```
 
 `library(kkstatfun)` attaches **only** kkstatfun (the pipe `%>%` comes with it).

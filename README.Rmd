@@ -68,11 +68,11 @@ Plotting helpers and column-wise utilities (`kkonehot()`, `mutate_round()`,
 You can install the package directly from GitHub:
 
 ```{r ex-01, eval=FALSE}
-# Install devtools if not already installed
-if (!require("devtools")) install.packages("devtools")
+# Install pak if not already installed
+if (!requireNamespace("pak", quietly = TRUE)) install.packages("pak")
 
 # Install kkstatfun from GitHub
-devtools::install_github("kostadinoff/kkstatfun")
+pak::pak("kostadinoff/kkstatfun")
 ```
 
 `library(kkstatfun)` attaches **only** kkstatfun (the pipe `%>%` comes with it).

@@ -111,3 +111,24 @@ test_that("kk_confusion_matrix MCC survives large counts and bootstrapping", {
     "tbl_df"
   )
 })
+
+test_that("kk_reg works with include_diagnostics = FALSE", {
+  # calculate_diagnostics() returned a 0x0 tibble, and bind_cols() cannot
+  # recycle that against the n-row coefficient table.
+  res <- kk_reg(mtcars, "mpg", c("wt", "hp"), include_diagnostics = FALSE)
+  expect_s3_class(res, "tbl_df")
+  expect_false("r_squared" %in% names(res))
+
+  # Diagnostics columns still appear by default.
+  res_diag <- kk_reg(mtcars, "mpg", c("wt", "hp"))
+  expect_true("r_squared" %in% names(res_diag))
+  expect_gt(ncol(res_diag), ncol(res))
+
+  # Logistic path too.
+  d <- mtcars
+  d$am <- factor(d$am)
+  expect_s3_class(
+    kk_reg(d, "am", c("wt", "hp"), include_diagnostics = FALSE),
+    "tbl_df"
+  )
+})

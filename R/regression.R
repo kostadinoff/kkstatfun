@@ -190,6 +190,11 @@ kk_reg <- function(data, outcome, predictors, log_outcome = FALSE, custom_formul
                             }
 
                             diagnostics <- calculate_diagnostics(model)
+                            # With include_diagnostics = FALSE the tibble is 0x0;
+                            # bind_cols() cannot recycle it against n result rows.
+                            if (ncol(diagnostics) == 0) {
+                                          return(results)
+                            }
                             results %>% dplyr::bind_cols(diagnostics)
               }
 
