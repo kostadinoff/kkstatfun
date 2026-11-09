@@ -1,6 +1,6 @@
 {
   "title": "kkstatfun: R Statistical Analysis Toolkit for Medical Statistics and Epidemiology",
-  "description": "<p>A comprehensive R toolkit for medical statistics and epidemiology. Provides tidy, group-aware functions for measures of association, standardisation, diagnostic accuracy, agreement, survival and competing risks, causal inference, quasi-experimental designs (difference-in-differences, regression discontinuity, interrupted time series, synthetic control, instrumental variables), infectious-disease models, health-economic evaluation, time series, and Bulgarian EGN parsing. Every analysis function takes individual-level data as its first argument, honours <code>dplyr::group_by()</code>, and returns a tibble.</p>",
+  "description": "<p>A comprehensive R toolkit for medical statistics and epidemiology. Provides tidy, group-aware functions for measures of association, standardisation, diagnostic accuracy, agreement, survival and competing risks, causal inference, quasi-experimental designs (difference-in-differences, regression discontinuity, interrupted time series, synthetic control, instrumental variables), infectious-disease models, health-economic evaluation, time series, biomedical cycles and rhythms (T-R periodogram of Komitov with a red-noise test, cosinor, superposed epochs, N-of-1 trials, wavelets; workflow after CycleLab by R. Stefanov), and Bulgarian EGN parsing. Every analysis function takes individual-level data as its first argument, honours <code>dplyr::group_by()</code>, and returns a tibble.</p>",
   "upload_type": "software",
   "license": {
     "id": "MIT"
@@ -29,12 +29,23 @@
     "diagnostic accuracy",
     "health economics",
     "infectious disease modelling",
-    "tidyverse"
+    "tidyverse",
+    "time series",
+    "chronobiology",
+    "cosinor",
+    "periodogram",
+    "circadian rhythm",
+    "N-of-1 trials"
   ],
   "related_identifiers": [
     {
       "identifier": "https://github.com/kostadinoff/kkstatfun",
       "relation": "isSupplementTo",
+      "scheme": "url"
+    },
+    {
+      "identifier": "https://cyclelab.raredis.org",
+      "relation": "isDerivedFrom",
       "scheme": "url"
     }
   ]

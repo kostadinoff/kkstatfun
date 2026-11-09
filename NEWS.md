@@ -1,3 +1,102 @@
+# kkstatfun 1.4.0
+
+## Cycles, rhythms and events in biomedical time series
+
+A new tier that brings the methods of **CycleLab** (Stefanov R, 2026,
+<https://cyclelab.raredis.org>, Institute for Rare Diseases, Plovdiv) to R:
+the analysis of a single long record (a glucose sensor, a temperature log,
+monthly admissions) for trend, cycles, the daily rhythm and the response to
+events. The cycle search is built on the **T-R periodogram of Boris Komitov**
+(6D STAT, 1998); the rhythm analysis on Halberg's cosinor. The ideas, the
+order of the analysis and much of the report wording come from CycleLab; we
+thank Prof. Rumen Stefanov for making its full method guide available, and
+acknowledge Boris Komitov's periodogram, on which the cycle search rests.
+
+### Trend and description (`R/ts_trend.R`)
+
+* `kk_ts_describe()` — distribution, sampling step, gaps, possible entry
+  errors and the moving average over one cycle.
+* `kk_ts_trend()` — the trend test with the effective number of observations
+  and the bias-corrected lag-1 autocorrelation, for the straight line and 15
+  two-parameter forms (and the Verhulst logistic); every form has a test of
+  no trend on its linearising scale, with the null hypothesis it implies
+  (`A = 0`, `A = 1` for `B*A^X`, `B = 0` for `X/(A*X + B)`).
+* `kk_day_parts()` — morning, midday, evening and night compared with the day
+  as a block (repeated-measures ANOVA, Friedman, paired post-hoc tests).
+
+### Cycles (`R/cycles.R`)
+
+* `kk_periodogram()` — the T-R periodogram (generalised Lomb-Scargle) with a
+  max-T test against AR(1) red noise: standardisation by a pilot set of
+  surrogates and calibration on an independent set, test on the trial-period
+  grid with the period refined only after acceptance, surrogates detrended
+  and projected exactly like the data; sequential extraction of cycles,
+  calendar periods and harmonics. `p_fixed` gives the exact F test for a
+  period fixed in advance, and documents why CycleLab's R/SR >= 1.96 rule is
+  only a heuristic.
+* `kk_harmonic_model()` — the trend-plus-cycles model with Komitov's PrIdx,
+  rolling-origin validation against naive forecasts and a prediction interval
+  (bootstrapped through both stages for trends nonlinear in their
+  parameters).
+* `kk_cycle_power()` — how long and how often to measure; simulates the
+  detector as it is applied to data (estimated autocorrelation), with Monte
+  Carlo errors and missingness redrawn across records.
+
+### Rhythms (`R/rhythms.R`)
+
+* `kk_cosinor()`, `kk_cosinor_population()` and `kk_cosinor_compare()` —
+  single, population-mean (Bingham) and comparative cosinor. The comparison
+  is made on the coefficients of independent units (subjects, or days of
+  each stage; MESOR ANOVA, Wilks' lambda, delta-method Wald tests) when
+  there are enough of them, otherwise on a pooled model with Newey-West
+  errors; the `method` column says which. Phase uncertainty is not reported
+  when the rhythm itself is not detected.
+* One time policy throughout: clock time keeps the UTC offset of the first
+  measurement, so daylight-saving changes neither duplicate nor drop hours.
+
+### Events (`R/ts_events.R`)
+
+* `kk_epoch_response()` — superposed epochs with clock-matched controls, a
+  pointwise corridor and a global band (split-sample calibration, corrected
+  for the finite pool of control days), and per-event measures (rise to peak,
+  time to peak, iAUC, mean change). **Events are tested against the controls,
+  not against zero**: a rise to the peak is a maximum and is positive even in
+  pure noise (in simulation the t test against zero declared a response in
+  every null record; the control comparison in 4%). Holm adjustment across
+  event categories; covariates and factors per event.
+* `kk_distributed_lag()`, `kk_nof1_schedule()`, `kk_nof1()` — lagged
+  effects, randomised N-of-1 schedules and their randomisation test.
+
+### Several series (`R/ts_compare.R`)
+
+* `kk_ts_compare()` — prewhitened cross-correlation, Granger tests with the
+  common trend and rhythm in both models, phase shifts with the joint
+  covariance of the two series, common cycles, smoothed-periodogram
+  coherence and lagged regressions.
+* `kk_wavelet()`, `kk_wavelet_coherence()` — Morlet wavelet power and
+  coherence (Torrence & Compo; Grinsted et al.), with the pointwise
+  significance threshold pooled outside the cone of influence and the
+  cross-wavelet power.
+
+### The full analysis, plots and examples
+
+* `kk_cycle_analysis()` — every step that suits the data, with what was and
+  was not established, the automatic decisions and Methods/Results text
+  written from what actually ran; grouped data give one result per group.
+* `kk_plot_periodogram()`, `kk_plot_cosinor()`, `kk_plot_epoch()`,
+  `kk_plot_wavelet()`, `kk_plot_model()`, `kk_plot_day_parts()` — kkplot house
+  style, white background, titles that state the finding.
+* `kk_cycle_example()` — nine simulated records with known truth.
+* New vignette *Cycles, rhythms and events* (`vignette("cycles-and-rhythms")`),
+  with a section on what is not (yet) implemented compared with CycleLab.
+
+### Review
+
+The statistical code was reviewed independently (Codex) before release; the
+findings were applied and the key tests were checked by simulation (false
+cycles 1.5-3.5% for the red-noise test, 4% for the event test, 3-6.5% for the
+global band, at a nominal 5%).
+
 # kkstatfun 1.3.0
 
 ## Quasi-experimental designs for causal inference

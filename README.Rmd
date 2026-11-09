@@ -30,7 +30,7 @@ suppressWarnings(suppressMessages(
 # kkstatfun
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18936019.svg)](https://doi.org/10.5281/zenodo.18936019)
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
+[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/kostadinoff/kkstatfun/releases)
 
 **R Statistical Analysis Toolkit for Medical and Epidemiology**
 
@@ -1883,6 +1883,143 @@ tail(attr(res_sc, "path"), 3)
 
 ---
 
+### 17. Cycles, Rhythms and Events in Biomedical Time Series
+
+New in 1.4.0. Repeated measurements of one person or one population —
+morning blood pressure, a glucose sensor, temperature several times a day,
+monthly admissions — are not independent values, and the ordinary tests find
+effects that are not there. This tier asks the usual questions of such a
+series with methods that respect the autocorrelation: trend, cycles of
+unknown period, the daily rhythm, the response after events, N-of-1 trials,
+several series together, a validated forecast, and how long to measure.
+
+**Acknowledgement.** The workflow, the choice of methods and the example
+scenarios follow **CycleLab** by Prof. Rumen Stefanov (Institute for Rare
+Diseases, Plovdiv; <https://cyclelab.raredis.org>), which is built around the
+**T-R periodogram of Boris Komitov** and Halberg's cosinor. kkstatfun
+reimplements the methods independently from the published literature. If you
+use them, please cite CycleLab and the method papers listed in each help page.
+The step-by-step guide with worked examples and interpretation is
+`vignette("cycles-and-rhythms")`.
+
+All examples use `kk_cycle_example()`: simulated records with **known true
+properties**, so you can check that each method recovers the truth.
+
+| Function | Question |
+|---|---|
+| `kk_ts_describe()` | distribution, step, gaps, outliers, moving average |
+| `kk_ts_trend()` | trend with the effective-N test; 15 trend shapes ranked |
+| `kk_periodogram()` | T-R periodogram (Komitov), red-noise maxT test, sequential cycles, calendar periods |
+| `kk_cosinor()`, `kk_cosinor_population()`, `kk_cosinor_compare()` | MESOR, amplitude, acrophase; per day; populations; stages and groups |
+| `kk_day_parts()` | morning / midday / evening / night, day as block |
+| `kk_epoch_response()`, `kk_distributed_lag()` | response after events with clock-matched controls; effect by lag |
+| `kk_nof1_schedule()`, `kk_nof1()` | randomised N-of-1 design and its randomisation test |
+| `kk_ts_compare()`, `kk_wavelet()`, `kk_wavelet_coherence()` | prewhitened CCF, Granger, phase shift, common cycles, coherence |
+| `kk_harmonic_model()` | trend + cycles model, PrIdx, forecast validated against naive |
+| `kk_cycle_power()` | record length needed; false cycles of the 1.96 rule vs the noise test |
+| `kk_cycle_analysis()` | everything above, with the conclusion and Methods/Results text |
+| `kk_plot_periodogram()`, `kk_plot_cosinor()`, `kk_plot_epoch()`, `kk_plot_model()`, `kk_plot_wavelet()`, `kk_plot_day_parts()` | kkplot figures whose titles state the finding |
+
+#### `kk_periodogram(data, outcome, time)` — cycles of unknown period
+
+Monthly pneumonia admissions for eight years: the truth is an annual cycle
+(amplitude 9, January peak) and a semi-annual cycle (amplitude 3).
+
+```{r ex-cyc-pgram, fig.height = 4.2}
+pn <- kk_cycle_example("pneumonia")
+pg <- kk_periodogram(pn$series, rate, month, calendar = c(12, 6), n_sim = 300)
+pg[, c("period", "model_period", "amplitude", "peak", "R_SR", "p_value", "in_model")]
+kk_plot_periodogram(pg)
+```
+
+> **Interpretation.** Both cycles are recovered and snapped to their calendar
+> values (the replacement is listed in `attr(pg, "decisions")`); the third
+> peak does not beat autocorrelated noise. In the figure many bumps cross the
+> naive 1.96 line — that rule holds only for one period chosen in advance —
+> but only the peaks above the red-noise threshold are cycles.
+
+#### `kk_cosinor(data, outcome, time)` — the daily rhythm
+
+```{r ex-cyc-cosinor, fig.height = 4.2}
+tp <- kk_cycle_example("temperature")
+cz <- kk_cosinor(tp, temp, time, by_day = TRUE)
+cz[, c("mesor", "amplitude", "acrophase", "acrophase_low", "acrophase_high", "p_value")]
+kk_plot_cosinor(cz)
+```
+
+> **Interpretation.** MESOR 36.6 °C, amplitude 0.3 °C, peak at 17:00 — the
+> simulated truth. `kk_plot_cosinor(cz, type = "ellipse")` draws the
+> population cosinor of the 28 days; the rhythm is significant when the
+> confidence ellipse does not cover the centre.
+
+#### `kk_cosinor_compare(data, outcome, time, group)` — did the rhythm move?
+
+A nurse moves from day to evening shifts on day 15 (truth: peak 17:00 →
+20:00, amplitude 0.30 → 0.22 °C).
+
+```{r ex-cyc-compare}
+nu <- kk_cycle_example("nurse")
+cc <- kk_cosinor_compare(nu, temp, time, stage)
+cc
+attr(cc, "differences")[, c("group", "amplitude_diff", "acrophase_shift",
+                            "acrophase_shift_low", "acrophase_shift_high")]
+```
+
+> **Interpretation.** With enough days per stage the comparison is made on
+> the cosinors of the individual days (Bingham et al.; `method = "units"`),
+> so each day counts once; the peak moved about 3 h later and the amplitude
+> fell, as simulated.
+
+#### `kk_epoch_response(data, outcome, time, events, event_time)` — after meals and walks
+
+```{r ex-cyc-epoch, fig.height = 4.2}
+pd <- kk_cycle_example("prediabetes")
+er <- kk_epoch_response(pd$series, glucose, time, pd$events, time,
+                        event_type = type, covariates = carbs,
+                        window = c(-0.5, 3), n_control = 200)
+attr(er, "summary")[, c("event_type", "n_events", "main_measure", "mean",
+                        "control_mean", "difference", "p.adjusted")]
+attr(er, "covariate_effect")[, c("covariate", "slope", "conf.low", "conf.high")]
+kk_plot_epoch(er)
+```
+
+> **Interpretation.** Glucose rises by about 2 mmol/l within 45 minutes of a
+> meal, by about 0.035 mmol/l per gram of carbohydrate (the simulated truth).
+> The controls are the same clock times on other days with no event in the
+> window, so the daily rhythm is not mistaken for the meal effect, and the
+> test compares events with these controls, not with zero: a rise to the
+> peak is a maximum and is positive even after a pseudo-event in pure noise.
+> The walks show why this matters. The simulated walk lowers glucose by
+> 0.6 mmol/l for about an hour, and the curve dips — but the same afternoon
+> hours fall on other days too, and only 6 of the 12 walks are usable (a
+> meal falls inside the other windows). Against the controls the walk effect
+> is **not established**: the design needs more walks that are not followed
+> by a meal, not a different test.
+
+#### `kk_harmonic_model(data, outcome, time, periods)` — model and forecast
+
+```{r ex-cyc-model, fig.height = 4.2}
+hm <- kk_harmonic_model(pn$series, rate, month, periods = c(12, 6), horizon = 12)
+attr(hm, "validation")
+kk_plot_model(hm)
+```
+
+> **Interpretation.** The forecast is reported only because the rolling-origin
+> check shows it beats repeating the last value; the 12 held-out months in
+> `pn$holdout` can be compared with `attr(hm, "forecast")`.
+
+#### `kk_cycle_analysis(data, outcome, time)` — the full analysis
+
+```{r ex-cyc-full}
+fa <- kk_cycle_analysis(nu, temp, time, n_sim = 200,
+                        label = "axillary temperature", unit = "°C")
+fa
+```
+
+`fa$methods_text` and `fa$results_text` are ready for the manuscript.
+
+---
+
 ## Methodological References & Textbooks
 
 The statistical algorithms and epidemiological methods in `kkstatfun` are implemented according to standard theoretical frameworks from the following reference textbooks:
@@ -1893,6 +2030,9 @@ The statistical algorithms and epidemiological methods in `kkstatfun` are implem
 4. **Zar, J. H. (2010)**. *Biostatistical Analysis* (5th ed.). Prentice Hall.
 5. **Sheskin, D. J. (2000)**. *Handbook of Parametric and Nonparametric Statistical Procedures* (2nd ed.). Chapman & Hall/CRC.
 6. **Stevenson, M., et al.** *Epidemiology with R*. R Epidemiological Community.
+7. **Stefanov, R. (2026)**. *CycleLab: analysis of biomedical time series*, version 0.14.4. Plovdiv: Institute for Rare Diseases. <https://cyclelab.raredis.org> — the model for the cycles-and-rhythms tier (section 17).
+8. **Komitov, B. (1998)**. *Shestmerna statistika (6D STAT), version 5.0. User manual*. Stara Zagora — the T-R periodogram.
+9. **Cornelissen, G. (2014)**. Cosinor-based rhythmometry. *Theoretical Biology and Medical Modelling* 11:16. doi:10.1186/1742-4682-11-16
 
 ---
 
@@ -1909,7 +2049,7 @@ If you use this package in your research, please cite it as follows:
   title = {kkstatfun: R Statistical Analysis Toolkit for Medical Statistics and Epidemiology},
   author = {Kostadinov, Kostadin},
   year = {2026},
-  version = {1.3.0},
+  version = {1.4.0},
   url = {https://github.com/kostadinoff/kkstatfun},
   doi = {10.5281/zenodo.18936019},
 }

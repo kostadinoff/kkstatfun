@@ -1,0 +1,519 @@
+---
+title: "Cycles, rhythms and events in biomedical time series"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Cycles, rhythms and events in biomedical time series}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7.5,
+                      fig.height = 4.4, dpi = 96, message = FALSE)
+library(kkstatfun)
+set.seed(1)
+```
+
+## What this guide is for
+
+Many measurements in medicine are taken again and again in one person or one
+population: blood pressure every morning, glucose every five minutes, body
+temperature several times a day, hospital admissions every month. Such a
+*time series* is not a sample of independent values. Neighbouring values are
+similar, the series may drift, it may rise and fall with the clock or the
+calendar, and it may respond to meals, drugs or a new service. Ordinary
+statistics — a t test of "before" against "after", a correlation between two
+series — treat every measurement as independent and therefore find effects
+that are not there.
+
+This guide explains, step by step and with worked examples, how to ask the
+usual questions of such a series and how to read the answers:
+
+| Question | Functions |
+|---|---|
+| What does the record look like? | `kk_ts_describe()` |
+| Is there a trend, and what shape is it? | `kk_ts_trend()` |
+| Are there cycles, and of which period? | `kk_periodogram()`, `kk_plot_periodogram()` |
+| Is there a daily (circadian) rhythm, and when is the peak? | `kk_cosinor()`, `kk_cosinor_population()`, `kk_plot_cosinor()` |
+| Does the rhythm differ between stages or groups? | `kk_cosinor_compare()` |
+| Do the parts of the day differ? | `kk_day_parts()` |
+| What happens after an event (meal, drug, procedure)? | `kk_epoch_response()`, `kk_distributed_lag()`, `kk_its()` |
+| Does a treatment work in one patient? | `kk_nof1_schedule()`, `kk_nof1()` |
+| Do several variables oscillate together, and which leads? | `kk_ts_compare()`, `kk_wavelet()`, `kk_wavelet_coherence()` |
+| Can I forecast, and is the forecast any good? | `kk_harmonic_model()`, `kk_plot_model()` |
+| How long must I measure? | `kk_cycle_power()` |
+| Do all of it and write the report | `kk_cycle_analysis()` |
+
+**Where this comes from.** The workflow, the choice of methods and the example
+scenarios follow **CycleLab** by Prof. Rumen Stefanov (Institute for Rare
+Diseases, Plovdiv; <https://cyclelab.raredis.org>), a free online program
+that we studied while building this tier. CycleLab is built around the
+**T-R periodogram of Boris Komitov** and the cosinor method of Franz
+Halberg. kkstatfun reimplements these methods independently in R, from the
+published literature listed at the end, so that they can be scripted,
+reproduced and combined with the rest of the package. If you use them,
+cite CycleLab and the method papers:
+
+> Stefanov R. *CycleLab: analysis of biomedical time series*, version 0.14.4.
+> Plovdiv: Institute for Rare Diseases; 2026. <https://cyclelab.raredis.org>
+
+All examples use `kk_cycle_example()`: simulated records **with known true
+properties**, so you can see whether each method recovers the truth.
+
+## The order of work
+
+1. **Plan.** Before collecting data, check how many measurements are needed
+   (`kk_cycle_power()`). A two-day record cannot establish a weekly cycle.
+2. **Describe** the series: number of measurements, step, gaps, distribution,
+   outliers.
+3. **Trend.** Test the trend with a correction for autocorrelation, compare
+   trend shapes, and remove the trend before looking for cycles — otherwise
+   it shows up as a fake long cycle.
+4. **Cycles.** Search for cycles with the T-R periodogram, test every peak
+   against autocorrelated noise, extract cycles one by one.
+5. **Daily rhythm.** With clock time: cosinor for every day and for the
+   whole record; compare stages or groups; compare parts of the day.
+6. **Events and factors.** Response after events by category, effect of an
+   intervention, differences between factor levels. Compare events, days or
+   segments — never neighbouring measurements as if they were independent.
+7. **Model and forecast.** Combine trend and cycles in one model; forecast
+   only if the forecast beats "repeat the last value".
+8. **Interpret.** Report what remains significant after the corrections.
+   "Not established" does not mean "absent" — the data may be insufficient.
+   An association with a cycle, trend or event is not proof of causation.
+
+## 1. Describing the series
+
+```{r describe}
+bp <- kk_cycle_example("hypertension")   # morning systolic BP, 182 days
+d <- kk_ts_describe(bp, sbp, date)
+d[, c("n", "duration", "step", "mean", "sd", "median", "near_normal",
+      "n_outliers", "summary_measure")]
+```
+
+*How to read it.* `near_normal` decides whether the mean (SD) or the median
+(IQR) describes the series (Shapiro-Wilk p ≥ 0.05; for more than 5000 values,
+skewness and kurtosis within three standard errors). Values more than three
+SD from the mean are listed in `attr(d, "outliers")` — check them for entry
+errors before anything else. `attr(d, "moving_average")` holds the moving
+average over one cycle (7 days here): it removes the weekly cycle and shows
+the slow change.
+
+## 2. Trend
+
+A trend is a slow, sustained change. The trap is autocorrelation: in a series
+where today resembles yesterday, an ordinary regression on time finds a
+"significant" slope far too often. `kk_ts_trend()` tests the slope with the
+**effective number of observations**, \(N_{eff} = N(1-r)/(1+r)\), where \(r\)
+is the lag-1 autocorrelation of the residuals corrected for its downward bias
+in short series, \(r = r_1 + (1+3r_1)/N + k/N\).
+
+```{r trend}
+er <- kk_cycle_example("emergency")   # new emergency room, visits by month
+tr <- kk_ts_trend(er, visits, month)
+tr[, c("form", "A", "r_squared", "r_residual", "n", "n_eff", "p.value")]
+head(attr(tr, "forms")[, c("form", "formula", "r_squared")], 5)
+```
+
+*How to read it.* 96 months behave like about `r round(tr$n_eff)` independent
+observations: that is how much information the series really holds. The
+`forms` table ranks fifteen two-parameter functions by \(R^2\) on the
+original scale. Here a saturating shape (the truth is Michaelis-Menten
+growth) explains much more than the line, and a message says so. The form
+is **not** chosen automatically: picking the best of fifteen by \(R^2\)
+inflates false trends, and \(R^2\) says nothing about behaviour after the
+record ends. Choose a form when the process justifies it — a new service
+filling up its capacity does justify a saturating curve.
+
+## 3. Cycles: the T-R periodogram
+
+### The idea
+
+For every trial period \(T\) the periodogram fits the best sinusoid of that
+period and records how well it matches the data: the correlation \(R(T)\) and
+its ratio to the standard error, \(R/S_R\) with \(S_R = (1-R^2)/\sqrt{N}\).
+This is Komitov's T-R periodogram. Peaks mark the periods at which a sinusoid
+describes the series best. It works with uneven spacing and gaps because the
+sinusoid is fitted at the actual measurement times.
+
+### The trap, and the test
+
+\(R/S_R \ge 1.96\) is CycleLab's traditional rule of thumb. It is not even an
+exact 5% test for one period chosen in advance — for that, the F test
+\(F = \frac{N-3}{2}\frac{R^2}{1-R^2}\) with 2 and \(N-3\) degrees of freedom is
+exact under independent noise (`p_fixed`; at \(N = 100\) the 1.96 line
+corresponds to p ≈ 0.17). And scanning hundreds of periods, random series
+cross 1.96 all the time — while autocorrelated ("red") noise, which every
+biomedical series has, piles up power at long periods. So every peak is
+compared with surrogate series of the same length, the same time points and
+the same lag-1 autocorrelation (AR(1) noise), passed through the same
+detrending, with a **max-T** test: \(R/S_R\) is standardised at each period
+using one set of surrogates, and the p value is the share of a *second,
+independent* set whose largest standardised value is at least as large as
+the observed one — how often noise produces a peak this tall *anywhere* in
+the range. Using two separate sets matters: standardising and calibrating
+with the same simulations makes the test too liberal when there are few of
+them. The test is done on the grid of trial periods; the period of an
+accepted peak is refined only afterwards, so the refinement cannot give the
+observed peak an advantage the surrogates did not have. With the default 500
+surrogates the false-cycle rate of white and red noise was close to 5% in
+our simulations; use at least 200, and 500 for a reported analysis.
+
+Cycles are then extracted one at a time: accept the strongest significant
+peak, remove it, search the residual, stop when the next peak is not
+significant. Each step is conditional on the cycles already accepted (it is a
+sequential procedure, not the formal step-down algorithm of Westfall and
+Young). A period that agrees with a calendar period (24 h, 7 days,
+12 months, 365.25 days or a harmonic) within the frequency resolution
+1/duration enters the model with its calendar value, and the replacement is
+recorded.
+
+```{r pgram}
+pn <- kk_cycle_example("pneumonia")   # monthly admissions, 8 years
+pg <- kk_periodogram(pn$series, rate, month, calendar = c(12, 6), n_sim = 300)
+pg[, c("cycle", "period", "model_period", "amplitude", "peak", "R_SR",
+       "p_value", "in_model")]
+attr(pg, "decisions")
+```
+
+```{r pgram-plot}
+kk_plot_periodogram(pg)
+```
+
+*How to read it.* Two cycles were accepted: 12 months (amplitude about 9 per
+100 000) and 6 months (about 3). The third peak did not beat noise. `peak` is
+the time of the maximum after the start of the record: about 0 months for the
+annual cycle means a January peak. In the plot, the 1.96 line is crossed by
+many small bumps; only the peaks above the red-noise threshold are cycles.
+The Fourier periodogram (`attr(pg, "fourier")`) is an independent check at
+the harmonics of the record length, and `attr(pg, "phase")` gives each
+measurement's position in the cycle (0-1, from the minimum).
+
+**Harmonics.** A non-sinusoidal pattern needs several harmonics. Workdays
+versus weekends is a step, not a sine wave, so the weekly cycle appears at 7,
+3.5 and 2.33 days:
+
+```{r harmonics}
+kk_periodogram(bp, sbp, date, detrend = "exponential",
+               n_sim = 300)[, c("period", "amplitude", "p_value", "in_model", "harmonic")]
+```
+
+The `harmonic` flag marks periods that are harmonics of the fundamental
+(7 days for dates, 24 h for clock time). They describe the *shape* of one
+rhythm, not separate rhythms.
+
+## 4. The daily rhythm: cosinor
+
+### The idea
+
+The cosinor fits
+\(y(t) = M + A\cos(2\pi t/24 - \phi)\): the **MESOR** \(M\)
+(rhythm-adjusted mean), the **amplitude** \(A\) (half the difference between
+peak and trough) and the **acrophase** \(\phi\) (the time of the peak). The
+zero-amplitude test asks whether there is a rhythm at all. Standard errors
+are Newey-West by default, because neighbouring measurements are correlated.
+
+```{r cosinor}
+tp <- kk_cycle_example("temperature")   # 7 measurements a day, 28 days
+cz <- kk_cosinor(tp, temp, time, by_day = TRUE)
+cz[, c("mesor", "amplitude", "acrophase", "acrophase_low", "acrophase_high",
+       "percent_rhythm", "p_value")]
+kk_plot_cosinor(cz)
+```
+
+*How to read it.* The peak is at about 17:00, the temperature is
+0.3 °C above the MESOR at the peak — the simulated truth. The acrophase
+interval is only meaningful when the rhythm is significant
+(`acrophase_reliable`); otherwise the peak can be anywhere.
+
+### Day by day, and the population cosinor
+
+A cosinor fitted to each day shows whether the rhythm is stable. The
+**population cosinor** (Halberg, Bingham) averages them and gives an
+ellipse: the arrow is the mean rhythm, its length the amplitude, its
+direction the time of the peak. The rhythm is significant when the ellipse
+does not cover the centre.
+
+```{r ellipse, fig.height = 5.2}
+kk_plot_cosinor(cz, type = "ellipse")
+```
+
+With several people, `kk_cosinor_population()` treats the *subjects* as the
+independent units — what generalises to the population:
+
+```{r population}
+su <- kk_cycle_example("subjects")   # 12 people, day vs night work
+kk_cosinor_population(su[su$group == "day work", ], hr, time, subject = id)[
+  , c("k", "mesor", "amplitude", "acrophase", "p_value")]
+```
+
+### Comparing stages or groups
+
+A nurse moves from day to evening shifts on day 15. Did the rhythm move?
+
+```{r compare}
+nu <- kk_cycle_example("nurse")
+cc <- kk_cosinor_compare(nu, temp, time, stage)
+cc
+attr(cc, "differences")[, c("group", "amplitude_diff", "acrophase_shift",
+                            "acrophase_shift_low", "acrophase_shift_high")]
+```
+
+*How to read it.* Four tests: equal MESORs, equal rhythms (both coefficients
+at once), equal amplitudes, equal acrophases. The peak moved by about 3 h
+later and the amplitude fell — both true in the simulation — while the MESOR
+did not change. Acrophase differences are wrapped, so 23:00 against 01:00 is
+a 2-hour shift, not 22.
+
+The `method` column says which comparison was made. With enough days in
+every stage (or `subject =` for people in groups) a cosinor is fitted to
+every **day** (or person), and the day coefficients are compared — MESORs by
+ANOVA, the rhythm by Wilks' lambda, amplitudes and acrophases by Wald tests
+on the between-day variation. This is the comparison of Bingham et al. used
+by CycleLab: each day counts once, however many measurements it has, and
+measurements of one day do not count as independent. With too few days the
+function falls back to one pooled model with Newey-West errors
+(`method = "pooled"`), whose estimand is the measurement-weighted curve.
+When one of the groups has no detectable rhythm, its peak time is
+meaningless and the acrophase test is `NA`.
+
+### Parts of the day
+
+```{r parts}
+pd <- kk_cycle_example("prediabetes")   # glucose sensor, meals and walks
+dp <- kk_day_parts(pd$series, glucose, time)
+dp
+kk_plot_day_parts(dp)
+```
+
+Each day contributes one mean per part (morning 05-11, midday 11-16, evening
+16-22, night 22-05), only complete days are used, and the day is a blocking
+factor: differences between days cannot create a false difference between
+parts. Parallel grey lines in the plot mean a consistent pattern.
+
+## 5. Events: what happens after a meal, a walk, a dose?
+
+### Superposed epochs
+
+The record is cut around every event and the segments are averaged, each as
+the change from its own baseline (the 30 minutes before, by default). The
+controls are pseudo-events **at the same clock time on other days** with no
+real event in their window, so the daily rhythm is not mistaken for an event
+effect. Two bands come from the controls: the pointwise corridor (grey) and
+the global band (dashed) — a lag outside the global band is significant
+after accounting for every lag in the window.
+
+**Why the test is against the controls.** The rise to the peak is a
+*maximum*: after a pseudo-event in pure noise it is still positive, because
+the largest of a dozen noisy values is above their mean. A t test of the
+mean rise against zero would therefore "find" a response to anything — in
+our simulations of a glucose-like series with no event effect it did so in
+almost every record. The same measures are therefore computed for the
+clock-matched control windows, and the test compares events with controls
+(`difference`, `p.value`, Holm-adjusted across event types in
+`p.adjusted`). This also removes the part of the change that is simply the
+daily rhythm at that hour.
+
+```{r epoch}
+er <- kk_epoch_response(pd$series, glucose, time, pd$events, time,
+                        event_type = type, covariates = carbs,
+                        window = c(-0.5, 3), n_control = 200)
+attr(er, "summary")[, c("event_type", "n_events", "main_measure", "mean",
+                        "control_mean", "difference", "diff.low",
+                        "diff.high", "p.adjusted")]
+attr(er, "covariate_effect")[, c("event_type", "covariate", "slope",
+                                 "conf.low", "conf.high", "p.adjusted")]
+kk_plot_epoch(er)
+```
+
+*How to read it.* For meals the main measure is the rise to the peak; for
+everything else the signed mean change, because a walk or a drug can lower
+the value. The carbohydrate slope (about 0.035 mmol/l per gram) is the
+simulated truth. The function warns when events happen at almost the same
+time every day: then the event effect cannot be separated from the daily
+rhythm, and the fix is a design with varied times or days without the event.
+
+### When does the effect appear? Distributed lags
+
+```{r dlag}
+n1 <- kk_cycle_example("nof1")
+s <- n1$series
+s$dose <- as.integer(s$time %in% n1$events$time)
+dl <- kk_distributed_lag(s, glucose, dose, time, max_lag = 32, period = 24)
+dl[dl$lag %in% c("0", "4", "8", "12", "16", "24", "cumulative"), ]
+```
+
+The coefficient at each lag (here one lag = 15 min) is the effect at that
+delay; the strongest fall is 2 h after the dose, and the effect fades by
+about 6 h.
+
+### A single intervention
+
+For one lasting change — a new treatment, a new service — use the
+interrupted time series `kk_its()`, which separates the immediate level
+change from the change in slope.
+
+## 6. Does it work in this patient? N-of-1 trials
+
+Randomise the treatment within blocks (pairs of days), so that trends and
+weekdays cannot bias the comparison, and analyse with the randomisation test
+that follows the design.
+
+```{r nof1}
+kk_nof1_schedule(5, c("no drug", "drug"), start = as.Date("2026-12-01"), seed = 7)
+daily <- aggregate(glucose ~ day, n1$series, mean)
+daily <- merge(daily, data.frame(day = n1$schedule$period,
+                                 block = n1$schedule$block,
+                                 treatment = n1$schedule$treatment))
+kk_nof1(daily, glucose, treatment, block, active = "drug")
+```
+
+## 7. Several variables
+
+```{r compare-series}
+ch <- kk_cycle_example("chronobiology")   # temperature, pulse, cortisol
+tc <- kk_ts_compare(ch, temp, cortisol, pulse, time = time, period = 24,
+                    n_sim = 200)
+tc[, c("x", "y", "ccf_lag", "ccf", "granger_x_to_y_p", "granger_y_to_x_p",
+       "phase_shift", "phase_shift_low", "phase_shift_high")]
+attr(tc, "common_cycles")
+```
+
+*How to read it.* `phase_shift` is the peak of `y` minus the peak of `x`:
+cortisol peaks first (08:00), then pulse (15:00), then temperature (17:00).
+The cross-correlation is computed after prewhitening — without it, two
+rhythmic series correlate at almost every lag. Granger tests ask whether the
+past of one series improves the prediction of the other; neither they nor the
+cross-correlation prove causation.
+
+Wavelets show *when* a rhythm is present and how strong it is at each
+moment, which a periodogram cannot. Over eight years of monthly admissions
+the annual cycle runs through the whole record:
+
+```{r wavelet}
+kk_plot_wavelet(kk_wavelet(pn$series, rate, month))
+```
+
+## 8. Model and forecast
+
+```{r model}
+hm <- kk_harmonic_model(pn$series, rate, month, periods = c(12, 6),
+                        horizon = 12)
+attr(hm, "fit")[, c("R", "r_squared", "PrIdx")]
+attr(hm, "validation")
+kk_plot_model(hm)
+```
+
+*How to read it.* \(R\) and Komitov's prognostic index
+\(PrIdx = \sqrt{\sum(y-\bar y)^2/\sum(y-\hat y)^2} - 1\) describe the fit.
+The forecast is trusted only because the rolling-origin check shows it beats
+repeating the last value (by about 70%); the check is optimistic, since the
+periods were chosen from the same data. Here the 12 held-out months can be
+compared with the forecast:
+
+```{r holdout}
+fc <- attr(hm, "forecast")
+round(mean(abs(fc$forecast - pn$holdout$rate)), 2)   # mean absolute error
+mean(pn$holdout$rate >= fc$pred.low & pn$holdout$rate <= fc$pred.high)  # coverage
+```
+
+## 9. Planning: how long to measure?
+
+```{r power}
+pw <- kk_cycle_power(period = 24, amplitude = 0.3, sd = 0.3, interval = 2,
+                     duration = 24 * c(2, 3, 5, 7), ar1 = 0.3, n_sim = 150)
+pw
+```
+
+*How to read it.* `false_rsr196` is the share of records **without** a
+rhythm in which the naive 1.96 rule finds one — almost always. The red-noise
+test keeps false cycles near 5% (`false_noise_test`). `power` is the share of
+records with the rhythm in which it is found at the right period. The
+simulation runs the test as it is applied to real data — the noise
+autocorrelation is estimated from each simulated record, signal included —
+so the numbers describe `kk_periodogram()` itself, not an idealised test;
+`power_se` is the Monte Carlo error. `attr(pw, "required")` is the shortest
+duration with at least 80% power and a false-cycle rate near 5%.
+
+## 10. Everything at once, with the report text
+
+```{r full}
+fa <- kk_cycle_analysis(nu, temp, time, n_sim = 200, label = "axillary temperature",
+                        unit = "°C")
+fa
+```
+
+`fa$methods_text` and `fa$results_text` are ready for the Methods and
+Results sections of a manuscript.
+
+```{r full-text}
+cat(strwrap(fa$results_text, 90), sep = "\n")
+```
+
+## Limitations
+
+- The periods that can be detected are limited by the step and the length of
+  the record. A period longer than half the record occurs less than twice and
+  may be a trend or a single event.
+- The red-noise test assumes AR(1) noise. Long-memory noise may need more
+  conservative thresholds.
+- Forecast checks use periods chosen from the same data and are therefore
+  optimistic.
+- Clock time keeps the UTC offset of the first measurement for the whole
+  record, so a daylight-saving change shifts the clock labels of later
+  measurements by one hour rather than creating duplicated or missing hours.
+- Methods that work on row offsets — distributed lags, wavelets, the
+  comparison of series — need equally spaced data without gaps and stop
+  otherwise; fill or interpolate gaps first.
+
+## What is not (yet) implemented
+
+kkstatfun follows the CycleLab algorithm closely but not completely. Not
+implemented, or narrower than in CycleLab:
+
+- the joint type-II factor analysis (all factors in one model), the
+  aligned-rank analysis and a non-parametric counterpart of the covariate
+  regression in the event analysis — factors are tested one at a time;
+- the automatic intervention analysis inside `kk_cycle_analysis()`; use
+  `kk_its()` separately, which models level and slope changes but not
+  changes of the rhythm;
+- Komitov's strict planning rule in `kk_cycle_power()`; the 1.96 rule and the
+  red-noise test are compared;
+- a separate cross-wavelet analysis: `kk_wavelet_coherence()` returns the
+  cross-wavelet power as a column, without its own significance test.
+
+- "Not established" does not mean "absent". Association is not causation.
+
+## References
+
+- Stefanov R. *CycleLab: analysis of biomedical time series*, v0.14.4.
+  Plovdiv: Institute for Rare Diseases; 2026. <https://cyclelab.raredis.org>
+- Komitov B. The Schove's series. Centural and supercentural variations of
+  the solar activity. *Bulg Geophys J.* 1997;23:74-82.
+- Komitov B. *Shestmerna statistika (6D STAT), v5.0. User manual.* Stara
+  Zagora; 1998.
+- Halberg F, Johnson EA, Nelson W, Runge W, Sothern R. Autorhythmometry.
+  *Physiol Teacher.* 1972;1(4):1-11.
+- Nelson W, Tong YL, Lee JK, Halberg F. Methods for cosinor-rhythmometry.
+  *Chronobiologia.* 1979;6:305-323.
+- Bingham C, Arbogast B, Cornelissen G, Lee JK, Halberg F. Inferential
+  statistical methods for estimating and comparing cosinor parameters.
+  *Chronobiologia.* 1982;9:397-439.
+- Cornelissen G. Cosinor-based rhythmometry. *Theor Biol Med Model.*
+  2014;11:16. doi:10.1186/1742-4682-11-16
+- Zechmeister M, Kürster M. The generalised Lomb-Scargle periodogram.
+  *Astron Astrophys.* 2009;496:577-584. doi:10.1051/0004-6361:200811296
+- Westfall PH, Young SS. *Resampling-Based Multiple Testing.* Wiley; 1993.
+- Chree C. Some phenomena of sunspots and of terrestrial magnetism at Kew
+  Observatory. *Phil Trans R Soc A.* 1913;212:75-116.
+- Schwartz J. The distributed lag between air pollution and daily deaths.
+  *Epidemiology.* 2000;11:320-326.
+- Torrence C, Compo GP. A practical guide to wavelet analysis. *Bull Am
+  Meteorol Soc.* 1998;79:61-78.
+- Grinsted A, Moore JC, Jevrejeva S. Application of the cross wavelet
+  transform and wavelet coherence. *Nonlin Processes Geophys.*
+  2004;11:561-566. doi:10.5194/npg-11-561-2004
+- Granger CWJ. Investigating causal relations by econometric models and
+  cross-spectral methods. *Econometrica.* 1969;37:424-438.
+- Kravitz RL, Duan N, eds. *Design and Implementation of N-of-1 Trials.*
+  AHRQ; 2014.
