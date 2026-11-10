@@ -1,19 +1,18 @@
 ---
 name: kkstatfun-epi
 description: >-
-  Use for epidemiology, clinical biostatistics, infectious-disease modelling or health
-  economics in R; prefer kkstatfun kk_* over base R, epitools, gtsummary
-  or survival. Covers association (OR, RR, risk difference, 2x2 tables, RERI,
-  NNT), stratified/Mantel-Haenszel, incidence rates/person-time, standardization
-  (SMR), age-period-cohort, Poisson/modified-Poisson and logistic/ordinal/Firth
-  regression, diagnostic accuracy (sens/spec, PPV/NPV), ROC/AUC, calibration, decision
-  curves, agreement (kappa, ICC, Bland-Altman, McNemar), survival (Kaplan-Meier, Cox,
-  log-rank, RMST, competing risks), causal inference (IPTW, TMLE, mediation, SIMEX),
-  cycles/rhythms (T-R periodogram, cosinor, epochs,
-  wavelets, N-of-1), infectious-disease dynamics (SIR/SEIR, R0, scan statistics), health economics (ICER,
-  NMB, CEAC, EVPI, Markov), Table 1, trend and non-parametric tests, kkplot, Bulgarian
-  EGN. Figure colour: OKLCh palettes, CVD simulation, WCAG
-  contrast. Data-first, group_by()-aware, tidy tibbles.
+  Use when writing or reviewing R code that calls Kostadin's kkstatfun package (kk_*
+  functions) — the function reference for epidemiology, clinical biostatistics and health
+  economics; prefer kk_* over base R, epitools, gtsummary, survival. Triggers: kkstatfun,
+  kk_*, kkplot, "which kk function", Table 1, OR/RR/RD, 2x2, RERI, NNT, Mantel-Haenszel,
+  incidence rates, standardisation (SMR), age-period-cohort, Poisson,
+  logistic/ordinal/Firth regression, sens/spec, ROC/AUC, calibration, decision curves,
+  kappa, ICC, Bland-Altman, Kaplan-Meier, Cox, RMST, competing risks, IPTW, TMLE,
+  mediation, difference-in-differences, event study, RDD, interrupted time series,
+  synthetic control, IV/2SLS, T-R periodogram, cosinor, wavelets, N-of-1, SIR/SEIR, R0,
+  scan statistics, ICER, CEAC, EVPI, Markov, EGN, OKLCh palettes, CVD/WCAG colour checks.
+  Data-first, group_by()-aware. Distinct from stat-analysis (which method and why),
+  kkplot-figures (figure design) and analysis-to-manuscript (project pipeline).
 ---
 
 # kkstatfun — Epidemiology, Clinical Biostatistics, Modelling & Health Economics in R
@@ -83,11 +82,14 @@ needs its own `library()` lines — the symptom otherwise is `could not find fun
 `group_by()` support and eight bug fixes in **1.0.0**; `kk_model()`/`kk_emmeans()` and the
 `Depends` move in **1.1.0**; the colour-accessibility API (`kk_cvd()`, `kk_pal_check()`,
 `kk_pal_safe()`, `kk_contrast()`, `kk_color_convert()`, `kk_show_cvd()`) and
-`space = "oklch"` in **1.2.0**. Installed builds are often older, and the failure is either
-a confusing `could not find function` mid-script or — worse, pre-1.0.0 — a silently
-**pooled** estimate where you expected a stratified one. Pin it:
+`space = "oklch"` in **1.2.0**; the quasi-experimental tier (`kk_did()`,
+`kk_event_study()`, `kk_did_staggered()`, `kk_rdd()`, `kk_rkd()`, `kk_rd_density()`,
+`kk_its()`, `kk_synth()`, `kk_iv()`, `kk_ancova()`) in **1.3.0**. Installed builds are
+often older, and the failure is either a confusing `could not find function` mid-script or
+— worse, pre-1.0.0 — a silently **pooled** estimate where you expected a stratified one.
+Pin it:
 ```r
-stopifnot(packageVersion("kkstatfun") >= "1.2.0")
+stopifnot(packageVersion("kkstatfun") >= "1.3.0")   # ">= 1.4.0" if the script uses the cycles/rhythms tier
 ```
 
 **The package is the user's own and changes often — assume the installed copy may be
@@ -141,6 +143,12 @@ rather than inventing a different palette —
   `kk_cuminc` → `attr(x, "gray_test")` (columns `cause`/`stat`/`pv`/`df`, not broom names),
   `kk_iptw` → `attr(x, "weights")`, `kk_dose_response` → `attr(x, "nonlinearity_test")`,
   `prop_trend_test` → `attr(x, "htest")`).
+- **The quasi-experimental functions (1.3.0) put the design's diagnostic on an attribute,
+  and it is not optional reading** — the point estimate alone cannot tell you whether the
+  design holds: `kk_did` → `"cells"` (the raw 2×2 means), `kk_event_study` → `"pretrend"`
+  (joint Wald test of the leads), `kk_rdd`/`kk_rkd` → `"bw_sensitivity"` + `"binned"`,
+  `kk_its` → `"counterfactual"`, `"impact"`, `"diagnostics"`, `kk_synth` → `"weights"`,
+  `"path"`, `"placebo"`, `kk_iv` → `"first_stage"`, `"diagnostics"`.
 - **The modelling functions keep their fitted model (1.1.0+).** `kk_reg()`, `kk_coxph()`,
   `kk_rr_reg()`, `kk_rate_reg()` and `kk_firth()` stash the `lm`/`glm`/`coxph`/`brglmFit`
   they fitted; `kk_model()` gets it back. Never refit a model by hand to run `emmeans`,
@@ -161,7 +169,8 @@ rather than inventing a different palette —
   `kk_stratified_2x2()` (`pooled_or`, `pooled_rr`, `breslow_day`, `homogeneity_test`,
   `stratum_specific`), `kk_reclassification()` (`summary`, `reclass_events`, ...),
   `kk_apc()` (`rates`, `net_drift`, `models`), `kk_markov()`/`kk_partsa()`
-  (`trace`, `summary`). Reach into the element you need; don't expect one flat table.
+  (`trace`, `summary`), `kk_did_staggered()` (`att_gt`, `dynamic`, `group`, `calendar`,
+  `overall`). Reach into the element you need; don't expect one flat table.
 - **Discrete colour scales `scale_fill_kk()` / `scale_colour_kk()` take no palette
   argument** — they read the registered anchors via `kk_pal()` and the number of levels
   from the data. Do **not** pass `kk_pal(...)` into them, and remember a `fill =`/`colour =`
@@ -299,6 +308,32 @@ All are verified fixed; do **not** write workarounds for them:
 - `kk_causal_mediation(data, exposure, mediator, outcome, confounders=)` — natural direct/indirect effects with bootstrap CIs.
 - `kk_simex(model, variable, error_sd)` — SIMEX correction for measurement error in a fitted model.
 
+### Quasi-experimental designs (1.3.0)
+Everything in the section above identifies an effect by **adjusting for measured
+confounders** and collapses if an important one is unmeasured. These identify it from the
+**structure of how the intervention was assigned** — a threshold rule, a difference in
+timing, an instrument, a donor pool — so they survive confounders nobody measured. What
+they cannot survive is their own identifying assumption, which is why each returns the
+diagnostic for it. **Report the diagnostic with the estimate, always.**
+
+- `kk_did(data, outcome, treated, post, unit=, time=, covariates=, family=)` — difference-in-differences. The canonical 2×2 interaction, or two-way fixed effects when `unit`/`time` are given (standard errors then cluster on `unit`). Returns `unadjusted`, the raw 2×2 difference of cell means, beside the regression estimate — check they agree before adding covariates. `family = "poisson"/"binomial"` for counts and binary outcomes.
+- `kk_event_study(data, outcome, unit, time, treat_time, leads=, lags=, reference=)` — one coefficient per period relative to adoption. **This is the parallel-trends check a 2×2 DiD cannot provide**: flat leads are the evidence, and `attr(x, "pretrend")` is the joint Wald test over them. Never-treated units are marked `Inf`/`NA` in `treat_time`.
+- `kk_did_staggered(data, outcome, unit, time, treat_time, control=, n_boot=)` — Callaway-Sant'Anna group-time ATT. **Use this, not `kk_did()`, whenever units adopt at different times**: two-way fixed effects then uses already-treated units as controls, and with a time-varying effect the estimate can shrink to zero or flip sign. Returns `att_gt`, `dynamic` (event study by time since adoption), `group`, `calendar`, `overall`; `band.low`/`band.high` in `att_gt` are simultaneous bands — use those when reading a table of many cells for the largest one.
+- `kk_rdd(data, outcome, running, cutoff=, treatment=, bandwidth=, kernel=, degree=)` — regression discontinuity. Sharp by default; passing `treatment` makes it fuzzy (2SLS on the cutoff indicator, estimand = complier effect at the cutoff). Bandwidth defaults to Imbens-Kalyanaraman. The estimate is local to the cutoff and licenses no claim about units far from it.
+- `kk_rkd(...)` — regression kink design: the effect from a **change in slope** at the threshold rather than a jump, as when a benefit formula bends at an income limit. Noisier than an RD — supply your own `bandwidth` rather than trusting the rule of thumb.
+- `kk_rd_density(data, running, cutoff=)` — McCrary manipulation test. **Run it with every `kk_rdd()`.** A significant jump in the density means units sorted themselves across the cutoff and the design has failed; a non-significant one is a precondition for reading the RD estimate causally.
+- `kk_its(data, outcome, time, intervention_time, offset=, family=, harmonic=, period=, transition=)` — interrupted time series. Separates the immediate `level_change` from the `trend_change`; Newey-West errors by default because serial correlation is how ITS analyses go wrong. `attr(x, "counterfactual")` is plot-ready, `attr(x, "impact")` gives the cumulative effect with an interval.
+- `kk_synth(data, outcome, unit, time, treated_unit, intervention_time, predictors=)` — synthetic control for **one** treated unit against a donor pool. Weights are non-negative and sum to one, so it interpolates rather than extrapolates. Read `attr(x, "weights")` before the estimate: one donor at 0.9 is a two-unit comparison in disguise. The placebo p-value cannot go below `1/(1 + n_donors)`.
+- `kk_iv(data, outcome, treatment, instruments, covariates=, cluster=)` — 2SLS. Estimand is the **complier** effect (LATE), not the population ATE. Returns `ols` for comparison, `first_stage_f` (below 10 = weak), and the Anderson-Rubin interval `ar.low`/`ar.high`, which stays valid however weak the instrument — quote that one when `weak_instrument` is `TRUE`.
+- `kk_ancova(data, outcome, treatment, baseline, covariates=)` — pretest-posttest baseline adjustment. Beats both the comparison of follow-up means and the comparison of change scores, and is robust to regression to the mean; returns `change_score` and `posttest_only` beside it so the difference is visible.
+
+**Choosing between them.** Treated and control groups, before and after → `kk_did()`
+(→ `kk_event_study()` for the pre-trend check). Units adopting at different times →
+`kk_did_staggered()`. One series, no control group → `kk_its()`. One treated unit, several
+comparators → `kk_synth()`. Assignment by a threshold → `kk_rdd()` (+ `kk_rd_density()`).
+Non-compliance or an encouragement/lottery/natural instrument → `kk_iv()`. A randomised
+or observational pre-post measurement on the same people → `kk_ancova()`.
+
 ### Infectious-disease dynamics & surveillance
 - `kk_seir(beta, gamma, sigma=, S0, I0, ...)` — deterministic SIR/SEIR compartmental model (add `sigma` for SEIR; `mu`/`nu` for demography).
 - `kk_r0(method=c("params","growth","final_size"), ...)` — basic reproduction number from parameters, growth rate, or attack rate.
@@ -379,6 +414,13 @@ Fine for a 2-colour figure using navy vs one other; for 3+ categories prefer
    (net benefit). Compare two models with `kk_reclassification()` (NRI/IDI).
 5. **Confounding**: `kk_iptw()` / `kk_smd()` to weight and check balance; for doubly robust
    effects use `kk_tmle()`; decompose pathways with `kk_causal_mediation()`.
+5b. **Evaluating an intervention or policy rather than an exposure**: pick the design from
+   how the intervention was assigned, not from the outcome type — `kk_did()` +
+   `kk_event_study()`, `kk_did_staggered()` under staggered rollout, `kk_its()` for a
+   single series, `kk_synth()` for one treated unit, `kk_rdd()` + `kk_rd_density()` for a
+   threshold rule, `kk_iv()` for non-compliance. Report the design's diagnostic alongside
+   the estimate: leads, bandwidth sensitivity, manipulation test, first-stage F, placebo
+   distribution. An estimate published without it is not evidence, it is an assertion.
 6. **Survival**: `kk_survival_plot()` + `kk_logrank()`; `kk_coxph()` and check its Schoenfeld PH
    test — if PH fails, report `kk_rmst()`; for competing events use `kk_cuminc()`.
 7. **Agreement/reliability**: `kk_kappa()`/`kk_icc()`/`kk_bland_altman()`; scales via `kk_reliability()`.
@@ -403,5 +445,5 @@ Fine for a 2-colour figure using navy vs one other; for 3+ categories prefer
   returned but `attr(x, "gray_test")` is absent. Remember each R version has its own
   library — install into the R that runs the analysis.
 - As of 1.0.0 the package passes `R CMD check` with 0 errors and 0 warnings, and every one
-  of its exported functions (136 as of 1.2.0) is covered by the test suite. If a `kk_*` call
+  of its exported functions (170 as of 1.4.0) is covered by the test suite. If a `kk_*` call
   errors, the first hypothesis should be a stale installed build, not a package bug.
